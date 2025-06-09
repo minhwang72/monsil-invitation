@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "1108:1108"
+    environment:
+      - NODE_ENV=production
+    restart: always
+    volumes:
+      - ./public/uploads:/app/public/uploads 

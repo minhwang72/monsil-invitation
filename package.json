@@ -1,5 +1,5 @@
 {
-  "name": "monsil",
+  "name": "temp-monsil",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,23 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.12.2",
     "@types/multer": "^1.4.13",
-    "axios": "^1.9.0",
+    "@types/node-sass": "^4.11.8",
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-icons": "^5.5.0",
-    "react-share": "^5.2.2"
+    "sass": "^1.89.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/node": "^22.15.30",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.6",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",
