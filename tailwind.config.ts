@@ -17,8 +17,8 @@ const config: Config = {
         text: '#5A4B41',
       },
       fontFamily: {
-        sans: ['Pretendard', 'sans-serif'],
-        score: ['S-CoreDream', 'sans-serif'],
+        sans: ['SpoqaHanSansNeo', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        score: ['SpoqaHanSansNeo', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
       },
     },
   },
