@@ -106,16 +106,16 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
 
   return (
     <>
-      <section className="w-full py-0 md:py-0 px-0">
+      <section className="w-full py-0 md:py-0 px-0 font-sans">
         <div className="w-full">
           <div className="p-6 md:p-8">
-            <h2 className="text-xl md:text-2xl font-score text-center mb-6 md:mb-8">MESSAGE</h2>
+            <h2 className="text-xl md:text-2xl font-sans font-medium text-gray-900 text-center mb-6 md:mb-8">MESSAGE</h2>
             
             {/* 작성 버튼 */}
             <div className="flex justify-end mb-6">
               <button
                 onClick={handleWrite}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -143,8 +143,8 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1 text-center">
                         <div className="flex justify-center items-center gap-4 mb-2">
-                          <span className="font-medium">{item.name}</span>
-                          <span className="text-sm text-gray-500">
+                          <span className="font-medium text-gray-900 font-sans">{item.name}</span>
+                          <span className="text-sm text-gray-700 font-sans">
                             {formatDate(String(item.created_at))}
                           </span>
                         </div>
@@ -153,7 +153,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                         {/* 수정 아이콘 */}
                         <button
                           onClick={() => handleEdit(item.id)}
-                          className="p-1 text-gray-500 hover:text-gray-700"
+                          className="p-1 text-gray-900 hover:text-gray-700"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -173,7 +173,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                         {/* 삭제 아이콘 */}
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="p-1 text-gray-500 hover:text-red-600"
+                          className="p-1 text-gray-900 hover:text-red-600"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -192,13 +192,13 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                         </button>
                       </div>
                     </div>
-                    <p className="text-gray-700 text-center">{item.content}</p>
+                    <p className="text-gray-900 text-center font-sans font-normal">{item.content}</p>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-lg text-gray-400 mb-2">메시지가 없습니다.</p>
-                  <p className="text-base text-gray-500">첫 메시지를 작성해주세요.</p>
+                  <p className="text-lg text-gray-700 mb-2 font-sans font-medium">메시지가 없습니다.</p>
+                  <p className="text-base text-gray-600 font-sans">첫 메시지를 작성해주세요.</p>
                 </div>
               )}
             </div>
@@ -213,12 +213,12 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           onClick={handleBackgroundClick}
         >
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md font-sans">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">메시지 작성</h3>
+              <h3 className="text-lg font-medium text-gray-900 font-sans">메시지 작성</h3>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-900 hover:text-gray-700"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -245,7 +245,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
                   placeholder="이름을 입력하세요"
                 />
               </div>
@@ -257,7 +257,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   value={formData.content}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
                   placeholder="메시지를 입력하세요"
                 />
               </div>
@@ -269,7 +269,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
                   placeholder="비밀번호를 입력하세요 (수정/삭제용)"
                 />
               </div>
@@ -278,7 +278,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-md transition-colors disabled:opacity-50"
+                  className="w-full px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-md transition-colors disabled:opacity-50 font-sans font-medium"
                 >
                   {isSubmitting ? '작성 중...' : '작성하기'}
                 </button>
