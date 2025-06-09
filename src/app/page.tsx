@@ -5,46 +5,48 @@ import Link from 'next/link'
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
-      {/* Cover Section */}
-      <section className="relative w-full h-screen flex items-center justify-center">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/cover.jpg"
-            alt="Wedding Cover"
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
-        <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-white">
-          <h1 className="text-3xl md:text-4xl font-score mb-4 text-center">김철수 ♥ 이영희</h1>
-          <p className="text-lg md:text-xl mb-8 text-center">2024. 05. 20</p>
-          <Link
-            href="#details"
-            className="bg-primary hover:bg-highlight text-white px-6 py-2 md:px-8 md:py-3 rounded-full transition-colors"
-          >
-            청첩장 보기
-          </Link>
-        </div>
-      </section>
+      <div className="w-full max-w-[500px] mx-auto">
+        {/* Cover Section */}
+        <section className="relative w-full h-screen flex items-center justify-center">
+          <div className="absolute inset-0">
+            <Image
+              src="/images/cover.jpg"
+              alt="Wedding Cover"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-white">
+            <h1 className="text-3xl md:text-4xl font-score mb-4 text-center">김철수 ♥ 이영희</h1>
+            <p className="text-lg md:text-xl mb-8 text-center">2024. 05. 20</p>
+            <Link
+              href="#details"
+              className="bg-primary hover:bg-highlight text-white px-6 py-2 md:px-8 md:py-3 rounded-full transition-colors"
+            >
+              청첩장 보기
+            </Link>
+          </div>
+        </section>
 
-      {/* Details Section */}
-      <section id="details" className="w-full py-12 md:py-16 px-4">
-        <div className="max-w-md mx-auto">
-          <h2 className="text-xl md:text-2xl font-score text-center mb-6 md:mb-8">Wedding Details</h2>
-          <div className="space-y-4 md:space-y-6">
-            <div className="text-center">
-              <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 일시</h3>
-              <p className="text-sm md:text-base">2024년 5월 20일 오후 1시</p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 장소</h3>
-              <p className="text-sm md:text-base">그랜드 웨딩홀</p>
-              <p className="text-xs md:text-sm text-gray-600">서울시 강남구 테헤란로 123</p>
+        {/* Details Section */}
+        <section id="details" className="w-full py-12 md:py-16 px-4">
+          <div className="max-w-md mx-auto">
+            <h2 className="text-xl md:text-2xl font-score text-center mb-6 md:mb-8">Wedding Details</h2>
+            <div className="space-y-4 md:space-y-6">
+              <div className="text-center">
+                <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 일시</h3>
+                <p className="text-sm md:text-base">2024년 5월 20일 오후 1시</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 장소</h3>
+                <p className="text-sm md:text-base">그랜드 웨딩홀</p>
+                <p className="text-xs md:text-sm text-gray-600">서울시 강남구 테헤란로 123</p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* Share Button */}
       <button
