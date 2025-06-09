@@ -13,50 +13,38 @@ export default function Home() {
   const [guestbook, setGuestbook] = useState<Guestbook[]>([])
   const [dDay, setDDay] = useState<number>(0)
 
+  // 방명록 데이터만 다시 가져오는 함수
+  const fetchGuestbook = async () => {
+    try {
+      const guestbookRes = await fetch('/api/guestbook')
+      const guestbookData = await guestbookRes.json()
+      
+      if (guestbookData.success) {
+        setGuestbook(guestbookData.data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching guestbook:', error)
+      setGuestbook([])
+    }
+  }
+
   useEffect(() => {
-    console.log('useEffect started - fetching data...')
-    
     // Fetch data
     const fetchData = async () => {
       try {
-        console.log('Making API calls...')
-        
         const [galleryRes, guestbookRes] = await Promise.all([
           fetch('/api/gallery'),
           fetch('/api/guestbook'),
         ])
-
-        console.log('API responses received:')
-        console.log('Gallery response status:', galleryRes.status)
-        console.log('Guestbook response status:', guestbookRes.status)
 
         const [galleryData, guestbookData] = await Promise.all([
           galleryRes.json(),
           guestbookRes.json(),
         ])
 
-        console.log('=== GUESTBOOK DEBUG ===')
-        console.log('Guestbook API response:', guestbookData)
-        console.log('Response success:', guestbookData.success)
-        console.log('Response data:', guestbookData.data)
-        console.log('Data type:', typeof guestbookData.data)
-        console.log('Data is array:', Array.isArray(guestbookData.data))
-        if (guestbookData.data) {
-          console.log('Data length:', guestbookData.data.length)
-        }
-
-        if (galleryData.success) {
-          console.log('Setting gallery data...')
-          setGallery(galleryData.data)
-        }
-        
+        if (galleryData.success) setGallery(galleryData.data)
         if (guestbookData.success) {
-          console.log('Setting guestbook data:', guestbookData.data)
           setGuestbook(guestbookData.data || [])
-          console.log('Guestbook state should be updated now')
-        } else {
-          console.error('Failed to fetch guestbook:', guestbookData.error)
-          setGuestbook([])
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -80,7 +68,7 @@ export default function Home() {
         <CoverSection dDay={dDay} />
         <DetailsSection />
         <GallerySection gallery={gallery} />
-        <GuestbookSection guestbook={guestbook} />
+        <GuestbookSection guestbook={guestbook} onGuestbookUpdate={fetchGuestbook} />
         <Footer />
       </div>
 

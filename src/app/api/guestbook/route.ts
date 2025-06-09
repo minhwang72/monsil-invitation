@@ -9,9 +9,6 @@ export async function GET() {
     )
     const guestbookRows = rows as Guestbook[]
     
-    console.log('Guestbook query result:', guestbookRows)
-    console.log('Number of rows:', guestbookRows.length)
-    
     return NextResponse.json<ApiResponse<Guestbook[]>>({
       success: true,
       data: guestbookRows,
@@ -33,9 +30,13 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, password, content } = body
 
+    // 한국 시간으로 현재 시간 생성
+    const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
+    const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
+
     await pool.query(
-      'INSERT INTO guestbook (name, password, content) VALUES (?, ?, ?)',
-      [name, password, content]
+      'INSERT INTO guestbook (name, password, content, created_at) VALUES (?, ?, ?, ?)',
+      [name, password, content, formattedTime]
     )
 
     return NextResponse.json<ApiResponse<null>>({

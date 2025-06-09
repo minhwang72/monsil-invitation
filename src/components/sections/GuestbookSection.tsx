@@ -3,9 +3,10 @@ import type { Guestbook } from '@/types'
 
 interface GuestbookSectionProps {
   guestbook: Guestbook[]
+  onGuestbookUpdate: () => void
 }
 
-export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
+export default function GuestbookSection({ guestbook, onGuestbookUpdate }: GuestbookSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -14,10 +15,6 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-
-  console.log('GuestbookSection - Received guestbook data:', guestbook)
-  console.log('GuestbookSection - Array length:', guestbook?.length || 0)
-  console.log('GuestbookSection - Array type:', typeof guestbook)
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type })
@@ -50,13 +47,38 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.name.trim() || !formData.content.trim() || !formData.password.trim()) {
-      showToast('모든 필드를 입력해주세요.', 'error')
+    if (!formData.name.trim()) {
+      showToast('이름을 입력해주세요.', 'error')
+      return
+    }
+
+    if (formData.name.trim().length > 10) {
+      showToast('이름은 10글자 이내로 입력해주세요.', 'error')
+      return
+    }
+
+    if (!formData.content.trim()) {
+      showToast('내용을 입력해주세요.', 'error')
+      return
+    }
+
+    if (formData.content.trim().length > 200) {
+      showToast('내용은 200글자 이내로 입력해주세요.', 'error')
+      return
+    }
+
+    if (!formData.password.trim()) {
+      showToast('비밀번호를 입력해주세요.', 'error')
       return
     }
 
     if (formData.password.length < 6) {
       showToast('비밀번호는 6자리 이상 입력해주세요.', 'error')
+      return
+    }
+
+    if (formData.password.length > 12) {
+      showToast('비밀번호는 12자리 이내로 입력해주세요.', 'error')
       return
     }
 
@@ -74,8 +96,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
       if (response.ok) {
         showToast('메시지가 작성되었습니다.', 'success')
         handleCloseModal()
-        // 페이지 새로고침으로 새로운 메시지 표시
-        setTimeout(() => window.location.reload(), 1000)
+        setTimeout(() => onGuestbookUpdate(), 1000)
       } else {
         showToast('메시지 작성에 실패했습니다.', 'error')
       }
@@ -99,13 +120,13 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    
+    return `${year}. ${month}. ${day} ${hours}:${minutes}`
   }
 
   return (
@@ -141,48 +162,18 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
 
             {/* 방명록 리스트 */}
             <div className="space-y-4">
-              <div className="text-xs text-red-500 mb-2">
-                DEBUG: guestbook length = {guestbook?.length || 0}, 
-                type = {typeof guestbook}, 
-                isArray = {Array.isArray(guestbook) ? 'true' : 'false'}
-              </div>
               {guestbook && guestbook.length > 0 ? (
                 guestbook.map((item) => (
-                  <div key={item.id} className="p-4 bg-gray-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1 text-center">
-                        <div className="flex justify-center items-center gap-4 mb-2">
-                          <span className="font-medium text-gray-900 font-sans">{item.name}</span>
-                          <span className="text-sm text-gray-700 font-sans">
-                            {formatDate(String(item.created_at))}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        {/* 수정 아이콘 */}
-                        <button
-                          onClick={() => handleEdit(item.id)}
-                          className="p-1 text-gray-900 hover:text-gray-700"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                            />
-                          </svg>
-                        </button>
-                        {/* 삭제 아이콘 */}
+                  <div key={item.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-lg">
+                    {/* 내용과 삭제버튼 좌우 정렬 */}
+                    <div className="flex justify-between items-start mb-3">
+                      <p className="text-gray-900 font-sans font-normal leading-relaxed flex-1 pr-2">{item.content}</p>
+                      <div className="flex-shrink-0">
+                        {/* 삭제 아이콘 - 분홍색 */}
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="p-1 text-gray-900 hover:text-red-600"
+                          className="p-1 rounded-lg transition-colors"
+                          style={{ color: '#FFCCE0' }}
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -201,7 +192,17 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                         </button>
                       </div>
                     </div>
-                    <p className="text-gray-900 text-center font-sans font-normal">{item.content}</p>
+                    
+                    {/* 날짜와 From 이름 좌우 정렬 */}
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs font-sans">
+                        <span style={{ color: '#B3D4FF' }}>From </span>
+                        <span className="text-gray-900">{item.name}</span>
+                      </div>
+                      <div className="text-xs text-gray-700 font-sans">
+                        {formatDate(String(item.created_at))}
+                      </div>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -254,6 +255,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
+                  maxLength={10}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
                   placeholder="이름을 입력하세요"
                 />
@@ -265,6 +267,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   name="content"
                   value={formData.content}
                   onChange={handleInputChange}
+                  maxLength={200}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
                   placeholder="메시지를 입력하세요"
@@ -278,6 +281,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  maxLength={12}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
                   placeholder="비밀번호를 입력하세요 (수정/삭제용)"
                 />
