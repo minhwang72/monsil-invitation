@@ -4,8 +4,9 @@ import type { ApiResponse, Guestbook } from '@/types'
 
 export async function GET() {
   try {
+    // deleted_at이 null인 레코드만 가져오기
     const [rows] = await pool.query(
-      'SELECT id, name, content, created_at FROM guestbook ORDER BY created_at DESC'
+      'SELECT id, name, content, created_at FROM guestbook WHERE deleted_at IS NULL ORDER BY created_at DESC'
     )
     const guestbookRows = rows as Guestbook[]
     
@@ -48,6 +49,73 @@ export async function POST(request: Request) {
       {
         success: false,
         error: 'Failed to create guestbook entry',
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const url = new URL(request.url)
+    const id = url.searchParams.get('id')
+    const password = url.searchParams.get('password')
+
+    if (!id || !password) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: 'ID와 비밀번호가 필요합니다.',
+        },
+        { status: 400 }
+      )
+    }
+
+    // 비밀번호 확인
+    const [passwordRows] = await pool.query(
+      'SELECT password FROM guestbook WHERE id = ? AND deleted_at IS NULL',
+      [id]
+    )
+
+    if (!Array.isArray(passwordRows) || passwordRows.length === 0) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: '메시지를 찾을 수 없습니다.',
+        },
+        { status: 404 }
+      )
+    }
+
+    const storedPassword = (passwordRows[0] as { password: string }).password
+    if (storedPassword !== password) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: '비밀번호가 일치하지 않습니다.',
+        },
+        { status: 401 }
+      )
+    }
+
+    // 한국 시간으로 현재 시간 생성하여 deleted_at에 설정
+    const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
+    const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
+
+    await pool.query(
+      'UPDATE guestbook SET deleted_at = ? WHERE id = ?',
+      [formattedTime, id]
+    )
+
+    return NextResponse.json<ApiResponse<null>>({
+      success: true,
+    })
+  } catch (error) {
+    console.error('Error deleting guestbook entry:', error)
+    return NextResponse.json<ApiResponse<null>>(
+      {
+        success: false,
+        error: '메시지 삭제에 실패했습니다.',
       },
       { status: 500 }
     )

@@ -15,6 +15,10 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type })
@@ -33,6 +37,12 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
   const handleBackgroundClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       handleCloseModal()
+    }
+  }
+
+  const handleDeleteBackgroundClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleDeleteCancel()
     }
   }
 
@@ -108,14 +118,48 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
     }
   }
 
-  const handleEdit = (id: number) => {
-    // 수정 기능 구현 예정
-    console.log('수정:', id)
+  const handleDelete = (id: number) => {
+    setDeleteTargetId(id)
+    setDeleteModalOpen(true)
   }
 
-  const handleDelete = (id: number) => {
-    // 삭제 기능 구현 예정
-    console.log('삭제:', id)
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId || !deletePassword.trim()) {
+      showToast('비밀번호를 입력해주세요.', 'error')
+      return
+    }
+
+    setIsDeleting(true)
+    
+    try {
+      const response = await fetch(`/api/guestbook?id=${deleteTargetId}&password=${encodeURIComponent(deletePassword)}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        showToast('메시지가 삭제되었습니다.', 'success')
+        setDeleteModalOpen(false)
+        setDeletePassword('')
+        setDeleteTargetId(null)
+        // 방명록 데이터 갱신
+        setTimeout(() => onGuestbookUpdate(), 1000)
+      } else {
+        showToast(result.error || '삭제에 실패했습니다.', 'error')
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error)
+      showToast('삭제 중 오류가 발생했습니다.', 'error')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false)
+    setDeletePassword('')
+    setDeleteTargetId(null)
   }
 
   const formatDate = (dateString: string) => {
@@ -312,6 +356,80 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
             }}
           >
             {toast.message}
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 모달 */}
+      {deleteModalOpen && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={handleDeleteBackgroundClick}
+        >
+          <div className="bg-white rounded-lg p-6 w-full max-w-md font-sans">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 font-sans">메시지 삭제</h3>
+              <button
+                onClick={handleDeleteCancel}
+                className="text-gray-900 hover:text-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleDeleteConfirm() }} className="space-y-4">
+              <div>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  maxLength={12}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
+                  placeholder="비밀번호를 입력하세요"
+                />
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isDeleting}
+                  className="w-full px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 font-sans font-medium"
+                  style={{ 
+                    backgroundColor: '#FFCCE0', 
+                    color: 'white',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDeleting) {
+                      e.currentTarget.style.backgroundColor = '#FFB3D1'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDeleting) {
+                      e.currentTarget.style.backgroundColor = '#FFCCE0'
+                    }
+                  }}
+                >
+                  {isDeleting ? '삭제 중...' : '삭제하기'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
