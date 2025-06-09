@@ -12,13 +12,18 @@ interface NaverLatLng {
   lng: number;
 }
 
+interface NaverMap {
+  setCenter: (center: NaverLatLng) => void;
+  setZoom: (zoom: number) => void;
+}
+
 declare global {
   interface Window {
     naver: {
       maps: {
-        Map: new (element: HTMLElement, options: NaverMapOptions) => any;
+        Map: new (element: HTMLElement, options: NaverMapOptions) => NaverMap;
         LatLng: new (lat: number, lng: number) => NaverLatLng;
-        Marker: new (options: { position: NaverLatLng; map: any }) => any;
+        Marker: new (options: { position: NaverLatLng; map: NaverMap }) => unknown;
       };
     };
   }
