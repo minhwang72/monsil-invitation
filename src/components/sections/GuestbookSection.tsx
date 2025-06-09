@@ -141,7 +141,12 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
 
             {/* 방명록 리스트 */}
             <div className="space-y-4">
-              {guestbook.length > 0 ? (
+              <div className="text-xs text-red-500 mb-2">
+                DEBUG: guestbook length = {guestbook?.length || 0}, 
+                type = {typeof guestbook}, 
+                isArray = {Array.isArray(guestbook) ? 'true' : 'false'}
+              </div>
+              {guestbook && guestbook.length > 0 ? (
                 guestbook.map((item) => (
                   <div key={item.id} className="p-4 bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
