@@ -11,15 +11,13 @@ const config: Config = {
       colors: {
         background: '#FDFBFF',
         primary: '#CAB8FF',
-        accent: {
-          sky: '#B3D4FF',
-          pink: '#FFCCE0',
-        },
         highlight: '#8D79E6',
+        sky: '#B3D4FF',
+        pink: '#FFCCE0',
         text: '#5A4B41',
       },
       fontFamily: {
-        pretendard: ['Pretendard', 'sans-serif'],
+        sans: ['Pretendard', 'sans-serif'],
         score: ['S-CoreDream', 'sans-serif'],
       },
     },

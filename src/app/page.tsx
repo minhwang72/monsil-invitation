@@ -1,61 +1,67 @@
 'use client'
-import Image from 'next/image'
-import Link from 'next/link'
+
+import { useState, useEffect } from 'react'
+import type { Gallery, Guestbook } from '@/types'
+import CoverSection from '@/components/sections/CoverSection'
+import DetailsSection from '@/components/sections/DetailsSection'
+import GallerySection from '@/components/sections/GallerySection'
+import GuestbookSection from '@/components/sections/GuestbookSection'
+import Footer from '@/components/Footer'
 
 export default function Home() {
-  return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-[500px] mx-auto">
-        {/* Cover Section */}
-        <section className="relative w-full h-screen flex items-center justify-center">
-          <div className="absolute inset-0">
-            <Image
-              src="/images/cover.jpg"
-              alt="Wedding Cover"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-          <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-white">
-            <h1 className="text-3xl md:text-4xl font-score mb-4 text-center">김철수 ♥ 이영희</h1>
-            <p className="text-lg md:text-xl mb-8 text-center">2024. 05. 20</p>
-            <Link
-              href="#details"
-              className="bg-primary hover:bg-highlight text-white px-6 py-2 md:px-8 md:py-3 rounded-full transition-colors"
-            >
-              청첩장 보기
-            </Link>
-          </div>
-        </section>
+  const [gallery, setGallery] = useState<Gallery[]>([])
+  const [guestbook, setGuestbook] = useState<Guestbook[]>([])
+  const [dDay, setDDay] = useState<number>(0)
 
-        {/* Details Section */}
-        <section id="details" className="w-full py-12 md:py-16 px-4">
-          <div className="max-w-md mx-auto">
-            <h2 className="text-xl md:text-2xl font-score text-center mb-6 md:mb-8">Wedding Details</h2>
-            <div className="space-y-4 md:space-y-6">
-              <div className="text-center">
-                <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 일시</h3>
-                <p className="text-sm md:text-base">2024년 5월 20일 오후 1시</p>
-              </div>
-              <div className="text-center">
-                <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 장소</h3>
-                <p className="text-sm md:text-base">그랜드 웨딩홀</p>
-                <p className="text-xs md:text-sm text-gray-600">서울시 강남구 테헤란로 123</p>
-              </div>
-            </div>
-          </div>
-        </section>
+  useEffect(() => {
+    // Fetch data
+    const fetchData = async () => {
+      try {
+        const [galleryRes, guestbookRes] = await Promise.all([
+          fetch('/api/gallery'),
+          fetch('/api/guestbook'),
+        ])
+
+        const [galleryData, guestbookData] = await Promise.all([
+          galleryRes.json(),
+          guestbookRes.json(),
+        ])
+
+        if (galleryData.success) setGallery(galleryData.data)
+        if (guestbookData.success) setGuestbook(guestbookData.data)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+
+    fetchData()
+
+    // Calculate D-day
+    const weddingDate = new Date('2024-11-08')
+    const today = new Date()
+    const diffTime = weddingDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    setDDay(diffDays)
+  }, [])
+
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center bg-sky/10 py-8">
+      <div className="w-full max-w-[500px] mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+        <CoverSection dDay={dDay} />
+        <DetailsSection />
+        <GallerySection gallery={gallery} />
+        <GuestbookSection guestbook={guestbook} />
+        <Footer />
       </div>
 
       {/* Share Button */}
       <button
-        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 bg-primary hover:bg-highlight text-white p-3 md:p-4 rounded-full shadow-lg transition-colors"
+        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 bg-purple-300 hover:bg-purple-400 text-white p-3 md:p-4 rounded-full shadow-lg transition-colors"
         onClick={() => {
           if (navigator.share) {
             navigator.share({
               title: '모바일 청첩장',
-              text: '김철수 ♥ 이영희의 결혼식에 초대합니다.',
+              text: '황민 ♥ 이은솔의 결혼식에 초대합니다.',
               url: window.location.href,
             })
           }
