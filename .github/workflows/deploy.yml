@@ -34,10 +34,14 @@ jobs:
         echo "HOST=0.0.0.0" >> $GITHUB_ENV
         echo "NODE_ENV=production" >> $GITHUB_ENV
 
-    - name: Install dependencies
+    - name: Clean and Install dependencies
       run: |
+        rm -rf node_modules
+        yarn cache clean
         yarn install --frozen-lockfile
-        yarn install --dev
+
+    - name: Check TypeScript is installed
+      run: yarn list typescript
 
     - name: Run linting
       run: yarn lint
@@ -109,10 +113,10 @@ jobs:
           echo "Checking deployment status..."
           sleep 10
           if docker ps | grep -q ${{ env.CONTAINER_NAME }}; then
-            echo "Deployment successful!"
+            echo "✅ Deployment successful!"
             docker logs ${{ env.CONTAINER_NAME }}
           else
-            echo "Deployment failed!"
+            echo "❌ Deployment failed!"
             docker logs ${{ env.CONTAINER_NAME }}
             exit 1
-          fi 
+          fi
