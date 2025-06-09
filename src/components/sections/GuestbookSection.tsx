@@ -13,6 +13,12 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
     password: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }
 
   const handleWrite = () => {
     setIsModalOpen(true)
@@ -41,7 +47,12 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
     e.preventDefault()
     
     if (!formData.name.trim() || !formData.content.trim() || !formData.password.trim()) {
-      alert('모든 필드를 입력해주세요.')
+      showToast('모든 필드를 입력해주세요.', 'error')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      showToast('비밀번호는 6자리 이상 입력해주세요.', 'error')
       return
     }
 
@@ -57,16 +68,16 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
       })
 
       if (response.ok) {
-        alert('메시지가 작성되었습니다.')
+        showToast('메시지가 작성되었습니다.', 'success')
         handleCloseModal()
         // 페이지 새로고침으로 새로운 메시지 표시
-        window.location.reload()
+        setTimeout(() => window.location.reload(), 1000)
       } else {
-        alert('메시지 작성에 실패했습니다.')
+        showToast('메시지 작성에 실패했습니다.', 'error')
       }
     } catch (error) {
       console.error('Error submitting message:', error)
-      alert('메시지 작성 중 오류가 발생했습니다.')
+      showToast('메시지 작성 중 오류가 발생했습니다.', 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -198,7 +209,8 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
       {/* 모달 */}
       {isModalOpen && (
         <div 
-          className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+          className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           onClick={handleBackgroundClick}
         >
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -227,9 +239,6 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  이름
-                </label>
                 <input
                   type="text"
                   id="name"
@@ -242,9 +251,6 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
               </div>
 
               <div>
-                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                  내용
-                </label>
                 <textarea
                   id="content"
                   name="content"
@@ -257,9 +263,6 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  비밀번호 <span className="text-xs text-gray-500">(수정/삭제용)</span>
-                </label>
                 <input
                   type="password"
                   id="password"
@@ -267,7 +270,7 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300"
-                  placeholder="비밀번호를 입력하세요"
+                  placeholder="비밀번호를 입력하세요 (수정/삭제용)"
                 />
               </div>
 
@@ -281,6 +284,21 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 토스트 메시지 */}
+      {toast && (
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000]">
+          <div 
+            className="px-4 py-2 rounded-lg font-medium animate-fade-in-out"
+            style={{ 
+              backgroundColor: toast.type === 'success' ? '#10b981' : '#FFCCE0',
+              color: toast.type === 'success' ? 'white' : '#5A4B41'
+            }}
+          >
+            {toast.message}
           </div>
         </div>
       )}
