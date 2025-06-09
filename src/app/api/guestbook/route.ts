@@ -8,6 +8,10 @@ export async function GET() {
       'SELECT id, name, content, created_at FROM guestbook ORDER BY created_at DESC'
     )
     const guestbookRows = rows as Guestbook[]
+    
+    console.log('Guestbook query result:', guestbookRows)
+    console.log('Number of rows:', guestbookRows.length)
+    
     return NextResponse.json<ApiResponse<Guestbook[]>>({
       success: true,
       data: guestbookRows,

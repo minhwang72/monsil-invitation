@@ -15,6 +15,10 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
+  console.log('GuestbookSection - Received guestbook data:', guestbook)
+  console.log('GuestbookSection - Array length:', guestbook?.length || 0)
+  console.log('GuestbookSection - Array type:', typeof guestbook)
+
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3000)

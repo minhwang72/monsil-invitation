@@ -27,8 +27,17 @@ export default function Home() {
           guestbookRes.json(),
         ])
 
+        console.log('Guestbook API response:', guestbookData)
+        console.log('Response success:', guestbookData.success)
+        console.log('Response data:', guestbookData.data)
+
         if (galleryData.success) setGallery(galleryData.data)
-        if (guestbookData.success) setGuestbook(guestbookData.data)
+        if (guestbookData.success) {
+          console.log('Setting guestbook data:', guestbookData.data)
+          setGuestbook(guestbookData.data)
+        } else {
+          console.error('Failed to fetch guestbook:', guestbookData.error)
+        }
       } catch (error) {
         console.error('Error fetching data:', error)
       }
