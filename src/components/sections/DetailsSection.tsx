@@ -9,12 +9,12 @@ export default function DetailsSection() {
           <div className="space-y-4 md:space-y-6">
             <div className="text-center">
               <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 일시</h3>
-              <p className="text-sm md:text-base">2024년 11월 8일 오후 1시</p>
+              <p className="text-sm md:text-base">2024년 11월 8일 오후 12시 30분</p>
             </div>
             <div className="text-center">
               <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">예식 장소</h3>
-              <p className="text-sm md:text-base">그랜드 웨딩홀</p>
-              <p className="text-xs md:text-sm text-gray-600">서울시 강남구 테헤란로 123</p>
+              <p className="text-sm md:text-base">정동제일교회</p>
+              <p className="text-xs md:text-sm text-gray-600">서울시 중구 정동길 46</p>
             </div>
           </div>
         </div>

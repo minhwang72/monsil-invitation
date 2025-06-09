@@ -35,7 +35,9 @@ jobs:
         echo "NODE_ENV=production" >> $GITHUB_ENV
 
     - name: Install dependencies
-      run: yarn install --frozen-lockfile
+      run: |
+        yarn install --frozen-lockfile
+        yarn install --dev
 
     - name: Run linting
       run: yarn lint
