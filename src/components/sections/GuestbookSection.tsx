@@ -196,9 +196,9 @@ export default function GuestbookSection({ guestbook }: GuestbookSectionProps) {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12">
-                  <p className="text-lg text-gray-700 mb-2 font-sans font-medium">메시지가 없습니다.</p>
-                  <p className="text-base text-gray-600 font-sans">첫 메시지를 작성해주세요.</p>
+                <div className="flex flex-col items-center justify-center py-16 min-h-[200px]">
+                  <p className="text-lg text-gray-900 mb-2 font-sans font-medium text-center">메시지가 없습니다.</p>
+                  <p className="text-lg text-gray-900 font-sans font-medium text-center">첫 메시지를 작성해주세요.</p>
                 </div>
               )}
             </div>
