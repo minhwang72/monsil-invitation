@@ -32,6 +32,12 @@ export default function RootLayout({
           src={`https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID}`}
           defer
         ></script>
+        <script
+          src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
+          integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4"
+          crossOrigin="anonymous"
+          defer
+        ></script>
       </head>
       <body className="bg-sky-100 text-text">
         {children}

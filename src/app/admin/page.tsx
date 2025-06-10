@@ -140,7 +140,7 @@ export default function AdminPage() {
           {gallery.map((item) => (
             <div key={item.id} className="relative aspect-square">
               <Image
-                src={`/uploads/${item.filename}`}
+                src={item.url}
                 alt="Gallery"
                 fill
                 className="object-cover rounded"

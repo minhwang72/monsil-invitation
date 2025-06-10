@@ -8,7 +8,7 @@ interface GallerySectionProps {
 
 type DisplayImage = Gallery | {
   id: number
-  filename: string
+  url: string
   isPlaceholder: boolean
 }
 
@@ -17,16 +17,32 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
+  const [showAll, setShowAll] = useState(false)
 
-  // 갤러리가 비어있을 때 플레이스홀더 이미지 배열 생성
-  const placeholderImages: DisplayImage[] = Array.from({ length: 6 }, (_, index) => ({
-    id: index,
-    filename: 'placeholder',
-    isPlaceholder: true
+  // 실제 갤러리 이미지가 있으면 사용하고, 없으면 12개의 기본 placeholder 이미지 생성 (더보기 기능 테스트용)
+  const placeholderImages: DisplayImage[] = Array.from({ length: 12 }, (_, i) => ({
+    id: i + 1,
+    url: `/images/gallery/placeholder-${i + 1}.jpg`,
+    isPlaceholder: true,
   }))
 
-  // 실제 이미지가 있으면 갤러리 사용, 없으면 플레이스홀더 사용
-  const displayImages: DisplayImage[] = gallery.length > 0 ? gallery : placeholderImages
+  const displayImages: DisplayImage[] = gallery && gallery.length > 0 
+    ? gallery 
+    : placeholderImages
+
+  // 표시할 이미지 개수 결정 (9개 제한 또는 모든 이미지)
+  const imagesToShow = showAll ? displayImages : displayImages.slice(0, 9)
+  const hasMoreImages = displayImages.length > 9
+
+  // 이미지 로드 실패 핸들러
+  const handleImageError = (imageId: number) => {
+    setFailedImages(prev => new Set(prev).add(imageId))
+  }
+
+  const toggleShowAll = () => {
+    setShowAll(!showAll)
+  }
 
   const openModal = (index: number) => {
     setCurrentImageIndex(index)
@@ -39,13 +55,13 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
   const goToPrevious = () => {
     setCurrentImageIndex((prev) => 
-      prev === 0 ? displayImages.length - 1 : prev - 1
+      prev === 0 ? imagesToShow.length - 1 : prev - 1
     )
   }
 
   const goToNext = () => {
     setCurrentImageIndex((prev) => 
-      prev === displayImages.length - 1 ? 0 : prev + 1
+      prev === imagesToShow.length - 1 ? 0 : prev + 1
     )
   }
 
@@ -100,13 +116,13 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 갤러리 그리드 */}
           <div className="grid grid-cols-3 gap-2 mb-8">
-            {displayImages.map((item, index) => (
+            {imagesToShow.map((item, index) => (
               <div 
                 key={item.id} 
                 className="relative aspect-square cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => openModal(index)}
               >
-                {'isPlaceholder' in item && item.isPlaceholder ? (
+                {('isPlaceholder' in item && item.isPlaceholder) || failedImages.has(item.id) ? (
                   <div className="relative aspect-square bg-gray-100 flex items-center justify-center">
                     <svg
                       className="w-12 h-12 text-gray-300"
@@ -119,21 +135,50 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={1.5}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"
                       />
                     </svg>
                   </div>
                 ) : (
                   <Image
-                    src={`/uploads/${item.filename}`}
+                    src={item.url}
                     alt="Gallery"
                     fill
                     className="object-cover"
+                    onError={() => handleImageError(item.id)}
                   />
                 )}
               </div>
             ))}
           </div>
+
+          {/* 더보기/접기 버튼 */}
+          {hasMoreImages && (
+            <div className="flex justify-center mb-8">
+              <button
+                onClick={toggleShowAll}
+                className="flex flex-col items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors font-sans"
+              >
+                <span className="text-sm font-light">
+                  {showAll ? '접기' : '더보기'}
+                </span>
+                <svg
+                  className={`w-5 h-5 transition-transform ${showAll ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* 하단 가로선 */}
           <div className="w-full h-px bg-gray-200"></div>
@@ -219,7 +264,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
             onTouchEnd={onTouchEnd}
           >
             <div className="flex-1 flex items-center justify-center w-full">
-              {'isPlaceholder' in displayImages[currentImageIndex] && displayImages[currentImageIndex].isPlaceholder ? (
+              {('isPlaceholder' in imagesToShow[currentImageIndex] && imagesToShow[currentImageIndex].isPlaceholder) || failedImages.has(imagesToShow[currentImageIndex].id) ? (
                 <div className="bg-gray-100 rounded-lg flex items-center justify-center w-96 h-96">
                   <svg
                     className="w-24 h-24 text-gray-300"
@@ -232,18 +277,19 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={1.5}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
                 </div>
               ) : (
                 <div className="relative w-full max-w-3xl max-h-[60vh] aspect-auto">
                   <Image
-                    src={`/uploads/${displayImages[currentImageIndex]?.filename}`}
+                    src={imagesToShow[currentImageIndex].url}
                     alt="Gallery"
                     fill
                     className="object-contain"
                     sizes="(max-width: 768px) 90vw, (max-width: 1200px) 80vw, 70vw"
+                    onError={() => handleImageError(imagesToShow[currentImageIndex].id)}
                   />
                 </div>
               )}
@@ -296,7 +342,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
             {/* 이미지 인덱스 표시 */}
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-sm">
-              {currentImageIndex + 1} / {displayImages.length}
+              {currentImageIndex + 1} / {imagesToShow.length}
             </div>
           </div>
         </div>

@@ -25,10 +25,11 @@ export interface ContactPerson {
 
 export interface Gallery {
   id: number;
-  filename: string;
+  url: string;
+  description?: string;
   image_type: 'main' | 'gallery';
-  created_at: Date;
-  deleted_at?: Date | null;
+  created_at: Date | string;
+  deleted_at?: Date | string | null;
 }
 
 export interface Guestbook {

@@ -6,7 +6,7 @@ export async function GET() {
   try {
     // 갤러리 이미지들 조회 (삭제되지 않은 것만)
     const [rows] = await pool.query(
-      'SELECT id, filename, image_type, created_at FROM gallery WHERE deleted_at IS NULL ORDER BY image_type DESC, created_at DESC'
+      'SELECT id, url, description, created_at, image_type FROM gallery WHERE deleted_at IS NULL ORDER BY image_type DESC, created_at DESC'
     )
     const galleryRows = rows as Gallery[]
     

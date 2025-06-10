@@ -370,7 +370,8 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
             className="px-4 py-2 rounded-lg font-medium animate-fade-in-out"
             style={{ 
               backgroundColor: toast.type === 'success' ? '#10b981' : '#FFCCE0',
-              color: toast.type === 'success' ? 'white' : '#5A4B41'
+              color: 'white',
+              textShadow: toast.type === 'error' ? '0 1px 2px rgba(0, 0, 0, 0.3)' : 'none'
             }}
           >
             {toast.message}

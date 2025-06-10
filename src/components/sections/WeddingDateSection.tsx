@@ -48,7 +48,7 @@ export default function WeddingDateSection() {
   const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
   return (
-    <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-gray-50/50">
+    <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-white">
       <div className="max-w-xl mx-auto text-center w-full px-8">
         {/* 제목 */}
         <h2 className="text-4xl font-light mb-16 tracking-wider text-gray-700 font-english english-text">
