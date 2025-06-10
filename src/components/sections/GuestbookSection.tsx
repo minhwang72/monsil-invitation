@@ -267,7 +267,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                 )}
               </>
             ) : (
-              <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-lg">
+              <div className="py-8">
                 <p className="text-gray-500 font-light text-center leading-relaxed">
                   메시지가 없습니다.<br />
                   첫 메시지를 작성해주세요.
