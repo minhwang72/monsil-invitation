@@ -95,6 +95,58 @@ export async function POST() {
       migrations.push('main image constraint trigger creation failed (non-critical)')
     }
 
+    // 6. contacts 테이블 생성
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS contacts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          side ENUM('groom', 'bride') NOT NULL,
+          relationship ENUM('person', 'father', 'mother') NOT NULL,
+          name VARCHAR(50) NOT NULL,
+          phone VARCHAR(20) NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_side (side),
+          INDEX idx_relationship (relationship)
+        )
+      `)
+      migrations.push('contacts table created or already exists')
+    } catch (error) {
+      console.error('Contacts table creation error:', error)
+      throw error
+    }
+
+    // 7. contacts 테이블에 초기 데이터 삽입
+    try {
+      // 기존 데이터가 있는지 확인
+      const [existingRows] = await pool.query('SELECT COUNT(*) as count FROM contacts')
+      const count = (existingRows as any[])[0].count
+      
+      if (count === 0) {
+        // 초기 연락처 데이터 삽입
+        const contactsData = [
+          ['groom', 'person', '황민', '01036986181'],
+          ['groom', 'father', '황현기', '01030666181'], 
+          ['groom', 'mother', '박인숙', '01042526181'],
+          ['bride', 'person', '이은솔', '01089390389'],
+          ['bride', 'father', '이완규', '01045990389'],
+          ['bride', 'mother', '홍순자', '']
+        ]
+        
+        for (const contact of contactsData) {
+          await pool.query(
+            'INSERT INTO contacts (side, relationship, name, phone) VALUES (?, ?, ?, ?)',
+            contact
+          )
+        }
+        migrations.push('initial contact data inserted')
+      } else {
+        migrations.push('contact data already exists, skipping initial data insertion')
+      }
+    } catch (error) {
+      console.error('Contact data insertion error:', error)
+      migrations.push('contact data insertion failed (non-critical)')
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migration completed successfully',

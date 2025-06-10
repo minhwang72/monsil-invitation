@@ -17,9 +17,9 @@ const config: Config = {
         text: '#5A4B41',
       },
       fontFamily: {
-        sans: ['PyeojinGothic', 'MaruBuri', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
-        score: ['PyeojinGothic', 'MaruBuri', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
-        english: ['MaruBuri', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'serif'],
+        sans: ['PyeojinGothic', 'Edu SA Hand', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        score: ['PyeojinGothic', 'Edu SA Hand', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        english: ['Edu SA Hand', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
       },
     },
   },

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Gallery, Guestbook } from '@/types'
 import CoverSection from '@/components/sections/CoverSection'
 import WeddingDateSection from '@/components/sections/WeddingDateSection'
+import ContactSection from '@/components/sections/ContactSection'
 import BlessingSection from '@/components/sections/BlessingSection'
 import DetailsSection from '@/components/sections/DetailsSection'
 import GallerySection from '@/components/sections/GallerySection'
@@ -156,6 +157,7 @@ export default function Home() {
       <div className="w-full max-w-[500px] mx-auto bg-white md:rounded-2xl md:shadow-lg overflow-hidden">
         <CoverSection />
         <WeddingDateSection />
+        <ContactSection />
         <DetailsSection />
         
         {loading.gallery ? (

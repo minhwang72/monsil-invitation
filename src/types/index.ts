@@ -15,6 +15,14 @@ export interface Account {
   number: string;
 }
 
+export interface ContactPerson {
+  id: number;
+  side: 'groom' | 'bride';
+  relationship: 'person' | 'father' | 'mother';
+  name: string;
+  phone: string;
+}
+
 export interface Gallery {
   id: number;
   filename: string;

@@ -51,7 +51,7 @@ export default function WeddingDateSection() {
     <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-gray-50/50">
       <div className="max-w-xl mx-auto text-center w-full px-8">
         {/* 제목 */}
-        <h2 className="text-4xl font-bold mb-16 tracking-wider text-gray-700 font-english">
+        <h2 className="text-4xl font-light mb-16 tracking-wider text-gray-700 font-english english-text">
           WEDDING DATE
         </h2>
 
@@ -61,7 +61,7 @@ export default function WeddingDateSection() {
         {/* 요일 헤더 */}
         <div className="grid grid-cols-7 gap-3 mb-6">
           {weekDays.map((day) => (
-            <div key={day} className="text-sm font-medium text-gray-500 text-center py-3 font-english">
+            <div key={day} className="text-sm font-medium text-gray-500 text-center py-3 font-english english-text">
               {day}
             </div>
           ))}
@@ -84,7 +84,7 @@ export default function WeddingDateSection() {
           <p className="text-lg font-medium text-gray-700">
             2025년 11월 8일 토요일 | 오후 12시 30분
           </p>
-          <p className="text-base font-normal text-gray-500 font-english">
+          <p className="text-base font-normal text-gray-500 font-english english-text">
             Saturday, November 8, 2025 | PM 12:30
           </p>
         </div>
