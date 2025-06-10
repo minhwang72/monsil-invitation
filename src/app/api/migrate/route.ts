@@ -115,7 +115,38 @@ export async function POST() {
       throw error
     }
 
-    // 7. contacts 테이블에 초기 데이터 삽입
+    // 7. contacts 테이블에 은행명과 계좌번호 컬럼 추가
+    try {
+      await pool.query(`
+        ALTER TABLE contacts 
+        ADD COLUMN bank_name VARCHAR(50) NULL DEFAULT NULL
+      `)
+      migrations.push('contacts: bank_name column added')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('contacts: bank_name column already exists')
+      } else {
+        throw error
+      }
+    }
+
+    try {
+      await pool.query(`
+        ALTER TABLE contacts 
+        ADD COLUMN account_number VARCHAR(50) NULL DEFAULT NULL
+      `)
+      migrations.push('contacts: account_number column added')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('contacts: account_number column already exists')
+      } else {
+        throw error
+      }
+    }
+
+    // 8. contacts 테이블에 초기 데이터 삽입 (계좌 정보 포함)
     try {
       // 기존 데이터가 있는지 확인
       const [existingRows] = await pool.query('SELECT COUNT(*) as count FROM contacts')
@@ -123,29 +154,63 @@ export async function POST() {
       const count = typedRows[0].count
       
       if (count === 0) {
-        // 초기 연락처 데이터 삽입
+        // 초기 연락처 데이터 삽입 (계좌 정보 포함)
         const contactsData = [
-          ['groom', 'person', '황민', '01036986181'],
-          ['groom', 'father', '황현기', '01030666181'], 
-          ['groom', 'mother', '박인숙', '01042526181'],
-          ['bride', 'person', '이은솔', '01089390389'],
-          ['bride', 'father', '이완규', '01045990389'],
-          ['bride', 'mother', '홍순자', '']
+          ['groom', 'person', '황민', '01036986181', '카카오뱅크', '3333-17-5074857'],
+          ['groom', 'father', '황현기', '01030666181', '농협', '302-0123-4567-11'], 
+          ['groom', 'mother', '박인숙', '01042526181', '국민은행', '123-456-789012'],
+          ['bride', 'person', '이은솔', '01089390389', '신한은행', '110-123-456789'],
+          ['bride', 'father', '이완규', '01045990389', '우리은행', '1002-123-456789'],
+          ['bride', 'mother', '홍순자', '', '하나은행', '333-123456-78901']
         ]
         
         for (const contact of contactsData) {
           await pool.query(
-            'INSERT INTO contacts (side, relationship, name, phone) VALUES (?, ?, ?, ?)',
+            'INSERT INTO contacts (side, relationship, name, phone, bank_name, account_number) VALUES (?, ?, ?, ?, ?, ?)',
             contact
           )
         }
-        migrations.push('initial contact data inserted')
+        migrations.push('initial contact data with account info inserted')
       } else {
-        migrations.push('contact data already exists, skipping initial data insertion')
+        // 기존 데이터가 있으면 계좌 정보만 업데이트
+        const accountUpdates = [
+          [1, '카카오뱅크', '3333-17-5074857'], // 황민
+          [2, '농협', '302-0123-4567-11'],     // 황현기
+          [3, '국민은행', '123-456-789012'],    // 박인숙
+          [4, '신한은행', '110-123-456789'],    // 이은솔
+          [5, '우리은행', '1002-123-456789'],   // 이완규
+          [6, '하나은행', '333-123456-78901']   // 홍순자
+        ]
+        
+        for (const [id, bankName, accountNumber] of accountUpdates) {
+          await pool.query(
+            'UPDATE contacts SET bank_name = ?, account_number = ? WHERE id = ?',
+            [bankName, accountNumber, id]
+          )
+        }
+        migrations.push('account information updated for existing contacts')
       }
     } catch (error) {
-      console.error('Contact data insertion error:', error)
-      migrations.push('contact data insertion failed (non-critical)')
+      console.error('Contact data insertion/update error:', error)
+      migrations.push('contact data insertion/update failed (non-critical)')
+    }
+
+    // 9. 사용하지 않는 accounts 테이블 삭제
+    try {
+      await pool.query('DROP TABLE IF EXISTS accounts')
+      migrations.push('accounts table dropped (unused)')
+    } catch (error) {
+      console.error('Accounts table drop error:', error)
+      migrations.push('accounts table drop failed (non-critical)')
+    }
+
+    // 10. 사용하지 않는 invitations 테이블 삭제
+    try {
+      await pool.query('DROP TABLE IF EXISTS invitations')
+      migrations.push('invitations table dropped (unused)')
+    } catch (error) {
+      console.error('Invitations table drop error:', error)
+      migrations.push('invitations table drop failed (non-critical)')
     }
 
     return NextResponse.json({

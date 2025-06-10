@@ -5,7 +5,7 @@ import type { ApiResponse, ContactPerson } from '@/types'
 export async function GET() {
   try {
     const [rows] = await pool.query(`
-      SELECT id, side, relationship, name, phone 
+      SELECT id, side, relationship, name, phone, bank_name, account_number 
       FROM contacts 
       ORDER BY side, 
         CASE relationship 
@@ -42,11 +42,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { side, relationship, name, phone } = body
+    const { side, relationship, name, phone, bank_name, account_number } = body
 
     await pool.query(
-      'INSERT INTO contacts (side, relationship, name, phone) VALUES (?, ?, ?, ?)',
-      [side, relationship, name, phone]
+      'INSERT INTO contacts (side, relationship, name, phone, bank_name, account_number) VALUES (?, ?, ?, ?, ?, ?)',
+      [side, relationship, name, phone, bank_name, account_number]
     )
 
     return NextResponse.json<ApiResponse<null>>({

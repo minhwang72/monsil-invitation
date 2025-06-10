@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import type { Invitation, Gallery, Guestbook } from '@/types'
+import type { Gallery, Guestbook } from '@/types'
 
 export default function AdminPage() {
-  const [invitation, setInvitation] = useState<Invitation | null>(null)
   const [gallery, setGallery] = useState<Gallery[]>([])
   const [guestbook, setGuestbook] = useState<Guestbook[]>([])
 
@@ -13,21 +12,18 @@ export default function AdminPage() {
     // Fetch data
     const fetchData = async () => {
       try {
-        const [invitationRes, galleryRes, guestbookRes] =
+        const [galleryRes, guestbookRes] =
           await Promise.all([
-            fetch('/api/invitation'),
             fetch('/api/gallery'),
             fetch('/api/guestbook'),
           ])
 
-        const [invitationData, galleryData, guestbookData] =
+        const [galleryData, guestbookData] =
           await Promise.all([
-            invitationRes.json(),
             galleryRes.json(),
             guestbookRes.json(),
           ])
 
-        if (invitationData.success) setInvitation(invitationData.data)
         if (galleryData.success) setGallery(galleryData.data)
         if (guestbookData.success) setGuestbook(guestbookData.data)
       } catch (error) {
@@ -66,66 +62,6 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen p-4">
       <h1 className="text-2xl font-score mb-8">관리자 페이지</h1>
-
-      {/* Invitation Section */}
-      <section className="mb-8">
-        <h2 className="text-xl font-medium mb-4">초대장 정보</h2>
-        {invitation && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">신랑</label>
-              <input
-                type="text"
-                value={invitation.groom}
-                onChange={(e) =>
-                  setInvitation({ ...invitation, groom: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">신부</label>
-              <input
-                type="text"
-                value={invitation.bride}
-                onChange={(e) =>
-                  setInvitation({ ...invitation, bride: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">메시지</label>
-              <textarea
-                value={invitation.message}
-                onChange={(e) =>
-                  setInvitation({ ...invitation, message: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                rows={4}
-              />
-            </div>
-            <button
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/invitation', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(invitation),
-                  })
-                  const data = await res.json()
-                  if (data.success) alert('저장되었습니다.')
-                } catch (error) {
-                  console.error('Error updating invitation:', error)
-                }
-              }}
-              className="bg-primary hover:bg-highlight text-white px-4 py-2 rounded"
-            >
-              저장
-            </button>
-          </div>
-        )}
-      </section>
 
       {/* Gallery Section */}
       <section className="mb-8">

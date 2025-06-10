@@ -1,26 +1,11 @@
-export interface Invitation {
-  id: number;
-  groom: string;
-  bride: string;
-  wedding_date: Date;
-  main_img: string;
-  message: string;
-}
-
-export interface Account {
-  id: number;
-  role: 'groom' | 'bride';
-  name: string;
-  bank: string;
-  number: string;
-}
-
 export interface ContactPerson {
   id: number;
   side: 'groom' | 'bride';
   relationship: 'person' | 'father' | 'mother';
   name: string;
   phone: string;
+  bank_name?: string;
+  account_number?: string;
 }
 
 export interface Gallery {

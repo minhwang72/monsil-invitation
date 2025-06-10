@@ -7,6 +7,7 @@ import WeddingDateSection from '@/components/sections/WeddingDateSection'
 import ContactSection from '@/components/sections/ContactSection'
 import BlessingSection from '@/components/sections/BlessingSection'
 import LocationSection from '@/components/sections/DetailsSection'
+import HeartMoneySection from '@/components/sections/HeartMoneySection'
 import GallerySection from '@/components/sections/GallerySection'
 import GuestbookSection from '@/components/sections/GuestbookSection'
 import Footer from '@/components/Footer'
@@ -281,6 +282,7 @@ export default function Home() {
         )}
         
         <LocationSection />
+        <HeartMoneySection />
         
         {loading.guestbook ? (
           <SimpleLoading type="guestbook" />
