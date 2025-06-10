@@ -107,7 +107,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
       if (response.ok) {
         showToast('메시지가 작성되었습니다.', 'success')
         handleCloseModal()
-        setTimeout(() => onGuestbookUpdate(), 1000)
+        onGuestbookUpdate()
       } else {
         showToast('메시지 작성에 실패했습니다.', 'error')
       }
@@ -144,8 +144,8 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
         setDeleteModalOpen(false)
         setDeletePassword('')
         setDeleteTargetId(null)
-        // 방명록 데이터 갱신
-        setTimeout(() => onGuestbookUpdate(), 1000)
+        // 방명록 데이터 갱신 - 즉시 반영
+        onGuestbookUpdate()
       } else {
         showToast(result.error || '삭제에 실패했습니다.', 'error')
       }
@@ -215,7 +215,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   <div key={item.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-lg">
                     {/* 내용과 삭제버튼 좌우 정렬 */}
                     <div className="flex justify-between items-start mb-3">
-                      <p className="text-gray-900 font-sans font-normal leading-relaxed flex-1 pr-2 text-center">{item.content}</p>
+                      <p className="text-gray-900 font-sans font-normal leading-relaxed flex-1 pr-2 text-left">{item.content}</p>
                       <div className="flex-shrink-0">
                         {/* 삭제 아이콘 - 분홍색 */}
                         <button
