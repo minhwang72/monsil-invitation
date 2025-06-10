@@ -41,7 +41,7 @@ const SimpleLoading = ({ type }: { type: 'gallery' | 'guestbook' }) => {
   if (type === 'gallery') {
     return (
       <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-white">
-        <div className="max-w-xl mx-auto text-center w-full px-8">
+        <div className="max-w-xl mx-auto text-center w-full px-4">
           {/* 제목 스켈레톤 */}
           <div className="h-10 bg-gray-200 rounded animate-pulse mb-16 w-40 mx-auto"></div>
           
