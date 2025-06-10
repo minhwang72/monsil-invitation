@@ -18,7 +18,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
         <div className="w-full h-px bg-gray-200 mb-8"></div>
 
         {/* 갤러리 그리드 */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-2 mb-8">
           {gallery.length > 0 ? (
             gallery.map((item) => (
               <div key={item.id} className="relative aspect-square">

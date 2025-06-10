@@ -49,7 +49,7 @@ const SimpleLoading = ({ type }: { type: 'gallery' | 'guestbook' }) => {
           <div className="w-full h-px bg-gray-200 mb-8"></div>
           
           {/* 갤러리 그리드 스켈레톤 */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-2 mb-8">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="aspect-square bg-gray-200 animate-pulse"></div>
             ))}
