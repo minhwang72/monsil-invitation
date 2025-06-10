@@ -81,12 +81,14 @@ jobs:
           NODE_ENV=${{ env.NODE_ENV }}
 
     - name: Deploy to Personal Server via SSH
-      uses: appleboy/ssh-action@v0.1.10
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ env.SERVER_HOST }}
         port: ${{ env.SERVER_PORT }}
         username: ${{ env.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
+        timeout: 30s
+        command_timeout: 10m
         script: |
           if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
             echo "Stopping and removing previous container..."
