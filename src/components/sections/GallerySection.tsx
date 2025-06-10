@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Gallery } from '@/types'
 
 interface GallerySectionProps {
@@ -47,10 +47,14 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
   const openModal = (index: number) => {
     setCurrentImageIndex(index)
     setIsModalOpen(true)
+    // 모달 열릴 때 body 스크롤 방지
+    document.body.style.overflow = 'hidden'
   }
 
   const closeModal = () => {
     setIsModalOpen(false)
+    // 모달 닫힐 때 body 스크롤 복원
+    document.body.style.overflow = 'unset'
   }
 
   const goToPrevious = () => {
@@ -102,30 +106,37 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     }
   }
 
+  // 컴포넌트 언마운트 시 스크롤 복원
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [])
+
   return (
     <>
-      <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-white">
-        <div className="max-w-xl mx-auto text-center w-full px-4">
+      <section className="w-full min-h-screen flex flex-col justify-center py-12 md:py-16 px-0 font-sans bg-white">
+        <div className="max-w-xl mx-auto text-center w-full px-4 md:px-6">
           {/* 제목 */}
-          <h2 className="text-4xl font-light mb-16 tracking-wider text-gray-700 font-english english-text">
+          <h2 className="text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text">
             GALLERY
           </h2>
 
           {/* 상단 가로선 */}
-          <div className="w-full h-px bg-gray-200 mb-8"></div>
+          <div className="w-full h-px bg-gray-200 mb-6 md:mb-8"></div>
 
           {/* 갤러리 그리드 */}
-          <div className="grid grid-cols-3 gap-2 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 mb-6 md:mb-8">
             {imagesToShow.map((item, index) => (
               <div 
                 key={item.id} 
-                className="relative aspect-square cursor-pointer hover:opacity-80 transition-opacity"
+                className="relative aspect-square cursor-pointer hover:opacity-80 transition-opacity rounded-lg overflow-hidden"
                 onClick={() => openModal(index)}
               >
                 {('isPlaceholder' in item && item.isPlaceholder) || failedImages.has(item.id) ? (
                   <div className="relative aspect-square bg-gray-100 flex items-center justify-center">
                     <svg
-                      className="w-12 h-12 text-gray-300"
+                      className="w-8 md:w-12 h-8 md:h-12 text-gray-300"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -154,7 +165,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 더보기/접기 버튼 */}
           {hasMoreImages && (
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-6 md:mb-8">
               <button
                 onClick={toggleShowAll}
                 className="flex flex-col items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors font-sans"
@@ -188,7 +199,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
       {/* 모달 */}
       {isModalOpen && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-90"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
           onClick={handleBackgroundClick}
           onKeyDown={handleKeyDown}
           tabIndex={-1}
@@ -196,10 +207,10 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           {/* 닫기 버튼 */}
           <button
             onClick={closeModal}
-            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors p-2 md:p-1"
+            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors p-2"
           >
             <svg
-              className="w-10 h-10 md:w-8 md:h-8"
+              className="w-8 h-8 md:w-10 md:h-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -214,13 +225,13 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
             </svg>
           </button>
 
-          {/* 이전 버튼 */}
+          {/* 이전 버튼 - 데스크톱에서만 표시 */}
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 md:p-1"
+            className="hidden md:block absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2"
           >
             <svg
-              className="w-10 h-10 md:w-8 md:h-8"
+              className="w-10 h-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -235,13 +246,13 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
             </svg>
           </button>
 
-          {/* 다음 버튼 */}
+          {/* 다음 버튼 - 데스크톱에서만 표시 */}
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 md:p-1"
+            className="hidden md:block absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2"
           >
             <svg
-              className="w-10 h-10 md:w-8 md:h-8"
+              className="w-10 h-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -258,16 +269,16 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 이미지 컨테이너 */}
           <div 
-            className="relative max-w-4xl max-h-[80vh] mx-auto flex flex-col items-center justify-center p-8"
+            className="relative max-w-5xl max-h-[90vh] mx-auto flex flex-col items-center justify-center p-4 md:p-8"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
             <div className="flex-1 flex items-center justify-center w-full">
               {('isPlaceholder' in imagesToShow[currentImageIndex] && imagesToShow[currentImageIndex].isPlaceholder) || failedImages.has(imagesToShow[currentImageIndex].id) ? (
-                <div className="bg-gray-100 rounded-lg flex items-center justify-center w-96 h-96">
+                <div className="bg-gray-100 rounded-lg flex items-center justify-center w-80 h-80 md:w-96 md:h-96">
                   <svg
-                    className="w-24 h-24 text-gray-300"
+                    className="w-16 h-16 md:w-24 md:h-24 text-gray-300"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -282,27 +293,27 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                   </svg>
                 </div>
               ) : (
-                <div className="relative w-full max-w-3xl max-h-[60vh] aspect-auto">
+                <div className="relative w-full max-w-4xl max-h-[75vh] md:max-h-[80vh] aspect-auto">
                   <Image
                     src={imagesToShow[currentImageIndex].url}
                     alt="Gallery"
                     fill
                     className="object-contain"
-                    sizes="(max-width: 768px) 90vw, (max-width: 1200px) 80vw, 70vw"
+                    sizes="(max-width: 768px) 95vw, (max-width: 1200px) 90vw, 80vw"
                     onError={() => handleImageError(imagesToShow[currentImageIndex].id)}
                   />
                 </div>
               )}
             </div>
 
-            {/* 이전/다음 텍스트 버튼 */}
-            <div className="w-full max-w-md flex justify-between items-center mt-6 px-4">
+            {/* 모바일용 네비게이션 버튼들 - 이미지 아래로 이동 */}
+            <div className="md:hidden flex justify-between items-center w-full max-w-sm mt-6">
               <button
                 onClick={goToPrevious}
-                className="flex items-center gap-1 text-white hover:text-gray-300 transition-colors font-sans underline underline-offset-2"
+                className="text-white hover:text-gray-300 transition-colors p-3 flex items-center gap-2"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-6 h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -315,16 +326,20 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                이전
+                <span className="text-sm">이전</span>
               </button>
-
+              
+              <div className="text-white text-sm font-sans">
+                {currentImageIndex + 1} / {imagesToShow.length}
+              </div>
+              
               <button
                 onClick={goToNext}
-                className="flex items-center gap-1 text-white hover:text-gray-300 transition-colors font-sans underline underline-offset-2"
+                className="text-white hover:text-gray-300 transition-colors p-3 flex items-center gap-2"
               >
-                다음
+                <span className="text-sm">다음</span>
                 <svg
-                  className="w-4 h-4"
+                  className="w-6 h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -340,9 +355,23 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
               </button>
             </div>
 
-            {/* 이미지 인덱스 표시 */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-sm">
-              {currentImageIndex + 1} / {imagesToShow.length}
+            {/* 데스크톱용 네비게이션 - 기존 위치 유지 */}
+            <div className="hidden md:flex justify-between items-center w-full max-w-4xl mt-4">
+              <button
+                onClick={goToPrevious}
+                className="text-white hover:text-gray-300 transition-colors font-sans text-sm"
+              >
+                ← 이전
+              </button>
+              <div className="text-white text-sm font-sans">
+                {currentImageIndex + 1} / {imagesToShow.length}
+              </div>
+              <button
+                onClick={goToNext}
+                className="text-white hover:text-gray-300 transition-colors font-sans text-sm"
+              >
+                다음 →
+              </button>
             </div>
           </div>
         </div>

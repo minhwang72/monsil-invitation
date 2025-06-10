@@ -49,6 +49,17 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
+    
+    // 비밀번호 필드의 경우 한글 입력 방지 (영문자, 숫자, 특수문자만 허용)
+    if (name === 'password') {
+      const filteredValue = value.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, '')
+      setFormData(prev => ({
+        ...prev,
+        [name]: filteredValue
+      }))
+      return
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -144,8 +155,10 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
         setDeleteModalOpen(false)
         setDeletePassword('')
         setDeleteTargetId(null)
-        // 방명록 데이터 갱신 - 즉시 반영
-        onGuestbookUpdate()
+        // 방명록 데이터 갱신 - 서버 처리 완료를 위한 충분한 지연 후 실행
+        setTimeout(() => {
+          onGuestbookUpdate()
+        }, 500)
       } else {
         showToast(result.error || '삭제에 실패했습니다.', 'error')
       }
@@ -176,18 +189,18 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
 
   return (
     <>
-      <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-gray-50/30">
-        <div className="max-w-xl mx-auto text-center w-full px-8">
+      <section className="w-full min-h-screen flex flex-col justify-center py-12 md:py-16 px-0 font-sans bg-gray-50/30">
+        <div className="max-w-xl mx-auto text-center w-full px-6 md:px-8">
           {/* 제목 */}
-          <h2 className="text-4xl font-light mb-16 tracking-wider text-gray-700 font-english english-text">
+          <h2 className="text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text">
             GUESTBOOK
           </h2>
           
           {/* 작성 버튼 */}
-          <div className="flex justify-end mb-6">
+          <div className="flex justify-end mb-4 md:mb-6">
             <button
               onClick={handleWrite}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium text-sm md:text-base"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -208,118 +221,106 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
           </div>
 
           {/* 방명록 리스트 */}
-          <div className="space-y-4">
+          <div className="space-y-4 md:space-y-6 text-left">
             {guestbook && guestbook.length > 0 ? (
               <>
-                {(showAll ? guestbook : guestbook.slice(0, 6)).map((item) => (
-                  <div key={item.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-lg">
-                    {/* 내용과 삭제버튼 좌우 정렬 */}
-                    <div className="flex justify-between items-start mb-3">
-                      <p className="text-gray-900 font-sans font-normal leading-relaxed flex-1 pr-2 text-left">{item.content}</p>
-                      <div className="flex-shrink-0">
-                        {/* 삭제 아이콘 - 분홍색 */}
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-1 rounded-lg transition-colors"
-                          style={{ color: '#FFCCE0' }}
+                {(showAll ? guestbook : guestbook.slice(0, 3)).map((item) => (
+                  <div key={item.id} className="bg-white/80 p-4 md:p-6 rounded-lg shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="text-gray-700 leading-relaxed text-sm md:text-base whitespace-pre-wrap flex-1 pr-4">
+                        {item.content}
+                      </div>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="text-pink-300 hover:text-pink-400 transition-colors p-1 flex-shrink-0"
+                        aria-label="메시지 삭제"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
                     </div>
-                    
-                    {/* 날짜와 From 이름 좌우 정렬 */}
-                    <div className="flex justify-between items-center">
-                      <div className="text-xs font-sans">
-                        <span style={{ color: '#B3D4FF' }}>From </span>
-                        <span className="text-gray-900">{item.name}</span>
+                    <div className="flex justify-between items-end">
+                      <div className="text-sm md:text-base">
+                        <span className="text-sky-400 font-medium">From.</span>
+                        <span className="text-gray-800 font-medium ml-1">{item.name}</span>
                       </div>
-                      <div className="text-xs text-gray-700 font-sans">
-                        {formatDate(String(item.created_at))}
-                      </div>
+                      <div className="text-xs md:text-sm text-gray-500">{formatDate(String(item.created_at))}</div>
                     </div>
                   </div>
                 ))}
                 
-                {/* 더보기/줄이기 버튼 */}
-                {guestbook.length > 6 && (
-                  <div className="flex justify-center pt-4">
+                {/* 더보기 버튼 */}
+                {guestbook.length > 3 && (
+                  <div className="flex justify-center mt-6 md:mt-8">
                     <button
                       onClick={() => setShowAll(!showAll)}
-                      className="text-gray-500 hover:text-gray-700 font-sans text-sm transition-colors"
+                      className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors font-sans"
                     >
-                      {showAll ? '줄이기' : `더보기 (+${guestbook.length - 6})`}
+                      <span className="text-sm font-light">
+                        {showAll ? '접기' : '더보기'}
+                      </span>
+                      <svg
+                        className={`w-5 h-5 transition-transform ${showAll ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
                     </button>
                   </div>
                 )}
               </>
             ) : (
-              <div className="py-8">
-                <p className="text-gray-500 font-light text-center leading-relaxed">
-                  메시지가 없습니다.<br />
-                  첫 메시지를 작성해주세요.
-                </p>
+              <div className="text-center py-12 md:py-16 text-gray-500">
+                <p className="text-sm md:text-base">아직 작성된 메시지가 없습니다.</p>
+                <p className="text-xs md:text-sm mt-2">첫 번째 축하 메시지를 남겨보세요!</p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* 모달 */}
+      {/* 작성 모달 */}
       {isModalOpen && (
         <div 
           className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           onClick={handleBackgroundClick}
         >
-          <div className="bg-white rounded-lg p-6 w-full max-w-md font-sans">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900 font-sans">메시지 작성</h3>
-              <button
-                onClick={handleCloseModal}
-                className="text-gray-900 hover:text-gray-700"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md font-sans max-h-[90vh] overflow-y-auto">
+            <div className="mb-4">
+              <h3 className="text-base md:text-lg font-medium text-gray-900 font-sans">메시지 작성</h3>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <input
-                  type="text"
                   id="name"
                   name="name"
+                  type="text"
                   value={formData.name}
                   onChange={handleInputChange}
-                  maxLength={10}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
-                  placeholder="이름을 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent text-sm md:text-base"
+                  placeholder="이름을 입력해주세요 (최대 10글자)"
                 />
               </div>
 
@@ -329,52 +330,44 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   name="content"
                   value={formData.content}
                   onChange={handleInputChange}
-                  maxLength={200}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
-                  placeholder="메시지를 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent resize-none text-sm md:text-base"
+                  placeholder="축하 메시지를 입력해주세요 (최대 200글자)"
                 />
+                <div className="text-xs text-gray-500 mt-1 text-right">
+                  {formData.content.length}/200
+                </div>
               </div>
 
               <div>
                 <input
-                  type="password"
                   id="password"
                   name="password"
+                  type="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  maxLength={12}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
-                  placeholder="비밀번호를 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent text-sm md:text-base"
+                  placeholder="비밀번호를 입력해주세요 (6~12자리)"
                 />
               </div>
 
-              <div className="pt-4">
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 py-2 px-4 text-sm md:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                >
+                  취소
+                </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-md transition-colors disabled:opacity-50 font-sans font-medium"
+                  className="flex-1 py-2 px-4 text-sm md:text-base bg-purple-300 hover:bg-purple-400 disabled:bg-purple-200 text-white rounded-md transition-colors"
                 >
                   {isSubmitting ? '작성 중...' : '작성하기'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* 토스트 메시지 */}
-      {toast && (
-        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000]">
-          <div 
-            className="px-4 py-2 rounded-lg font-medium animate-fade-in-out"
-            style={{ 
-              backgroundColor: toast.type === 'success' ? '#10b981' : '#FFCCE0',
-              color: 'white',
-              textShadow: toast.type === 'error' ? '0 1px 2px rgba(0, 0, 0, 0.3)' : 'none'
-            }}
-          >
-            {toast.message}
           </div>
         </div>
       )}
@@ -386,69 +379,50 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           onClick={handleDeleteBackgroundClick}
         >
-          <div className="bg-white rounded-lg p-6 w-full max-w-md font-sans">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900 font-sans">메시지 삭제</h3>
-              <button
-                onClick={handleDeleteCancel}
-                className="text-gray-900 hover:text-gray-700"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-sm font-sans">
+            <div className="mb-4">
+              <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">메시지 삭제</h3>
+              <p className="text-sm text-gray-600">삭제하려면 비밀번호를 입력해주세요.</p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleDeleteConfirm() }} className="space-y-4">
-              <div>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  maxLength={12}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 font-sans text-gray-900"
-                  placeholder="비밀번호를 입력하세요"
-                />
-              </div>
+            <div className="mb-4">
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent text-sm md:text-base"
+                placeholder="비밀번호 입력"
+              />
+            </div>
 
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={isDeleting}
-                  className="w-full px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 font-sans font-medium"
-                  style={{ 
-                    backgroundColor: '#FFCCE0', 
-                    color: 'white',
-                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isDeleting) {
-                      e.currentTarget.style.backgroundColor = '#FFB3D1'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isDeleting) {
-                      e.currentTarget.style.backgroundColor = '#FFCCE0'
-                    }
-                  }}
-                >
-                  {isDeleting ? '삭제 중...' : '삭제하기'}
-                </button>
-              </div>
-            </form>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="flex-1 py-2 px-4 text-sm md:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="flex-1 py-2 px-4 text-sm md:text-base bg-pink-300 hover:bg-pink-400 disabled:bg-pink-200 text-white rounded-md transition-colors"
+              >
+                {isDeleting ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 토스트 메시지 */}
+      {toast && (
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000] px-4">
+          <div 
+            className={`px-4 py-2 rounded-lg font-medium animate-fade-in-out text-sm md:text-base ${
+              toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`}
+          >
+            {toast.message}
           </div>
         </div>
       )}

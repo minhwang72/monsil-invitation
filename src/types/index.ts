@@ -6,6 +6,7 @@ export interface ContactPerson {
   phone: string;
   bank_name?: string;
   account_number?: string;
+  kakaopay_link?: string;
 }
 
 export interface Gallery {

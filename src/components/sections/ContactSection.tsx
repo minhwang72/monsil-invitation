@@ -52,17 +52,17 @@ export default function ContactSection() {
 
   if (loading) {
     return (
-      <section className="w-full flex flex-col justify-center px-10 font-sans bg-blue-50/50" style={{ minHeight: '80vh' }}>
-        <div className="max-w-md mx-auto w-full space-y-8">
+      <section className="w-full flex flex-col justify-center py-16 md:py-20 px-6 md:px-10 font-sans bg-blue-50/50">
+        <div className="max-w-md mx-auto w-full space-y-6 md:space-y-8">
           {[1, 2].map(i => (
             <div key={i} className="space-y-4">
-              <div className="h-8 bg-gray-200 rounded-full animate-pulse w-20 mx-auto"></div>
+              <div className="h-6 md:h-8 bg-gray-200 rounded-full animate-pulse w-16 md:w-20 mx-auto"></div>
               <div className="h-px bg-gray-200 animate-pulse"></div>
               {[1, 2, 3].map(j => (
                 <div key={j} className="space-y-3">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                  <div className="h-3 md:h-4 bg-gray-200 rounded animate-pulse w-12 md:w-16"></div>
                   <div className="flex justify-between items-center">
-                    <div className="h-5 bg-gray-200 rounded animate-pulse w-20"></div>
+                    <div className="h-4 md:h-5 bg-gray-200 rounded animate-pulse w-16 md:w-20"></div>
                     <div className="flex gap-3">
                       <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
                       <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
@@ -78,17 +78,17 @@ export default function ContactSection() {
   }
 
   return (
-    <section className="w-full flex flex-col justify-center px-10 font-sans bg-blue-50/50" style={{ minHeight: '80vh' }}>
-      <div className="max-w-md mx-auto w-full space-y-8">
+    <section className="w-full flex flex-col justify-center py-16 md:py-20 px-6 md:px-10 font-sans bg-blue-50/50">
+      <div className="max-w-md mx-auto w-full space-y-6 md:space-y-8">
         {/* 신랑측 */}
         <div className="space-y-4">
           <div className="text-center">
-            <span className="inline-block bg-purple-300 text-white px-4 py-2 rounded-full text-sm font-medium">
+            <span className="inline-block bg-purple-300 text-white px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-medium">
               신랑
             </span>
           </div>
           <div className="w-full h-px bg-gray-200"></div>
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {groomSide.map((contact) => (
               <div key={contact.id}>
                 {getRelationshipLabel(contact.relationship) && (
@@ -97,17 +97,17 @@ export default function ContactSection() {
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <div className="text-base font-medium text-gray-800">
+                  <div className="text-sm md:text-base font-medium text-gray-800">
                     {contact.name}
                   </div>
                   {contact.phone && contact.phone.trim() && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 md:gap-3">
                       <button
                         onClick={() => handleCall(contact.phone)}
                         className="text-pink-300 hover:text-pink-400 transition-colors p-1"
                         aria-label={`${contact.name}에게 전화걸기`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 md:h-6 w-5 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
                       </button>
@@ -116,7 +116,7 @@ export default function ContactSection() {
                         className="text-blue-300 hover:text-blue-400 transition-colors p-1"
                         aria-label={`${contact.name}에게 문자보내기`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 md:h-6 w-5 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </button>
@@ -131,12 +131,12 @@ export default function ContactSection() {
         {/* 신부측 */}
         <div className="space-y-4">
           <div className="text-center">
-            <span className="inline-block bg-purple-300 text-white px-4 py-2 rounded-full text-sm font-medium">
+            <span className="inline-block bg-purple-300 text-white px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-medium">
               신부
             </span>
           </div>
           <div className="w-full h-px bg-gray-200"></div>
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {brideSide.map((contact) => (
               <div key={contact.id}>
                 {getRelationshipLabel(contact.relationship) && (
@@ -145,17 +145,17 @@ export default function ContactSection() {
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <div className="text-base font-medium text-gray-800">
+                  <div className="text-sm md:text-base font-medium text-gray-800">
                     {contact.name}
                   </div>
                   {contact.phone && contact.phone.trim() && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 md:gap-3">
                       <button
                         onClick={() => handleCall(contact.phone)}
                         className="text-pink-300 hover:text-pink-400 transition-colors p-1"
                         aria-label={`${contact.name}에게 전화걸기`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 md:h-6 w-5 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
                       </button>
@@ -164,7 +164,7 @@ export default function ContactSection() {
                         className="text-blue-300 hover:text-blue-400 transition-colors p-1"
                         aria-label={`${contact.name}에게 문자보내기`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 md:h-6 w-5 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </button>

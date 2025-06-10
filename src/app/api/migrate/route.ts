@@ -213,6 +213,34 @@ export async function POST() {
       migrations.push('invitations table drop failed (non-critical)')
     }
 
+    // 11. contacts 테이블에 kakaopay_link 컬럼 추가
+    try {
+      await pool.query(`
+        ALTER TABLE contacts 
+        ADD COLUMN kakaopay_link VARCHAR(255) NULL DEFAULT NULL
+      `)
+      migrations.push('contacts: kakaopay_link column added')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('contacts: kakaopay_link column already exists')
+      } else {
+        throw error
+      }
+    }
+
+    // 12. 황민의 카카오페이 링크 업데이트
+    try {
+      await pool.query(
+        'UPDATE contacts SET kakaopay_link = ? WHERE name = ? AND side = ?',
+        ['https://qr.kakaopay.com/Ej7nPOau3', '황민', 'groom']
+      )
+      migrations.push('황민 kakaopay link updated')
+    } catch (error) {
+      console.error('KakaoPay link update error:', error)
+      migrations.push('kakaopay link update failed (non-critical)')
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migration completed successfully',
