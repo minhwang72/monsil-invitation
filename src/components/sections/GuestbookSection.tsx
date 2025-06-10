@@ -176,101 +176,104 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
 
   return (
     <>
-      <section className="w-full py-0 md:py-0 px-0 font-sans bg-gray-50">
-        <div className="w-full">
-          <div className="p-6 md:p-8">
-            <h2 className="text-xl md:text-2xl font-sans font-medium text-gray-900 text-center mb-6 md:mb-8">MESSAGE</h2>
-            
-            {/* 작성 버튼 */}
-            <div className="flex justify-end mb-6">
-              <button
-                onClick={handleWrite}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium"
+      <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-gray-50/30">
+        <div className="max-w-xl mx-auto text-center w-full px-8">
+          {/* 제목 */}
+          <h2 className="text-4xl font-light mb-16 tracking-wider text-gray-700 font-english english-text">
+            GUESTBOOK
+          </h2>
+          
+          {/* 작성 버튼 */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={handleWrite}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-                작성
-              </button>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+              작성
+            </button>
+          </div>
 
-            {/* 방명록 리스트 */}
-            <div className="space-y-4">
-              {guestbook && guestbook.length > 0 ? (
-                <>
-                  {(showAll ? guestbook : guestbook.slice(0, 6)).map((item) => (
-                    <div key={item.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-lg">
-                      {/* 내용과 삭제버튼 좌우 정렬 */}
-                      <div className="flex justify-between items-start mb-3">
-                        <p className="text-gray-900 font-sans font-normal leading-relaxed flex-1 pr-2">{item.content}</p>
-                        <div className="flex-shrink-0">
-                          {/* 삭제 아이콘 - 분홍색 */}
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="p-1 rounded-lg transition-colors"
-                            style={{ color: '#FFCCE0' }}
+          {/* 방명록 리스트 */}
+          <div className="space-y-4">
+            {guestbook && guestbook.length > 0 ? (
+              <>
+                {(showAll ? guestbook : guestbook.slice(0, 6)).map((item) => (
+                  <div key={item.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-lg">
+                    {/* 내용과 삭제버튼 좌우 정렬 */}
+                    <div className="flex justify-between items-start mb-3">
+                      <p className="text-gray-900 font-sans font-normal leading-relaxed flex-1 pr-2 text-center">{item.content}</p>
+                      <div className="flex-shrink-0">
+                        {/* 삭제 아이콘 - 분홍색 */}
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="p-1 rounded-lg transition-colors"
+                          style={{ color: '#FFCCE0' }}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      
-                      {/* 날짜와 From 이름 좌우 정렬 */}
-                      <div className="flex justify-between items-center">
-                        <div className="text-xs font-sans">
-                          <span style={{ color: '#B3D4FF' }}>From </span>
-                          <span className="text-gray-900">{item.name}</span>
-                        </div>
-                        <div className="text-xs text-gray-700 font-sans">
-                          {formatDate(String(item.created_at))}
-                        </div>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                  ))}
-                  
-                  {/* 더보기/줄이기 버튼 */}
-                  {guestbook.length > 6 && (
-                    <div className="flex justify-center pt-4">
-                      <button
-                        onClick={() => setShowAll(!showAll)}
-                        className="text-gray-500 hover:text-gray-700 font-sans text-sm transition-colors"
-                      >
-                        {showAll ? '줄이기' : `더보기 (+${guestbook.length - 6})`}
-                      </button>
+                    
+                    {/* 날짜와 From 이름 좌우 정렬 */}
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs font-sans">
+                        <span style={{ color: '#B3D4FF' }}>From </span>
+                        <span className="text-gray-900">{item.name}</span>
+                      </div>
+                      <div className="text-xs text-gray-700 font-sans">
+                        {formatDate(String(item.created_at))}
+                      </div>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 md:py-16 min-h-[200px] mb-8 md:mb-16">
-                  <p className="text-lg text-gray-500 mb-2 font-sans font-normal text-center">메시지가 없습니다.</p>
-                  <p className="text-lg text-gray-500 font-sans font-normal text-center">첫 메시지를 작성해주세요.</p>
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+                
+                {/* 더보기/줄이기 버튼 */}
+                {guestbook.length > 6 && (
+                  <div className="flex justify-center pt-4">
+                    <button
+                      onClick={() => setShowAll(!showAll)}
+                      className="text-gray-500 hover:text-gray-700 font-sans text-sm transition-colors"
+                    >
+                      {showAll ? '줄이기' : `더보기 (+${guestbook.length - 6})`}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-lg">
+                <p className="text-gray-500 font-light text-center leading-relaxed">
+                  메시지가 없습니다.<br />
+                  첫 메시지를 작성해주세요.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
