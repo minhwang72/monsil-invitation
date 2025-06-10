@@ -10,20 +10,65 @@ import HeartMoneySection from '@/components/sections/HeartMoneySection'
 import LazyGallerySection from '@/components/sections/LazyGallerySection'
 import LazyGuestbookSection from '@/components/sections/LazyGuestbookSection'
 import Footer from '@/components/Footer'
+import type { Gallery } from '@/types'
 
 export default function Home() {
   const [shareMenuOpen, setShareMenuOpen] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [mainImageUrl, setMainImageUrl] = useState<string>('')
 
   // 카카오 SDK 초기화
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
-      const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY
-      if (kakaoKey) {
-        window.Kakao.init(kakaoKey)
+    const initKakao = () => {
+      try {
+        if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
+          const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY
+          if (kakaoKey) {
+            window.Kakao.init(kakaoKey)
+            console.log('카카오 SDK 초기화 완료')
+          } else {
+            console.error('카카오 JS 키가 설정되지 않았습니다')
+          }
+        }
+      } catch (error) {
+        console.error('카카오 SDK 초기화 오류:', error)
       }
     }
+
+    // DOM이 완전히 로드된 후 실행
+    if (document.readyState === 'complete') {
+      initKakao()
+    } else {
+      window.addEventListener('load', initKakao)
+      return () => window.removeEventListener('load', initKakao)
+    }
+  }, [])
+
+  // 메인 이미지 가져오기
+  useEffect(() => {
+    const fetchMainImage = async () => {
+      try {
+        const response = await fetch('/api/gallery')
+        const data = await response.json()
+        if (data.success) {
+          const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
+          if (mainImage?.url) {
+            // 상대 경로라면 절대 경로로 변환
+            const imageUrl = mainImage.url.startsWith('http') 
+              ? mainImage.url 
+              : `https://monsil.eungming.com${mainImage.url}`
+            setMainImageUrl(imageUrl)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching main image:', error)
+        // 기본 이미지 URL 설정
+        setMainImageUrl('https://monsil.eungming.com/images/cover-image.jpg')
+      }
+    }
+
+    fetchMainImage()
   }, [])
 
   // 공유 메뉴 닫기 함수
@@ -62,28 +107,36 @@ export default function Home() {
 
   // 카카오톡 공유하기
   const shareKakao = () => {
-    if (window.Kakao) {
-      window.Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: '황민 ♥ 이은솔 결혼합니다',
-          description: '2025년 11월 8일 오후 12시 30분\n정동제일교회에서 결혼식을 올립니다.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.',
-          imageUrl: 'https://monsil.eungming.com/images/cover-image.jpg',
-          link: {
-            mobileWebUrl: 'https://monsil.eungming.com',
-            webUrl: 'https://monsil.eungming.com',
-          },
-        },
-        buttons: [
-          {
-            title: '청첩장 보기',
+    try {
+      if (window.Kakao && window.Kakao.isInitialized()) {
+        window.Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: '황민 ♥ 이은솔 결혼합니다',
+            description: '2025년 11월 8일 오후 12시 30분\n정동제일교회에서 결혼식을 올립니다.\nWe invite you to our wedding.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.',
+            imageUrl: mainImageUrl || 'https://monsil.eungming.com/images/cover-image.jpg',
             link: {
               mobileWebUrl: 'https://monsil.eungming.com',
               webUrl: 'https://monsil.eungming.com',
             },
           },
-        ],
-      })
+          buttons: [
+            {
+              title: '청첩장 보기',
+              link: {
+                mobileWebUrl: 'https://monsil.eungming.com',
+                webUrl: 'https://monsil.eungming.com',
+              },
+            },
+          ],
+        })
+      } else {
+        console.error('카카오 SDK가 초기화되지 않았습니다')
+        showToastMessage('카카오톡 공유 기능을 사용할 수 없습니다')
+      }
+    } catch (error) {
+      console.error('카카오톡 공유 오류:', error)
+      showToastMessage('카카오톡 공유 중 오류가 발생했습니다')
     }
     setShareMenuOpen(false)
   }

@@ -2,35 +2,32 @@ import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import type { ApiResponse } from '@/types'
 
-interface CoverImageData {
-  imageUrl?: string
-}
-
 export async function GET() {
   try {
-    // 갤러리 테이블에서 메인 이미지 조회
-    const [rows] = await pool.query(
-      'SELECT filename FROM gallery WHERE image_type = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1',
-      ['main']
-    )
+    // 메인 이미지 조회 (삭제되지 않은 것 중 가장 최근 것)
+    const [rows] = await pool.query(`
+      SELECT filename 
+      FROM gallery 
+      WHERE image_type = 'main' 
+        AND deleted_at IS NULL 
+        AND filename IS NOT NULL
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `)
     
-    const coverImageDataObj: CoverImageData = {}
+    const result = rows as { filename: string }[]
     
-    if (Array.isArray(rows) && rows.length > 0) {
-      const mainImage = rows[0] as { filename: string }
-      coverImageDataObj.imageUrl = `/uploads/${mainImage.filename}`
+    if (result.length === 0) {
+      return NextResponse.json<ApiResponse<null>>({
+        success: false,
+        error: 'No cover image found',
+      }, { status: 404 })
     }
-    
-    const response = NextResponse.json<ApiResponse<CoverImageData>>({
-      success: true,
-      data: coverImageDataObj,
-    })
 
-    // 캐싱 헤더 추가 (10분 캐시)
-    response.headers.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1200')
-    response.headers.set('CDN-Cache-Control', 'public, s-maxage=600')
-    
-    return response
+    return NextResponse.json<ApiResponse<{ url: string }>>({
+      success: true,
+      data: { url: `/uploads/${result[0].filename}` },
+    })
   } catch (error) {
     console.error('Error fetching cover image:', error)
     return NextResponse.json<ApiResponse<null>>(

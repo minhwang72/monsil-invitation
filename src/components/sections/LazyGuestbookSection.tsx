@@ -13,15 +13,24 @@ const apiCache = new Map<string, CacheData>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5분
 
 // 캐시된 API 호출 함수
-const fetchWithCache = async (url: string) => {
+const fetchWithCache = async (url: string, forceRefresh = false) => {
   const now = Date.now()
   const cached = apiCache.get(url)
   
-  if (cached && now - cached.timestamp < CACHE_DURATION) {
+  // forceRefresh가 true이거나 캐시가 만료된 경우 새로 요청
+  if (!forceRefresh && cached && now - cached.timestamp < CACHE_DURATION) {
+    console.log('🔍 [DEBUG] Using cached data for:', url)
     return cached.data
   }
   
-  const response = await fetch(url)
+  console.log('🔍 [DEBUG] Fetching fresh data for:', url)
+  const response = await fetch(url, {
+    // 캐시 방지를 위한 헤더 추가
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  })
   const data = await response.json()
   
   apiCache.set(url, { data, timestamp: now })
@@ -74,12 +83,13 @@ export default function LazyGuestbookSection() {
   const fetchGuestbook = useCallback(async () => {
     try {
       setLoading(true)
-      // 캐시를 무시하고 최신 데이터 가져오기
-      apiCache.delete('/api/guestbook')
-      const guestbookData = await fetchWithCache('/api/guestbook')
+      console.log('🔍 [DEBUG] Forcing guestbook refresh')
+      // 강제로 최신 데이터 가져오기 (캐시 무시)
+      const guestbookData = await fetchWithCache('/api/guestbook', true)
       
       if (guestbookData && typeof guestbookData === 'object' && 'success' in guestbookData && guestbookData.success) {
         setGuestbook((guestbookData as { data: Guestbook[] }).data || [])
+        console.log('✅ [DEBUG] Guestbook updated with fresh data')
       }
     } catch (error) {
       console.error('Error fetching guestbook:', error)

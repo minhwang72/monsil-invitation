@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import type { Gallery } from '@/types'
 
@@ -27,8 +26,11 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     isPlaceholder: true,
   }))
 
-  const displayImages: DisplayImage[] = gallery && gallery.length > 0 
-    ? gallery 
+  // 갤러리 이미지만 필터링 (메인 이미지 제외)
+  const galleryImages = gallery ? gallery.filter(item => item.image_type === 'gallery') : []
+
+  const displayImages: DisplayImage[] = galleryImages && galleryImages.length > 0 
+    ? galleryImages 
     : placeholderImages
 
   // 표시할 이미지 개수 결정 (9개 제한 또는 모든 이미지)
@@ -151,11 +153,10 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                     </svg>
                   </div>
                 ) : (
-                  <Image
+                  <img
                     src={item.url}
                     alt="Gallery"
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                     onError={() => handleImageError(item.id)}
                   />
                 )}
@@ -228,7 +229,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           {/* 이전 버튼 - 데스크톱에서만 표시 */}
           <button
             onClick={goToPrevious}
-            className="hidden md:block absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2"
+            className="hidden md:block absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-20"
           >
             <svg
               className="w-10 h-10"
@@ -249,7 +250,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           {/* 다음 버튼 - 데스크톱에서만 표시 */}
           <button
             onClick={goToNext}
-            className="hidden md:block absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2"
+            className="hidden md:block absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-20"
           >
             <svg
               className="w-10 h-10"
@@ -269,7 +270,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 이미지 컨테이너 */}
           <div 
-            className="relative max-w-5xl max-h-[90vh] mx-auto flex flex-col items-center justify-center p-4 md:p-8"
+            className="relative w-full max-w-[90vw] md:max-w-4xl max-h-[80vh] md:max-h-[70vh] mx-auto flex flex-col items-center justify-center p-4 md:p-8 z-10"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -293,13 +294,12 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                   </svg>
                 </div>
               ) : (
-                <div className="relative w-full max-w-4xl max-h-[75vh] md:max-h-[80vh] aspect-auto">
-                  <Image
+                <div className="relative w-full h-full max-w-[85vw] md:max-w-[800px] max-h-[70vh] md:max-h-[600px] flex items-center justify-center">
+                  <img
                     src={imagesToShow[currentImageIndex].url}
                     alt="Gallery"
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 95vw, (max-width: 1200px) 90vw, 80vw"
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    sizes="(max-width: 768px) 85vw, 800px"
                     onError={() => handleImageError(imagesToShow[currentImageIndex].id)}
                   />
                 </div>
@@ -352,25 +352,6 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
-              </button>
-            </div>
-
-            {/* 데스크톱용 네비게이션 - 기존 위치 유지 */}
-            <div className="hidden md:flex justify-between items-center w-full max-w-4xl mt-4">
-              <button
-                onClick={goToPrevious}
-                className="text-white hover:text-gray-300 transition-colors font-sans text-sm"
-              >
-                ← 이전
-              </button>
-              <div className="text-white text-sm font-sans">
-                {currentImageIndex + 1} / {imagesToShow.length}
-              </div>
-              <button
-                onClick={goToNext}
-                className="text-white hover:text-gray-300 transition-colors font-sans text-sm"
-              >
-                다음 →
               </button>
             </div>
           </div>

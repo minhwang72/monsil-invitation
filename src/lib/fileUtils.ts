@@ -31,10 +31,16 @@ export async function deletePhysicalFile(filename: string): Promise<void> {
   }
 }
 
-export function generateFilename(originalName: string): string {
+export function generateFilename(originalName: string, forceJpeg: boolean = false): string {
   const timestamp = Date.now()
-  const fileExt = originalName.split('.').pop() || 'jpg'
-  return `${timestamp}.${fileExt}`
+  const originalExt = originalName.split('.').pop()?.toLowerCase() || 'jpg'
+  
+  // HEIC나 HEIF 파일이거나 강제 JPEG 변환이 요청된 경우 JPEG로 변환
+  if (forceJpeg || ['heic', 'heif'].includes(originalExt)) {
+    return `${timestamp}.jpg`
+  }
+  
+  return `${timestamp}.${originalExt}`
 }
 
 export function getTodayDateString(): string {

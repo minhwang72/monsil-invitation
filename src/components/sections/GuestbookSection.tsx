@@ -115,12 +115,27 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
         body: JSON.stringify(formData),
       })
 
-      if (response.ok) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
         showToast('메시지가 작성되었습니다.', 'success')
         handleCloseModal()
-        onGuestbookUpdate()
+        
+        // 데이터 업데이트를 즉시 호출하고 조금 더 기다림
+        console.log('🔍 [DEBUG] Calling guestbook update after successful post')
+        await onGuestbookUpdate()
+        
+        // 추가 업데이트를 위한 짧은 지연
+        setTimeout(() => {
+          console.log('🔍 [DEBUG] Additional guestbook update call')
+          onGuestbookUpdate()
+        }, 100)
       } else {
-        showToast('메시지 작성에 실패했습니다.', 'error')
+        showToast(result.error || '메시지 작성에 실패했습니다.', 'error')
       }
     } catch (error) {
       console.error('Error submitting message:', error)
@@ -148,17 +163,27 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
         method: 'DELETE',
       })
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       const result = await response.json()
 
-      if (response.ok && result.success) {
+      if (result.success) {
         showToast('메시지가 삭제되었습니다.', 'success')
         setDeleteModalOpen(false)
         setDeletePassword('')
         setDeleteTargetId(null)
-        // 방명록 데이터 갱신 - 서버 처리 완료를 위한 충분한 지연 후 실행
+        
+        // 방명록 데이터 즉시 갱신
+        console.log('🔍 [DEBUG] Calling guestbook update after successful delete')
+        await onGuestbookUpdate()
+        
+        // 추가 업데이트를 위한 짧은 지연
         setTimeout(() => {
+          console.log('🔍 [DEBUG] Additional guestbook update call after delete')
           onGuestbookUpdate()
-        }, 500)
+        }, 100)
       } else {
         showToast(result.error || '삭제에 실패했습니다.', 'error')
       }

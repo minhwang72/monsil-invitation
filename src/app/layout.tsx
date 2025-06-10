@@ -1,11 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "황민 ♥ 이은솔 결혼합니다",
-  description: "2024년 11월 8일, 황민 ♥ 이은솔의 결혼식에 초대합니다.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  title: "We invite you to our wedding",
+  description: "2025년 11월 8일, 황민 ♥ 이은솔의 결혼식에 초대합니다.",
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
 
 export default function RootLayout({
   children,
@@ -16,17 +26,35 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         <link
+          rel="icon"
+          href="/favicon.svg"
+          type="image/svg+xml"
+        />
+        <link
           rel="stylesheet"
           as="style"
           crossOrigin=""
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
         />
         <link
-          rel="stylesheet"
-          as="style"
-          crossOrigin=""
-          href="https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-3Light.woff"
+          rel="preconnect"
+          href="https://cdn.jsdelivr.net"
         />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <style>
+          {`
+            @font-face {
+              font-family: 'S-CoreDream-3Light';
+              src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-3Light.woff') format('woff');
+              font-weight: 300;
+              font-style: normal;
+            }
+          `}
+        </style>
         <script
           type="text/javascript"
           src={`https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID}`}

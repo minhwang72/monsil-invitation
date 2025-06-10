@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 
 export default function CoverSection() {
   const [imageUrl, setImageUrl] = useState<string>('')
@@ -15,8 +14,8 @@ export default function CoverSection() {
         const response = await fetch('/api/cover-image')
         const data = await response.json()
         
-        if (data.success && data.data?.imageUrl) {
-          setImageUrl(data.data.imageUrl)
+        if (data.success && data.data?.url) {
+          setImageUrl(data.data.url)
         }
       } catch (error) {
         console.error('Error fetching cover image:', error)
@@ -79,7 +78,7 @@ export default function CoverSection() {
 
         {/* 사진 영역 (더 세로로 늘림) */}
         <div className="flex justify-center mb-6 md:mb-8">
-          <div className="w-full max-w-sm aspect-[9/16]">
+          <div className="w-full max-w-sm aspect-[3/4]">
             <div className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden">
               {isLoading ? (
                 <div className="w-full h-full bg-gray-200 animate-pulse flex items-center justify-center">
@@ -98,12 +97,10 @@ export default function CoverSection() {
                   </svg>
                 </div>
               ) : imageUrl ? (
-                <Image
+                <img
                   src={imageUrl}
                   alt="Wedding Cover"
-                  fill
-                  className="object-cover"
-                  priority
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">

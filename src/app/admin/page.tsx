@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Image from 'next/image'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
+import { validateAndPrepareFile } from '@/lib/clientImageUtils'
 
 // 로딩 컴포넌트
 const Loading = () => (
@@ -103,11 +103,25 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
     if (!file) return
 
     setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('image_type', 'main')
-
+    
     try {
+      console.log('🔍 [DEBUG] Validating and preparing file:', file.name)
+      
+      // 클라이언트 사이드에서 파일 유효성 검사
+      const validation = await validateAndPrepareFile(file)
+      
+      if (!validation.isValid) {
+        alert(validation.error || '파일 검증에 실패했습니다.')
+        return
+      }
+      
+      console.log('✅ [DEBUG] File validated successfully')
+      
+      // FormData로 파일 전송
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('image_type', 'main')
+      
       const res = await fetch('/api/admin/upload', {
         method: 'POST',
         body: formData,
@@ -115,17 +129,8 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
       const data = await res.json()
 
       if (data.success) {
-        // 새 이미지 정보로 업데이트
-        const newImage: Gallery = {
-          id: Date.now(),
-          url: `/uploads/${data.data.filename}`,
-          filename: data.data.filename,
-          image_type: 'main',
-          created_at: new Date()
-        }
-        setCurrentImage(newImage)
+        await fetchMainImage()
         
-        // 외부 상태도 업데이트
         if (onUpdate) onUpdate()
         
         alert('메인 이미지가 업데이트되었습니다.')
@@ -134,7 +139,7 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
       }
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert('업로드 중 오류가 발생했습니다.')
+      alert(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
     } finally {
       setUploading(false)
     }
@@ -146,15 +151,14 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
       
       <div className="space-y-6">
         {/* 현재 메인 이미지 */}
-        {currentImage ? (
+        {currentImage && currentImage.url ? (
           <div className="text-center">
             <h3 className="text-lg font-medium text-gray-900 mb-4">현재 메인 이미지</h3>
             <div className="relative w-64 h-80 mx-auto">
-              <Image
+              <img
                 src={currentImage.url}
                 alt="Main"
-                fill
-                className="object-cover rounded-lg"
+                className="w-full h-full object-cover rounded-lg"
               />
             </div>
           </div>
@@ -211,6 +215,11 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingContact),
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`)
+      }
+      
       const data = await res.json()
       console.log('🔍 [DEBUG] Save response:', data)
 
@@ -226,9 +235,14 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
         
         setEditingContact(null)
         
-        // 외부 상태도 업데이트
-        await onUpdate()
-        console.log('✅ [DEBUG] onUpdate completed')
+        // 외부 상태도 업데이트 (에러가 발생해도 로컬 상태는 유지)
+        try {
+          await onUpdate()
+          console.log('✅ [DEBUG] onUpdate completed successfully')
+        } catch (updateError) {
+          console.warn('⚠️ [DEBUG] onUpdate failed, but local state is updated:', updateError)
+        }
+        
         alert('연락처가 업데이트되었습니다.')
       } else {
         console.log('❌ [DEBUG] Save failed:', data.error)
@@ -379,19 +393,32 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
     if (files.length === 0) return
 
     setUploading(true)
-    console.log('🔍 [DEBUG] Uploading', files.length, 'files')
+    console.log('🔍 [DEBUG] Validating and preparing', files.length, 'files')
     
     try {
       const uploadPromises = files.map(async (file) => {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('image_type', 'gallery')
-
-        const res = await fetch('/api/admin/upload', {
-          method: 'POST',
-          body: formData,
-        })
-        return res.json()
+        try {
+          // 클라이언트 사이드에서 각 파일 유효성 검사
+          const validation = await validateAndPrepareFile(file)
+          
+          if (!validation.isValid) {
+            return { success: false, error: validation.error || '파일 검증 실패' }
+          }
+          
+          // FormData로 파일 전송
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('image_type', 'gallery')
+          
+          const res = await fetch('/api/admin/upload', {
+            method: 'POST',
+            body: formData,
+          })
+          return res.json()
+        } catch (error) {
+          console.error('Error validating/uploading file:', file.name, error)
+          return { success: false, error: `${file.name} 처리 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}` }
+        }
       })
 
       const results = await Promise.all(uploadPromises)
@@ -595,11 +622,10 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
 
               {/* 이미지 미리보기 */}
               <div className="w-16 h-16 relative mr-4">
-                <Image
+                <img
                   src={item.url}
                   alt="Gallery"
-                  fill
-                  className="object-cover rounded"
+                  className="w-full h-full object-cover rounded"
                 />
               </div>
 
@@ -672,29 +698,37 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
     try {
       console.log('🔍 [DEBUG] Deleting guestbook:', id)
       
-      // 즉시 로컬 상태에서 제거
-      setLocalGuestbook(prev => prev.filter(item => item.id !== id))
-      
       const res = await fetch(`/api/admin/guestbook/${id}`, {
         method: 'DELETE',
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`)
+      }
+      
       const data = await res.json()
 
       if (data.success) {
         console.log('✅ [DEBUG] Guestbook deleted successfully')
-        // 외부 상태도 업데이트
-        await onUpdate()
+        
+        // 즉시 로컬 상태에서 제거
+        setLocalGuestbook(prev => prev.filter(item => item.id !== id))
+        
+        // 외부 상태도 업데이트 (에러가 발생해도 로컬 상태는 유지)
+        try {
+          await onUpdate()
+          console.log('✅ [DEBUG] Guestbook onUpdate completed successfully')
+        } catch (updateError) {
+          console.warn('⚠️ [DEBUG] Guestbook onUpdate failed, but local state is updated:', updateError)
+        }
+        
         alert('방명록이 삭제되었습니다.')
       } else {
         console.log('❌ [DEBUG] Guestbook deletion failed:', data.error)
-        // 실패 시 로컬 상태 복원
-        setLocalGuestbook(guestbook)
         alert(data.error || '삭제에 실패했습니다.')
       }
     } catch (error) {
       console.error('❌ [DEBUG] Error deleting guestbook:', error)
-      // 에러 시 로컬 상태 복원
-      setLocalGuestbook(guestbook)
       alert('삭제 중 오류가 발생했습니다.')
     }
   }

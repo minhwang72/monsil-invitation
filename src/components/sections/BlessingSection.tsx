@@ -4,6 +4,13 @@ export default function BlessingSection() {
   return (
     <section className="w-full min-h-screen flex flex-col justify-center py-12 md:py-16 px-0 font-sans bg-gray-50/50">
       <div className="max-w-xl mx-auto text-center w-full px-6 md:px-8">
+        {/* 영어 멘트 */}
+        <div className="mb-8 md:mb-12">
+          <p className="text-base md:text-lg font-light text-gray-500 tracking-wider font-english english-text">
+            We invite you to our wedding
+          </p>
+        </div>
+
         {/* 메시지 내용 */}
         <div className="space-y-6 md:space-y-8 mb-8">
           {/* 첫 번째 문단 */}

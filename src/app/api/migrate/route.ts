@@ -6,6 +6,10 @@ interface MySQLError extends Error {
   code?: string
 }
 
+interface MySQLUpdateResult {
+  affectedRows: number
+}
+
 export async function POST() {
   try {
     const migrations = []
@@ -31,12 +35,12 @@ export async function POST() {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS gallery (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          filename VARCHAR(255) NOT NULL,
+          url VARCHAR(500) DEFAULT NULL,
+          filename VARCHAR(255) DEFAULT NULL,
+          base64_data LONGTEXT DEFAULT NULL,
           image_type ENUM('main', 'gallery') DEFAULT 'gallery',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          deleted_at DATETIME NULL DEFAULT NULL,
-          INDEX idx_image_type (image_type),
-          INDEX idx_deleted_at (deleted_at)
+          deleted_at DATETIME DEFAULT NULL
         )
       `)
       migrations.push('gallery table created or already exists')
@@ -105,6 +109,38 @@ export async function POST() {
         migrations.push('gallery: url column already removed')
       } else {
         console.log('Gallery url column removal skipped:', mysqlError.message)
+      }
+    }
+
+    // 4-3. gallery 테이블에 base64_data 컬럼 추가 (base64 이미지 저장용)
+    try {
+      await pool.query(`
+        ALTER TABLE gallery 
+        ADD COLUMN base64_data LONGTEXT DEFAULT NULL
+      `)
+      migrations.push('gallery: base64_data column added')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('gallery: base64_data column already exists')
+      } else {
+        console.log('Gallery base64_data column migration skipped:', mysqlError.message)
+      }
+    }
+
+    // 4-4. gallery 테이블에서 base64_data 컬럼 제거 (파일 기반 저장으로 변경)
+    try {
+      await pool.query(`
+        ALTER TABLE gallery 
+        DROP COLUMN base64_data
+      `)
+      migrations.push('gallery: base64_data column removed (using file storage instead)')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_CANT_DROP_FIELD_OR_KEY') {
+        migrations.push('gallery: base64_data column already removed')
+      } else {
+        console.log('Gallery base64_data column removal skipped:', mysqlError.message)
       }
     }
 
@@ -313,6 +349,25 @@ export async function POST() {
     } catch (error) {
       console.error('Admin setup error:', error)
       migrations.push('admin setup failed (non-critical)')
+    }
+
+    // 15. HEIC 파일들 정리 (404 오류 방지)
+    try {
+      const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
+      const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
+      
+      const [result] = await pool.query(
+        `UPDATE gallery SET deleted_at = ? 
+         WHERE (filename LIKE '%.HEIC' OR filename LIKE '%.heic') 
+         AND deleted_at IS NULL`,
+        [formattedTime]
+      )
+      
+      const updateResult = result as MySQLUpdateResult
+      migrations.push(`HEIC files cleaned up: ${updateResult.affectedRows} files marked as deleted`)
+    } catch (error) {
+      console.error('HEIC cleanup error:', error)
+      migrations.push('HEIC cleanup failed (non-critical)')
     }
 
     return NextResponse.json({

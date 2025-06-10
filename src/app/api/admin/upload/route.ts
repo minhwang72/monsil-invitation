@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
 import { join } from 'path'
+import sharp from 'sharp'
 import pool from '@/lib/db'
-import { ensureUploadDir, generateFilename, getTodayDateString, deletePhysicalFile } from '@/lib/fileUtils'
+import { ensureUploadDir, getTodayDateString } from '@/lib/fileUtils'
 import type { ApiResponse } from '@/types'
 
 export async function POST(request: NextRequest) {
@@ -24,49 +24,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // FormData로 파일 직접 받기 (base64 대신)
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const imageType = formData.get('image_type') as string || 'gallery'
+    const image_type = formData.get('image_type') as string || 'gallery'
     
-    console.log('🔍 [DEBUG] File info:', {
-      name: file?.name,
+    console.log('🔍 [DEBUG] Upload info:', {
+      filename: file?.name,
       size: file?.size,
       type: file?.type,
-      imageType
+      image_type
     })
 
     if (!file) {
-      console.log('❌ [DEBUG] No file provided in upload')
+      console.log('❌ [DEBUG] No file provided')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: 'No file uploaded',
+          error: 'No file provided',
         },
         { status: 400 }
       )
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    console.log('🔍 [DEBUG] File converted to buffer, size:', buffer.length)
+    // 파일을 버퍼로 읽기
+    const buffer = Buffer.from(await file.arrayBuffer())
+    console.log('🔍 [DEBUG] File buffer size:', buffer.length)
 
     // Generate paths and filename
     const dateString = getTodayDateString()
     const datePath = await ensureUploadDir(dateString)
-    const filename = generateFilename(file.name)
-    const filepath = join(datePath, filename)
-    const dbFilename = `${dateString}/${filename}`
+    const timestamp = Date.now()
+    const cleanName = file.name.replace(/\.[^/.]+$/, '') // 확장자 제거
+    const dbFilename = `${timestamp}_${cleanName}.jpg` // 항상 .jpg로 저장
+    const filepath = join(datePath, dbFilename)
+    const dbPath = `${dateString}/${dbFilename}` // DB에 저장할 상대 경로
     
     console.log('🔍 [DEBUG] File paths:', {
       dateString,
       datePath,
-      filename,
+      dbFilename,
       filepath,
-      dbFilename
+      dbPath
     })
 
     // Handle main image type - soft delete existing main image and remove physical files
-    if (imageType === 'main') {
+    if (image_type === 'main') {
       console.log('🔍 [DEBUG] Processing main image upload - deleting existing')
       const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
       const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -86,36 +89,64 @@ export async function POST(request: NextRequest) {
       
       // Delete physical files
       for (const image of existingImages) {
-        await deletePhysicalFile(image.filename)
-        console.log('🔍 [DEBUG] Deleted physical file:', image.filename)
+        if (image.filename) {
+          const oldFilePath = join(process.cwd(), 'public', 'uploads', image.filename)
+          try {
+            await import('fs/promises').then(fs => fs.unlink(oldFilePath))
+            console.log('🔍 [DEBUG] Deleted physical file:', oldFilePath)
+          } catch (error) {
+            console.log('🔍 [DEBUG] File deletion info:', error)
+          }
+        }
       }
     }
 
-    // Save new file
-    console.log('🔍 [DEBUG] Saving new file to:', filepath)
-    await writeFile(filepath, buffer)
-    console.log('✅ [DEBUG] File saved successfully')
+    // Sharp를 사용하여 이미지 처리 (HEIC 포함 모든 형식 지원)
+    console.log('🔍 [DEBUG] Processing image with Sharp...')
+    try {
+      await sharp(buffer)
+        .jpeg({ 
+          quality: 85,
+          progressive: true 
+        })
+        .resize(1920, null, { 
+          withoutEnlargement: true,
+          fit: 'inside'
+        })
+        .toFile(filepath)
+      
+      console.log('✅ [DEBUG] Image processed and saved with Sharp')
+    } catch (sharpError) {
+      console.error('❌ [DEBUG] Sharp processing failed:', sharpError)
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: `이미지 처리에 실패했습니다: ${sharpError instanceof Error ? sharpError.message : '알 수 없는 오류'}`,
+        },
+        { status: 500 }
+      )
+    }
 
-    // Save to database
+    // Save to database with file path
     const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
     const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
     
     console.log('🔍 [DEBUG] Inserting to database:', {
-      dbFilename,
-      imageType,
+      filename: dbPath,
+      image_type,
       formattedTime
     })
 
     const insertResult = await pool.query(
       'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
-      [dbFilename, imageType, formattedTime]
+      [dbPath, image_type, formattedTime]
     )
     
     console.log('✅ [DEBUG] Database insert result:', insertResult)
 
     return NextResponse.json<ApiResponse<{ filename: string }>>({
       success: true,
-      data: { filename: dbFilename },
+      data: { filename: dbPath },
     })
   } catch (error) {
     console.error('❌ [DEBUG] Error uploading file:', error)

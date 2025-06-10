@@ -105,7 +105,7 @@ export default function HeartMoneySection() {
 
   return (
     <>
-      <section className="w-full py-12 px-0 font-sans bg-gray-100">
+      <section className="w-full py-16 md:py-20 px-0 font-sans bg-gray-50">
         <div className="max-w-xl mx-auto text-center w-full px-8">
           {/* 제목 */}
           <h2 className="text-2xl font-light mb-8 tracking-wider text-gray-700">
