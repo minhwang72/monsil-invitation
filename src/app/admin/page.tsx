@@ -12,14 +12,15 @@ const Loading = () => (
 )
 
 // 로그인 컴포넌트
-const LoginForm = ({ onLogin }: { onLogin: (password: string) => void }) => {
+const LoginForm = ({ onLogin }: { onLogin: (username: string, password: string) => void }) => {
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    await onLogin(password)
+    await onLogin(username, password)
     setLoading(false)
   }
 
@@ -32,6 +33,20 @@ const LoginForm = ({ onLogin }: { onLogin: (password: string) => void }) => {
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="username" className="sr-only">
+              사용자명
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm mb-3"
+              placeholder="사용자명을 입력하세요"
+              required
+            />
+          </div>
           <div>
             <label htmlFor="password" className="sr-only">
               비밀번호
@@ -62,26 +77,26 @@ const LoginForm = ({ onLogin }: { onLogin: (password: string) => void }) => {
 }
 
 // 메인 이미지 섹션 컴포넌트
-const MainImageSection = () => {
+const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
   const [uploading, setUploading] = useState(false)
   const [currentImage, setCurrentImage] = useState<Gallery | null>(null)
 
-  useEffect(() => {
-    const fetchMainImage = async () => {
-      try {
-        const res = await fetch('/api/gallery')
-        const data = await res.json()
-        if (data.success) {
-          const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
-          setCurrentImage(mainImage || null)
-        }
-      } catch (error) {
-        console.error('Error fetching main image:', error)
+  const fetchMainImage = useCallback(async () => {
+    try {
+      const res = await fetch('/api/gallery')
+      const data = await res.json()
+      if (data.success) {
+        const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
+        setCurrentImage(mainImage || null)
       }
+    } catch (error) {
+      console.error('Error fetching main image:', error)
     }
-
-    fetchMainImage()
   }, [])
+
+  useEffect(() => {
+    fetchMainImage()
+  }, [fetchMainImage])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -104,10 +119,15 @@ const MainImageSection = () => {
         const newImage: Gallery = {
           id: Date.now(),
           url: `/uploads/${data.data.filename}`,
+          filename: data.data.filename,
           image_type: 'main',
           created_at: new Date()
         }
         setCurrentImage(newImage)
+        
+        // 외부 상태도 업데이트
+        if (onUpdate) onUpdate()
+        
         alert('메인 이미지가 업데이트되었습니다.')
       } else {
         alert(data.error || '업로드에 실패했습니다.')
@@ -177,6 +197,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
   const handleSave = async () => {
     if (!editingContact) return
 
+    console.log('🔍 [DEBUG] Saving contact:', editingContact)
     setSaving(true)
     try {
       const res = await fetch(`/api/admin/contacts/${editingContact.id}`, {
@@ -185,16 +206,21 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
         body: JSON.stringify(editingContact),
       })
       const data = await res.json()
+      console.log('🔍 [DEBUG] Save response:', data)
 
       if (data.success) {
+        console.log('✅ [DEBUG] Contact saved successfully, calling onUpdate')
         setEditingContact(null)
-        onUpdate()
+        // 먼저 외부 상태 업데이트
+        await onUpdate()
+        console.log('✅ [DEBUG] onUpdate completed')
         alert('연락처가 업데이트되었습니다.')
       } else {
+        console.log('❌ [DEBUG] Save failed:', data.error)
         alert(data.error || '업데이트에 실패했습니다.')
       }
     } catch (error) {
-      console.error('Error updating contact:', error)
+      console.error('❌ [DEBUG] Error updating contact:', error)
       alert('업데이트 중 오류가 발생했습니다.')
     } finally {
       setSaving(false)
@@ -347,6 +373,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       const data = await res.json()
 
       if (data.success) {
+        // 즉시 외부 상태 업데이트
         onUpdate()
         alert('이미지가 업로드되었습니다.')
       } else {
@@ -361,7 +388,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('이 이미지를 삭제하시겠습니까?')) return
+    if (!confirm('정말로 이 이미지를 삭제하시겠습니까?')) return
 
     try {
       const res = await fetch(`/api/admin/gallery/${id}`, {
@@ -370,6 +397,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       const data = await res.json()
 
       if (data.success) {
+        // 즉시 외부 상태 업데이트
         onUpdate()
         alert('이미지가 삭제되었습니다.')
       } else {
@@ -401,7 +429,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
     const [removed] = newOrder.splice(dragIndex, 1)
     newOrder.splice(dropIndex, 0, removed)
 
-    // 서버에 순서 업데이트 요청
+    // 서버에 순서 변경 요청
     try {
       const res = await fetch('/api/admin/gallery', {
         method: 'PUT',
@@ -411,7 +439,9 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       const data = await res.json()
 
       if (data.success) {
+        // 즉시 외부 상태 업데이트
         onUpdate()
+        alert('갤러리 순서가 변경되었습니다.')
       } else {
         alert(data.error || '순서 변경에 실패했습니다.')
       }
@@ -500,7 +530,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
 // 방명록 관리 섹션 컴포넌트
 const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbook[], onUpdate: () => void, loading: boolean }) => {
   const handleDelete = async (id: number) => {
-    if (!confirm('이 방명록을 삭제하시겠습니까?')) return
+    if (!confirm('정말로 이 방명록을 삭제하시겠습니까?')) return
 
     try {
       const res = await fetch(`/api/admin/guestbook/${id}`, {
@@ -509,6 +539,7 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
       const data = await res.json()
 
       if (data.success) {
+        // 즉시 외부 상태 업데이트
         onUpdate()
         alert('방명록이 삭제되었습니다.')
       } else {
@@ -604,12 +635,12 @@ export default function AdminPage() {
   }, [])
 
   // 로그인 처리
-  const handleLogin = async (password: string) => {
+  const handleLogin = async (username: string, password: string) => {
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       })
       const data = await res.json()
 
@@ -634,7 +665,7 @@ export default function AdminPage() {
     }
   }
 
-  // 데이터 로딩
+  // 데이터 로딩 및 개별 업데이트 함수들
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return
 
@@ -662,6 +693,58 @@ export default function AdminPage() {
       setLoading(prev => ({ ...prev, gallery: false, guestbook: false, contacts: false }))
     }
   }, [isAuthenticated])
+
+  // 개별 섹션 업데이트 함수들
+  const updateGallery = useCallback(async () => {
+    try {
+      setLoading(prev => ({ ...prev, gallery: true }))
+      const res = await fetch('/api/gallery')
+      const data = await res.json()
+      if (data.success) {
+        setGallery(data.data)
+      }
+    } catch (error) {
+      console.error('Error updating gallery:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, gallery: false }))
+    }
+  }, [])
+
+  const updateGuestbook = useCallback(async () => {
+    try {
+      setLoading(prev => ({ ...prev, guestbook: true }))
+      const res = await fetch('/api/guestbook')
+      const data = await res.json()
+      if (data.success) {
+        setGuestbook(data.data)
+      }
+    } catch (error) {
+      console.error('Error updating guestbook:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, guestbook: false }))
+    }
+  }, [])
+
+  const updateContacts = useCallback(async () => {
+    try {
+      console.log('🔍 [DEBUG] updateContacts called')
+      setLoading(prev => ({ ...prev, contacts: true }))
+      const res = await fetch('/api/contacts')
+      const data = await res.json()
+      console.log('🔍 [DEBUG] Contacts fetch response:', data)
+      if (data.success) {
+        console.log('✅ [DEBUG] Setting contacts state:', data.data)
+        setContacts(data.data)
+      } else {
+        console.log('❌ [DEBUG] Contacts fetch failed:', data.error)
+      }
+    } catch (error) {
+      console.error('❌ [DEBUG] Error updating contacts:', error)
+    } finally {
+      setLoading(prev => ({ ...prev, contacts: false }))
+      console.log('🔍 [DEBUG] updateContacts completed')
+    }
+  }, [])
 
   useEffect(() => {
     fetchData()
@@ -722,21 +805,21 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {/* 메인 이미지 관리 탭 */}
-          {activeTab === 'main' && <MainImageSection />}
+          {activeTab === 'main' && <MainImageSection onUpdate={updateGallery} />}
 
           {/* 연락처 관리 탭 */}
           {activeTab === 'contacts' && (
-            <ContactsSection contacts={contacts} onUpdate={fetchData} />
+            <ContactsSection contacts={contacts} onUpdate={updateContacts} />
           )}
 
           {/* 갤러리 관리 탭 */}
           {activeTab === 'gallery' && (
-            <GallerySection gallery={gallery} onUpdate={fetchData} loading={loading.gallery} />
+            <GallerySection gallery={gallery} onUpdate={updateGallery} loading={loading.gallery} />
           )}
 
           {/* 방명록 관리 탭 */}
           {activeTab === 'guestbook' && (
-            <GuestbookSection guestbook={guestbook} onUpdate={fetchData} loading={loading.guestbook} />
+            <GuestbookSection guestbook={guestbook} onUpdate={updateGuestbook} loading={loading.guestbook} />
           )}
         </div>
       </main>

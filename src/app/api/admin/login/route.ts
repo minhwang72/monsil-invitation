@@ -1,89 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
-import type { ApiResponse } from '@/types'
-import type { RowDataPacket } from 'mysql2'
+import { decryptPassword } from '@/lib/crypto'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { password } = body
+    const { username, password } = await request.json()
 
-    if (!password) {
-      return NextResponse.json<ApiResponse<null>>(
-        {
-          success: false,
-          error: 'Password is required',
-        },
+    if (!username || !password) {
+      return NextResponse.json(
+        { success: false, message: '사용자명과 비밀번호를 입력해주세요.' },
         { status: 400 }
       )
     }
 
-    // Check if admin table exists, create if not
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS admin (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          password VARCHAR(255) NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `)
-
-      // Insert default admin password if table is empty
-      const [rows] = await pool.query('SELECT COUNT(*) as count FROM admin')
-      const typedRows = rows as { count: number }[]
-      const count = typedRows[0].count
-
-      if (count === 0) {
-        await pool.query(
-          'INSERT INTO admin (password) VALUES (?)',
-          ['admin123'] // 기본 비밀번호
-        )
-      }
-    } catch (error) {
-      console.error('Error setting up admin table:', error)
-    }
-
-    // Verify password
-    const [adminRows] = await pool.query(
-      'SELECT id FROM admin WHERE password = ? LIMIT 1',
-      [password]
+    // 사용자명으로 admin 조회
+    const [rows] = await pool.query(
+      'SELECT id, username, password FROM admin WHERE username = ?',
+      [username]
     )
-    const resultRows = Array.isArray(adminRows) ? adminRows as RowDataPacket[] : []
     
-    if (!resultRows.length) {
-      return NextResponse.json<ApiResponse<null>>(
-        {
-          success: false,
-          error: 'Invalid password',
-        },
+    const adminRows = rows as { id: number; username: string; password: string }[]
+    
+    if (adminRows.length === 0) {
+      return NextResponse.json(
+        { success: false, message: '잘못된 사용자명 또는 비밀번호입니다.' },
         { status: 401 }
       )
     }
 
-    // Create session token (simple implementation)
-    const sessionToken = `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const admin = adminRows[0]
     
-    const response = NextResponse.json<ApiResponse<{ token: string }>>({
+    // 저장된 암호화된 비밀번호를 복호화해서 비교
+    try {
+      const decryptedPassword = decryptPassword(admin.password)
+      
+      if (password !== decryptedPassword) {
+        return NextResponse.json(
+          { success: false, message: '잘못된 사용자명 또는 비밀번호입니다.' },
+          { status: 401 }
+        )
+      }
+    } catch (error) {
+      console.error('Password decryption error:', error)
+      return NextResponse.json(
+        { success: false, message: '로그인 처리 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
+    }
+
+    // 세션 생성 (24시간)
+    const sessionId = `admin_${admin.id}_${Date.now()}`
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24시간
+
+    const response = NextResponse.json({
       success: true,
-      data: { token: sessionToken }
+      message: '로그인에 성공했습니다.',
+      admin: {
+        id: admin.id,
+        username: admin.username
+      }
     })
 
-    // Set session cookie (24 hours)
-    response.cookies.set('admin_session', sessionToken, {
+    // httpOnly 쿠키 설정
+    response.cookies.set('admin_session', sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 // 24 hours
+      sameSite: 'lax',
+      expires: expiresAt,
+      path: '/'
     })
 
     return response
+
   } catch (error) {
-    console.error('Error in admin login:', error)
-    return NextResponse.json<ApiResponse<null>>(
-      {
-        success: false,
-        error: 'Login failed',
-      },
+    console.error('Login error:', error)
+    return NextResponse.json(
+      { success: false, message: '로그인 처리 중 오류가 발생했습니다.' },
       { status: 500 }
     )
   }

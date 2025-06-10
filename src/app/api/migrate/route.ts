@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { encryptPassword } from '@/lib/crypto'
 
 interface MySQLError extends Error {
   code?: string
@@ -75,24 +76,45 @@ export async function POST() {
       }
     }
 
-    // 5. 메인 이미지는 1개만 존재하도록 하는 트리거 생성
+    // 4-1. gallery 테이블에 filename 컬럼 추가 (기존 테이블에 없을 경우)
+    try {
+      await pool.query(`
+        ALTER TABLE gallery 
+        ADD COLUMN filename VARCHAR(255) NOT NULL DEFAULT ''
+      `)
+      migrations.push('gallery: filename column added')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('gallery: filename column already exists')
+      } else {
+        console.log('Gallery filename column migration skipped:', mysqlError.message)
+      }
+    }
+
+    // 4-2. gallery 테이블에서 url 컬럼 제거 (filename 사용으로 변경)
+    try {
+      await pool.query(`
+        ALTER TABLE gallery 
+        DROP COLUMN url
+      `)
+      migrations.push('gallery: url column removed (using filename instead)')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_CANT_DROP_FIELD_OR_KEY') {
+        migrations.push('gallery: url column already removed')
+      } else {
+        console.log('Gallery url column removal skipped:', mysqlError.message)
+      }
+    }
+
+    // 5. 메인 이미지 트리거 제거 (문제 발생으로 인해)
     try {
       await pool.query(`DROP TRIGGER IF EXISTS enforce_single_main_image`)
-      await pool.query(`
-        CREATE TRIGGER enforce_single_main_image
-        BEFORE INSERT ON gallery
-        FOR EACH ROW
-        BEGIN
-          IF NEW.image_type = 'main' THEN
-            UPDATE gallery SET deleted_at = NOW() WHERE image_type = 'main' AND deleted_at IS NULL;
-          END IF;
-        END
-      `)
-      migrations.push('main image constraint trigger created')
+      migrations.push('main image constraint trigger removed (handled in app logic)')
     } catch (error) {
-      console.error('Trigger creation error:', error)
-      // 트리거 생성 실패는 치명적이지 않으므로 계속 진행
-      migrations.push('main image constraint trigger creation failed (non-critical)')
+      console.error('Trigger removal error:', error)
+      migrations.push('trigger removal failed (non-critical)')
     }
 
     // 6. contacts 테이블 생성
@@ -239,6 +261,58 @@ export async function POST() {
     } catch (error) {
       console.error('KakaoPay link update error:', error)
       migrations.push('kakaopay link update failed (non-critical)')
+    }
+
+    // 13. admin 테이블 생성 및 username 컬럼 추가
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS admin (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          username VARCHAR(50) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      migrations.push('admin table created or already exists')
+    } catch (error) {
+      console.error('Admin table creation error:', error)
+      migrations.push('admin table creation failed (non-critical)')
+    }
+
+    // username 컬럼이 없으면 추가
+    try {
+      await pool.query(`
+        ALTER TABLE admin 
+        ADD COLUMN username VARCHAR(50) NOT NULL UNIQUE FIRST
+      `)
+      migrations.push('admin: username column added')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('admin: username column already exists')
+      } else {
+        console.log('Admin username column migration skipped:', mysqlError.message)
+      }
+    }
+
+    // 14. 기존 admin 데이터 삭제 후 새로운 admin 추가
+    try {
+      // 기존 admin 모두 삭제
+      await pool.query('DELETE FROM admin')
+      migrations.push('existing admin records deleted')
+      
+      // 새로운 admin 두 명 추가 (암호화된 비밀번호)
+      const minPassword = encryptPassword('f8tgw3lshms!')
+      const solPassword = encryptPassword('qlrqod1027@')
+      
+      await pool.query(
+        'INSERT INTO admin (username, password) VALUES (?, ?), (?, ?)',
+        ['min', minPassword, 'sol', solPassword]
+      )
+      migrations.push('new admin accounts (min, sol) created with encrypted passwords')
+    } catch (error) {
+      console.error('Admin setup error:', error)
+      migrations.push('admin setup failed (non-critical)')
     }
 
     return NextResponse.json({

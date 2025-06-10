@@ -33,6 +33,15 @@ jobs:
         echo "PORT=1108" >> $GITHUB_ENV
         echo "HOST=0.0.0.0" >> $GITHUB_ENV
         echo "NODE_ENV=production" >> $GITHUB_ENV
+    
+        echo "Loaded ENV values:"
+        echo "DOCKER_IMAGE=${{ secrets.DOCKER_IMAGE }}"   # OK (이미지명은 보통 노출돼도 됨)
+        echo "DOCKER_TAG=${{ secrets.DOCKER_TAG }}"       # OK
+        echo "SERVER_HOST=${{ secrets.SERVER_HOST }}"     # OK
+        echo "SERVER_PORT=${{ secrets.SERVER_PORT }}"     # OK
+        echo "SERVER_USER=${{ secrets.SERVER_USER }}"     # OK
+      shell: bash
+      
 
     - name: Clean and Install dependencies
       run: |

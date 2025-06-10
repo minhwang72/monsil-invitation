@@ -6,13 +6,19 @@ export async function GET() {
   try {
     // 갤러리 이미지들 조회 (삭제되지 않은 것만)
     const [rows] = await pool.query(
-      'SELECT id, url, description, created_at, image_type FROM gallery WHERE deleted_at IS NULL ORDER BY image_type DESC, created_at DESC'
+      'SELECT id, filename, created_at, image_type FROM gallery WHERE deleted_at IS NULL ORDER BY image_type DESC, created_at DESC'
     )
-    const galleryRows = rows as Gallery[]
+    const galleryRows = rows as { id: number; filename: string; created_at: Date; image_type: 'main' | 'gallery' }[]
+    
+    // filename을 url로 변환하여 Gallery 타입으로 변환
+    const galleryData: Gallery[] = galleryRows.map(row => ({
+      ...row,
+      url: `/uploads/${row.filename}`
+    }))
     
     const response = NextResponse.json<ApiResponse<Gallery[]>>({
       success: true,
-      data: galleryRows,
+      data: galleryData,
     })
 
     // 캐싱 헤더 추가 (5분 캐시)

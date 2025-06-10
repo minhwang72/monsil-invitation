@@ -12,6 +12,7 @@ export interface ContactPerson {
 export interface Gallery {
   id: number;
   url: string;
+  filename?: string;
   description?: string;
   image_type: 'main' | 'gallery';
   created_at: Date | string;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { deletePhysicalFile } from '@/lib/fileUtils'
 import type { ApiResponse } from '@/types'
 
 function getIdFromRequest(request: NextRequest) {
@@ -25,6 +26,23 @@ export async function DELETE(request: NextRequest) {
 
     const id = getIdFromRequest(request)
 
+    // Get filename before deleting
+    const [existingRows] = await pool.query(
+      'SELECT filename FROM gallery WHERE id = ? AND deleted_at IS NULL',
+      [id]
+    )
+    const existingImages = existingRows as { filename: string }[]
+
+    if (existingImages.length === 0) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: 'Gallery item not found',
+        },
+        { status: 404 }
+      )
+    }
+
     // Soft delete gallery item
     const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
     const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -33,6 +51,11 @@ export async function DELETE(request: NextRequest) {
       'UPDATE gallery SET deleted_at = ? WHERE id = ?',
       [formattedTime, id]
     )
+
+    // Delete physical file
+    if (existingImages[0].filename) {
+      await deletePhysicalFile(existingImages[0].filename)
+    }
 
     return NextResponse.json<ApiResponse<null>>({
       success: true,
