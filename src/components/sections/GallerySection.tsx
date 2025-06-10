@@ -213,15 +213,50 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 이미지 컨테이너 */}
           <div 
-            className="relative max-w-4xl max-h-[80vh] mx-auto flex items-center justify-center p-8"
+            className="relative max-w-4xl max-h-[80vh] mx-auto flex flex-col items-center justify-center p-8"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            {'isPlaceholder' in displayImages[currentImageIndex] && displayImages[currentImageIndex].isPlaceholder ? (
-              <div className="bg-gray-100 rounded-lg flex items-center justify-center w-96 h-96">
+            <div className="flex-1 flex items-center justify-center w-full">
+              {'isPlaceholder' in displayImages[currentImageIndex] && displayImages[currentImageIndex].isPlaceholder ? (
+                <div className="bg-gray-100 rounded-lg flex items-center justify-center w-96 h-96">
+                  <svg
+                    className="w-24 h-24 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              ) : (
+                <div className="relative w-full max-w-3xl max-h-[60vh] aspect-auto">
+                  <Image
+                    src={`/uploads/${displayImages[currentImageIndex]?.filename}`}
+                    alt="Gallery"
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 90vw, (max-width: 1200px) 80vw, 70vw"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 이전/다음 텍스트 버튼 */}
+            <div className="w-full max-w-md flex justify-between items-center mt-6 px-4">
+              <button
+                onClick={goToPrevious}
+                className="flex items-center gap-1 text-white hover:text-gray-300 transition-colors font-sans underline underline-offset-2"
+              >
                 <svg
-                  className="w-24 h-24 text-gray-300"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -230,27 +265,39 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
                   />
                 </svg>
-              </div>
-            ) : (
-              <div className="relative w-full max-w-3xl max-h-[70vh] aspect-auto">
-                <Image
-                  src={`/uploads/${displayImages[currentImageIndex]?.filename}`}
-                  alt="Gallery"
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 90vw, (max-width: 1200px) 80vw, 70vw"
-                />
-              </div>
-            )}
-          </div>
+                이전
+              </button>
 
-          {/* 이미지 인덱스 표시 */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm">
-            {currentImageIndex + 1} / {displayImages.length}
+              <button
+                onClick={goToNext}
+                className="flex items-center gap-1 text-white hover:text-gray-300 transition-colors font-sans underline underline-offset-2"
+              >
+                다음
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* 이미지 인덱스 표시 */}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-sm">
+              {currentImageIndex + 1} / {displayImages.length}
+            </div>
           </div>
         </div>
       )}
