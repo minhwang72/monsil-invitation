@@ -7,7 +7,7 @@ interface GallerySectionProps {
 
 export default function GallerySection({ gallery }: GallerySectionProps) {
   return (
-    <section className="w-full py-12 md:py-16 px-4">
+    <section className="w-full py-0 md:py-16 px-4">
       <div className="max-w-md mx-auto bg-white rounded-2xl p-6 md:p-8 shadow-lg">
         <h2 className="text-xl md:text-2xl font-score text-center mb-6 md:mb-8">Gallery</h2>
         <div className="grid grid-cols-2 gap-4">

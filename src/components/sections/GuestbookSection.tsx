@@ -265,7 +265,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 min-h-[200px] mb-16">
+                <div className="flex flex-col items-center justify-center py-8 md:py-16 min-h-[200px] mb-8 md:mb-16">
                   <p className="text-lg text-gray-500 mb-2 font-sans font-normal text-center">메시지가 없습니다.</p>
                   <p className="text-lg text-gray-500 font-sans font-normal text-center">첫 메시지를 작성해주세요.</p>
                 </div>

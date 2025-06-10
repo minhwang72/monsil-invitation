@@ -4,16 +4,22 @@ import type { ApiResponse, Guestbook } from '@/types'
 
 export async function GET() {
   try {
-    // deleted_at이 null인 레코드만 가져오기
+    // 캐시 헤더와 함께 응답 최적화
     const [rows] = await pool.query(
-      'SELECT id, name, content, created_at FROM guestbook WHERE deleted_at IS NULL ORDER BY created_at DESC'
+      'SELECT id, name, content, created_at FROM guestbook WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 50'
     )
     const guestbookRows = rows as Guestbook[]
     
-    return NextResponse.json<ApiResponse<Guestbook[]>>({
+    const response = NextResponse.json<ApiResponse<Guestbook[]>>({
       success: true,
       data: guestbookRows,
     })
+
+    // 캐싱 헤더 추가 (1분 캐시)
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=60')
+    
+    return response
   } catch (error) {
     console.error('Error fetching guestbook:', error)
     return NextResponse.json<ApiResponse<null>>(
