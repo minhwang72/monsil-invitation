@@ -58,46 +58,60 @@ export default function BlessingSection() {
   }
 
   return (
-    <section ref={sectionRef} className="w-full py-16 px-10 font-sans">
-      <div className="max-w-2xl mx-auto text-center space-y-6">
-        {/* 첫 번째 문단 */}
-        <div className="space-y-4">
-          <p className={lineClass(0)}>
-            하나님께서 인도하신 만남 속에서
-          </p>
-          <p className={lineClass(1)}>
-            서로의 존재에 감사하며
-          </p>
-          <p className={lineClass(2)}>
-            가장 진실한 사랑으로 하나 되고자 합니다.
-          </p>
+    <section ref={sectionRef} className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-gray-50/50">
+      <div className="max-w-xl mx-auto text-center w-full px-8">
+        {/* 제목 */}
+        <h2 className="text-4xl font-light mb-16 tracking-wider text-gray-700 font-english english-text">
+          MESSAGE
+        </h2>
+
+        {/* 상단 가로선 */}
+        <div className="w-full h-px bg-gray-200 mb-8"></div>
+
+        {/* 메시지 내용 */}
+        <div className="space-y-6 mb-8">
+          {/* 첫 번째 문단 */}
+          <div className="space-y-4">
+            <p className={lineClass(0)}>
+              하나님께서 인도하신 만남 속에서
+            </p>
+            <p className={lineClass(1)}>
+              서로의 존재에 감사하며
+            </p>
+            <p className={lineClass(2)}>
+              가장 진실한 사랑으로 하나 되고자 합니다.
+            </p>
+          </div>
+
+          {/* 두 번째 문단 */}
+          <div className="space-y-4">
+            <p className={lineClass(3)}>
+              따스한 축복 아래, 새로운 시작을 앞두고
+            </p>
+            <p className={lineClass(4)}>
+              저희 두 사람이 주님 안에서
+            </p>
+            <p className={lineClass(5)}>
+              사랑과 믿음으로 가정을 이루려 합니다.
+            </p>
+          </div>
+
+          {/* 세 번째 문단 */}
+          <div className="space-y-4">
+            <p className={lineClass(6)}>
+              소중한 분들을 모시고
+            </p>
+            <p className={lineClass(7)}>
+              그 첫걸음을 함께 나누고 싶습니다.
+            </p>
+            <p className={lineClass(8)}>
+              축복으로 함께해 주시면 감사하겠습니다.
+            </p>
+          </div>
         </div>
 
-        {/* 두 번째 문단 */}
-        <div className="space-y-4">
-          <p className={lineClass(3)}>
-            따스한 축복 아래, 새로운 시작을 앞두고
-          </p>
-          <p className={lineClass(4)}>
-            저희 두 사람이 주님 안에서
-          </p>
-          <p className={lineClass(5)}>
-            사랑과 믿음으로 가정을 이루려 합니다.
-          </p>
-        </div>
-
-        {/* 세 번째 문단 */}
-        <div className="space-y-4">
-          <p className={lineClass(6)}>
-            소중한 분들을 모시고
-          </p>
-          <p className={lineClass(7)}>
-            그 첫걸음을 함께 나누고 싶습니다.
-          </p>
-          <p className={lineClass(8)}>
-            축복으로 함께해 주시면 감사하겠습니다.
-          </p>
-        </div>
+        {/* 하단 가로선 */}
+        <div className="w-full h-px bg-gray-200"></div>
       </div>
     </section>
   )
