@@ -15,6 +15,8 @@ type DisplayImage = Gallery | {
 export default function GallerySection({ gallery }: GallerySectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
 
   // 갤러리가 비어있을 때 플레이스홀더 이미지 배열 생성
   const placeholderImages: DisplayImage[] = Array.from({ length: 6 }, (_, index) => ({
@@ -57,6 +59,31 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     if (e.key === 'Escape') closeModal()
     if (e.key === 'ArrowLeft') goToPrevious()
     if (e.key === 'ArrowRight') goToNext()
+  }
+
+  // 터치 이벤트 핸들러
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null) // 이전 터치 종료점 초기화
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > 50
+    const isRightSwipe = distance < -50
+
+    if (isLeftSwipe) {
+      goToNext() // 왼쪽으로 스와이프하면 다음 이미지
+    }
+    if (isRightSwipe) {
+      goToPrevious() // 오른쪽으로 스와이프하면 이전 이미지
+    }
   }
 
   return (
@@ -119,15 +146,18 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-90"
           onClick={handleBackgroundClick}
           onKeyDown={handleKeyDown}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
           tabIndex={-1}
         >
           {/* 닫기 버튼 */}
           <button
             onClick={closeModal}
-            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors"
+            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors p-2 md:p-1"
           >
             <svg
-              className="w-8 h-8"
+              className="w-10 h-10 md:w-8 md:h-8"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -145,10 +175,10 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           {/* 이전 버튼 */}
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 md:p-1"
           >
             <svg
-              className="w-8 h-8"
+              className="w-10 h-10 md:w-8 md:h-8"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -166,10 +196,10 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           {/* 다음 버튼 */}
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 md:p-1"
           >
             <svg
-              className="w-8 h-8"
+              className="w-10 h-10 md:w-8 md:h-8"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
