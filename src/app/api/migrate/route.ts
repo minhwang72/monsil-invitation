@@ -119,7 +119,8 @@ export async function POST() {
     try {
       // 기존 데이터가 있는지 확인
       const [existingRows] = await pool.query('SELECT COUNT(*) as count FROM contacts')
-      const count = (existingRows as any[])[0].count
+      const typedRows = existingRows as { count: number }[]
+      const count = typedRows[0].count
       
       if (count === 0) {
         // 초기 연락처 데이터 삽입

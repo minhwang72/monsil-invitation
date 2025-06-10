@@ -40,16 +40,23 @@ const fetchWithCache = async (url: string) => {
 const SimpleLoading = ({ type }: { type: 'gallery' | 'guestbook' }) => {
   if (type === 'gallery') {
     return (
-      <section className="w-full py-0 md:py-0 px-0 font-sans">
-        <div className="w-full">
-          <div className="p-6 md:p-8">
-            <div className="h-8 bg-gray-200 rounded animate-pulse mb-6 md:mb-8 w-32 mx-auto"></div>
-            <div className="grid grid-cols-2 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="aspect-square bg-gray-200 rounded-lg animate-pulse"></div>
-              ))}
-            </div>
+      <section className="w-full h-screen flex flex-col justify-center px-0 font-sans bg-gray-50/50">
+        <div className="max-w-xl mx-auto text-center w-full px-8">
+          {/* 제목 스켈레톤 */}
+          <div className="h-10 bg-gray-200 rounded animate-pulse mb-16 w-40 mx-auto"></div>
+          
+          {/* 상단 가로선 */}
+          <div className="w-full h-px bg-gray-200 mb-8"></div>
+          
+          {/* 갤러리 그리드 스켈레톤 */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="aspect-square bg-gray-200 animate-pulse"></div>
+            ))}
           </div>
+          
+          {/* 하단 가로선 */}
+          <div className="w-full h-px bg-gray-200"></div>
         </div>
       </section>
     )
@@ -158,7 +165,6 @@ export default function Home() {
         <CoverSection />
         <WeddingDateSection />
         <ContactSection />
-        <DetailsSection />
         
         {loading.gallery ? (
           <SimpleLoading type="gallery" />
@@ -166,6 +172,7 @@ export default function Home() {
           <GallerySection gallery={gallery} />
         )}
         
+        <DetailsSection />
         <BlessingSection />
         
         {loading.guestbook ? (

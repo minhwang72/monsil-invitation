@@ -37,9 +37,9 @@ export default function CoverSection() {
 
   return (
     <section className="w-full h-screen flex flex-col justify-center px-10 font-sans">
-      <div className="flex flex-col my-auto" style={{height: '60vh'}}>
+      <div className="flex flex-col my-auto" style={{height: '75vh'}}>
         {/* 이름 좌우 정렬 */}
-        <div className="flex justify-between items-center mb-10">
+        <div className="flex justify-between items-center mb-8">
           <h1 className="text-lg font-sans font-normal text-gray-900">황민</h1>
           
           {/* 장식 SVG */}
@@ -75,8 +75,8 @@ export default function CoverSection() {
           <h1 className="text-lg font-sans font-normal text-gray-900">이은솔</h1>
         </div>
 
-        {/* 사진 영역 (세로 2/3 차지) */}
-        <div className="flex-1 flex items-center mb-10">
+        {/* 사진 영역 (더 세로로 늘림) */}
+        <div className="flex-1 flex items-center mb-6">
           <div className="w-full h-full">
             <div className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden">
               {isLoading ? (
@@ -125,7 +125,7 @@ export default function CoverSection() {
         </div>
 
         {/* 날짜와 시간 */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <p className="text-lg font-sans font-normal text-gray-900">
             2025. 11. 08. 12:30 PM
           </p>

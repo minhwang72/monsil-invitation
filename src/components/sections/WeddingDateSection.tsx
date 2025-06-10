@@ -31,8 +31,8 @@ export default function WeddingDateSection() {
     const baseClass = "flex items-center justify-center w-14 h-14 text-lg font-medium transition-all duration-300"
     
     if (dayInfo.isWeddingDay) {
-      // 결혼 당일 (8일) - 라벤더 원
-      return `${baseClass} bg-purple-300 text-white rounded-full shadow-lg transform scale-110`
+      // 결혼 당일 (8일) - 기본 스타일 (라벤더 원은 별도로 렌더링)
+      return `${baseClass} text-gray-600 relative`
     } else if (dayInfo.dayOfWeek === 0) {
       // 일요일 - 연분홍 (더 연하게)
       return `${baseClass} font-semibold text-pink-300`
@@ -71,7 +71,20 @@ export default function WeddingDateSection() {
         <div className="grid grid-cols-7 gap-3">
           {calendarDays.map((dayInfo, dayIndex) => (
             <div key={dayIndex} className={getDayClass(dayInfo)}>
-              {dayInfo?.day || ''}
+              {dayInfo?.isWeddingDay ? (
+                <>
+                  {/* 작은 라벤더 원 배경 */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-10 h-10 bg-purple-300 rounded-full shadow-sm"></div>
+                  </div>
+                  {/* 흰색 숫자 */}
+                  <span className="relative z-10 text-white font-medium">
+                    {dayInfo.day}
+                  </span>
+                </>
+              ) : (
+                dayInfo?.day || ''
+              )}
             </div>
           ))}
         </div>
