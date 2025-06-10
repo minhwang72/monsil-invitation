@@ -1,15 +1,5 @@
-import type { Metadata, Viewport } from "next";
+import type { Viewport } from "next";
 import "./globals.css";
-
-export const metadata: Metadata = {
-  title: "We invite you to our wedding",
-  description: "2025년 11월 8일, 황민 ♥ 이은솔의 결혼식에 초대합니다.",
-  icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
-  },
-};
 
 export const viewport: Viewport = {
   width: 'device-width',
