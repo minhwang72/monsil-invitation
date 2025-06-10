@@ -18,7 +18,9 @@ export interface Account {
 export interface Gallery {
   id: number;
   filename: string;
+  image_type: 'main' | 'gallery';
   created_at: Date;
+  deleted_at?: Date | null;
 }
 
 export interface Guestbook {

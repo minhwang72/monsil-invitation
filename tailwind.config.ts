@@ -17,8 +17,9 @@ const config: Config = {
         text: '#5A4B41',
       },
       fontFamily: {
-        sans: ['SpoqaHanSansNeo', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
-        score: ['SpoqaHanSansNeo', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['PyeojinGothic', 'MaruBuri', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        score: ['PyeojinGothic', 'MaruBuri', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        english: ['MaruBuri', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'serif'],
       },
     },
   },

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Gallery, Guestbook } from '@/types'
 import CoverSection from '@/components/sections/CoverSection'
+import WeddingDateSection from '@/components/sections/WeddingDateSection'
+import BlessingSection from '@/components/sections/BlessingSection'
 import DetailsSection from '@/components/sections/DetailsSection'
 import GallerySection from '@/components/sections/GallerySection'
 import GuestbookSection from '@/components/sections/GuestbookSection'
@@ -86,7 +88,6 @@ const SimpleLoading = ({ type }: { type: 'gallery' | 'guestbook' }) => {
 export default function Home() {
   const [gallery, setGallery] = useState<Gallery[]>([])
   const [guestbook, setGuestbook] = useState<Guestbook[]>([])
-  const [dDay, setDDay] = useState<number>(0)
   const [loading, setLoading] = useState({
     gallery: true,
     guestbook: true,
@@ -148,19 +149,13 @@ export default function Home() {
     }
 
     fetchInitialData()
-
-    // D-day 계산 (즉시 계산)
-    const weddingDate = new Date('2024-11-08')
-    const today = new Date()
-    const diffTime = weddingDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    setDDay(diffDays)
   }, [])
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-sky/10 py-0 md:py-8">
       <div className="w-full max-w-[500px] mx-auto bg-white md:rounded-2xl md:shadow-lg overflow-hidden">
-        <CoverSection dDay={dDay} />
+        <CoverSection />
+        <WeddingDateSection />
         <DetailsSection />
         
         {loading.gallery ? (
@@ -168,6 +163,8 @@ export default function Home() {
         ) : (
           <GallerySection gallery={gallery} />
         )}
+        
+        <BlessingSection />
         
         {loading.guestbook ? (
           <SimpleLoading type="guestbook" />
