@@ -189,6 +189,12 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
 const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], onUpdate: () => void }) => {
   const [editingContact, setEditingContact] = useState<ContactPerson | null>(null)
   const [saving, setSaving] = useState(false)
+  const [localContacts, setLocalContacts] = useState<ContactPerson[]>(contacts)
+
+  // contacts prop이 변경되면 로컬 상태도 업데이트
+  useEffect(() => {
+    setLocalContacts(contacts)
+  }, [contacts])
 
   const handleEdit = (contact: ContactPerson) => {
     setEditingContact({ ...contact })
@@ -209,9 +215,18 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
       console.log('🔍 [DEBUG] Save response:', data)
 
       if (data.success) {
-        console.log('✅ [DEBUG] Contact saved successfully, calling onUpdate')
+        console.log('✅ [DEBUG] Contact saved successfully, updating local state')
+        
+        // 즉시 로컬 상태 업데이트
+        setLocalContacts(prev => 
+          prev.map(contact => 
+            contact.id === editingContact.id ? editingContact : contact
+          )
+        )
+        
         setEditingContact(null)
-        // 먼저 외부 상태 업데이트
+        
+        // 외부 상태도 업데이트
         await onUpdate()
         console.log('✅ [DEBUG] onUpdate completed')
         alert('연락처가 업데이트되었습니다.')
@@ -242,7 +257,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
       <h2 className="text-2xl font-bold text-gray-900 mb-6">연락처 관리</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {contacts.map((contact) => (
+        {localContacts.map((contact) => (
           <div key={contact.id} className="border rounded-lg p-4">
             <div className="flex justify-between items-start mb-4">
               <div>
@@ -252,7 +267,8 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
               </div>
               <button
                 onClick={() => handleEdit(contact)}
-                className="text-purple-600 hover:text-purple-900 text-sm"
+                disabled={saving}
+                className="text-purple-600 hover:text-purple-900 text-sm disabled:opacity-50"
               >
                 수정
               </button>
@@ -316,7 +332,8 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                   </button>
                   <button
                     onClick={() => setEditingContact(null)}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded"
+                    disabled={saving}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded disabled:opacity-50"
                   >
                     취소
                   </button>
@@ -352,43 +369,84 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
 // 갤러리 관리 섹션 컴포넌트
 const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], onUpdate: () => void, loading: boolean }) => {
   const [uploading, setUploading] = useState(false)
-  const [draggedItem, setDraggedItem] = useState<Gallery | null>(null)
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // 다중 파일 업로드
+  const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
     setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('image_type', 'gallery')
-
+    console.log('🔍 [DEBUG] Uploading', files.length, 'files')
+    
     try {
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await res.json()
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('image_type', 'gallery')
 
-      if (data.success) {
-        // 즉시 외부 상태 업데이트
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        })
+        return res.json()
+      })
+
+      const results = await Promise.all(uploadPromises)
+      const successCount = results.filter(result => result.success).length
+      const failCount = results.length - successCount
+
+      if (successCount > 0) {
         onUpdate()
-        alert('이미지가 업로드되었습니다.')
+        alert(`${successCount}개 이미지가 업로드되었습니다.${failCount > 0 ? ` (${failCount}개 실패)` : ''}`)
       } else {
-        alert(data.error || '업로드에 실패했습니다.')
+        alert('모든 이미지 업로드에 실패했습니다.')
       }
     } catch (error) {
-      console.error('Error uploading image:', error)
+      console.error('❌ [DEBUG] Error uploading images:', error)
       alert('업로드 중 오류가 발생했습니다.')
     } finally {
       setUploading(false)
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('정말로 이 이미지를 삭제하시겠습니까?')) return
+  // 선택된 아이템들 삭제
+  const handleDeleteSelected = async () => {
+    if (selectedItems.size === 0) return
+    if (!confirm(`선택된 ${selectedItems.size}개 이미지를 삭제하시겠습니까?`)) return
+
+    try {
+      console.log('🔍 [DEBUG] Deleting selected items:', Array.from(selectedItems))
+      const deletePromises = Array.from(selectedItems).map(async (id) => {
+        const res = await fetch(`/api/admin/gallery/${id}`, {
+          method: 'DELETE',
+        })
+        return res.json()
+      })
+
+      const results = await Promise.all(deletePromises)
+      const successCount = results.filter(result => result.success).length
+      const failCount = results.length - successCount
+
+      setSelectedItems(new Set())
+      onUpdate()
+      
+      if (successCount > 0) {
+        alert(`${successCount}개 이미지가 삭제되었습니다.${failCount > 0 ? ` (${failCount}개 실패)` : ''}`)
+      } else {
+        alert('이미지 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('❌ [DEBUG] Error deleting images:', error)
+      alert('삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 단일 아이템 삭제
+  const handleDeleteSingle = async (id: number) => {
+    if (!confirm('이 이미지를 삭제하시겠습니까?')) return
 
     try {
       const res = await fetch(`/api/admin/gallery/${id}`, {
@@ -397,39 +455,49 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       const data = await res.json()
 
       if (data.success) {
-        // 즉시 외부 상태 업데이트
         onUpdate()
         alert('이미지가 삭제되었습니다.')
       } else {
         alert(data.error || '삭제에 실패했습니다.')
       }
     } catch (error) {
-      console.error('Error deleting image:', error)
+      console.error('❌ [DEBUG] Error deleting image:', error)
       alert('삭제 중 오류가 발생했습니다.')
     }
   }
 
-  const handleDragStart = (e: React.DragEvent, item: Gallery) => {
-    setDraggedItem(item)
+  // 아이템 선택/해제
+  const toggleSelection = (id: number) => {
+    const newSelected = new Set(selectedItems)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedItems(newSelected)
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
+  // 전체 선택/해제
+  const toggleSelectAll = () => {
+    if (selectedItems.size === galleryItems.length) {
+      setSelectedItems(new Set())
+    } else {
+      setSelectedItems(new Set(galleryItems.map(item => item.id)))
+    }
   }
 
-  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault()
-    if (!draggedItem) return
+  // 순서 변경 (위로/아래로)
+  const moveItem = async (id: number, direction: 'up' | 'down') => {
+    const currentIndex = galleryItems.findIndex(item => item.id === id)
+    if (currentIndex === -1) return
+    
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    if (newIndex < 0 || newIndex >= galleryItems.length) return
 
-    const dragIndex = galleryItems.findIndex(item => item.id === draggedItem.id)
-    if (dragIndex === dropIndex) return
-
-    // 새로운 순서 생성
     const newOrder = [...galleryItems]
-    const [removed] = newOrder.splice(dragIndex, 1)
-    newOrder.splice(dropIndex, 0, removed)
+    const [movedItem] = newOrder.splice(currentIndex, 1)
+    newOrder.splice(newIndex, 0, movedItem)
 
-    // 서버에 순서 변경 요청
     try {
       const res = await fetch('/api/admin/gallery', {
         method: 'PUT',
@@ -439,76 +507,142 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       const data = await res.json()
 
       if (data.success) {
-        // 즉시 외부 상태 업데이트
         onUpdate()
-        alert('갤러리 순서가 변경되었습니다.')
       } else {
         alert(data.error || '순서 변경에 실패했습니다.')
       }
     } catch (error) {
-      console.error('Error reordering gallery:', error)
+      console.error('❌ [DEBUG] Error reordering gallery:', error)
       alert('순서 변경 중 오류가 발생했습니다.')
     }
+  }
 
-    setDraggedItem(null)
+  // 파일명 추출
+  const getFileName = (url: string) => {
+    return url.split('/').pop()?.split('.')[0] || 'Unknown'
   }
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">갤러리 관리</h2>
       
-      {/* 업로드 섹션 */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          새 이미지 업로드
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          disabled={uploading}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-        />
-        {uploading && (
-          <p className="text-sm text-purple-600 mt-2">업로드 중...</p>
+      {/* 업로드 및 컨트롤 섹션 */}
+      <div className="mb-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            이미지 업로드 (다중 선택 가능)
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleMultipleImageUpload}
+            disabled={uploading}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+          />
+          {uploading && (
+            <p className="text-sm text-purple-600 mt-2">업로드 중...</p>
+          )}
+        </div>
+
+        {/* 선택 컨트롤 */}
+        {galleryItems.length > 0 && (
+          <div className="flex items-center justify-between bg-gray-50 p-3 rounded">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm text-purple-600 hover:text-purple-800"
+              >
+                {selectedItems.size === galleryItems.length ? '전체 해제' : '전체 선택'}
+              </button>
+              <span className="text-sm text-gray-600">
+                {selectedItems.size}개 선택됨
+              </span>
+            </div>
+            {selectedItems.size > 0 && (
+              <button
+                onClick={handleDeleteSelected}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+              >
+                선택 삭제 ({selectedItems.size}개)
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* 갤러리 그리드 */}
+      {/* 갤러리 목록 */}
       {loading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-300 mx-auto"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="space-y-3">
           {galleryItems.map((item, index) => (
             <div
               key={item.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, item)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, index)}
-              className="relative group cursor-move border-2 border-dashed border-transparent hover:border-purple-300"
+              className={`flex items-center p-4 border rounded-lg ${
+                selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+              }`}
             >
-              <div className="aspect-square relative">
+              {/* 선택 체크박스 */}
+              <input
+                type="checkbox"
+                checked={selectedItems.has(item.id)}
+                onChange={() => toggleSelection(item.id)}
+                className="mr-4"
+              />
+
+              {/* 이미지 미리보기 */}
+              <div className="w-16 h-16 relative mr-4">
                 <Image
                   src={item.url}
                   alt="Gallery"
                   fill
                   className="object-cover rounded"
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded flex items-center justify-center">
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="bg-red-600 hover:bg-red-700 text-white p-2 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    삭제
-                  </button>
-                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1 text-center">
-                순서: {index + 1}
+
+              {/* 파일 정보 */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-gray-900 truncate">
+                  {getFileName(item.url)}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  업로드: {new Date(item.created_at).toLocaleDateString('ko-KR')}
+                </p>
               </div>
+
+              {/* 순서 번호 */}
+              <div className="text-sm text-gray-600 mr-4">
+                #{index + 1}
+              </div>
+
+              {/* 순서 변경 버튼 */}
+              <div className="flex flex-col space-y-1 mr-4">
+                <button
+                  onClick={() => moveItem(item.id, 'up')}
+                  disabled={index === 0}
+                  className="w-8 h-6 flex items-center justify-center text-xs bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                >
+                  ↑
+                </button>
+                <button
+                  onClick={() => moveItem(item.id, 'down')}
+                  disabled={index === galleryItems.length - 1}
+                  className="w-8 h-6 flex items-center justify-center text-xs bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                >
+                  ↓
+                </button>
+              </div>
+
+              {/* 개별 삭제 버튼 */}
+              <button
+                onClick={() => handleDeleteSingle(item.id)}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+              >
+                삭제
+              </button>
             </div>
           ))}
         </div>
@@ -519,34 +653,48 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
           갤러리 이미지가 없습니다.
         </div>
       )}
-      
-      <div className="mt-4 text-sm text-gray-600">
-        💡 이미지를 드래그하여 순서를 변경할 수 있습니다.
-      </div>
     </div>
   )
 }
 
 // 방명록 관리 섹션 컴포넌트
 const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbook[], onUpdate: () => void, loading: boolean }) => {
+  const [localGuestbook, setLocalGuestbook] = useState<Guestbook[]>(guestbook)
+
+  // guestbook prop이 변경되면 로컬 상태도 업데이트
+  useEffect(() => {
+    setLocalGuestbook(guestbook)
+  }, [guestbook])
+
   const handleDelete = async (id: number) => {
     if (!confirm('정말로 이 방명록을 삭제하시겠습니까?')) return
 
     try {
+      console.log('🔍 [DEBUG] Deleting guestbook:', id)
+      
+      // 즉시 로컬 상태에서 제거
+      setLocalGuestbook(prev => prev.filter(item => item.id !== id))
+      
       const res = await fetch(`/api/admin/guestbook/${id}`, {
         method: 'DELETE',
       })
       const data = await res.json()
 
       if (data.success) {
-        // 즉시 외부 상태 업데이트
-        onUpdate()
+        console.log('✅ [DEBUG] Guestbook deleted successfully')
+        // 외부 상태도 업데이트
+        await onUpdate()
         alert('방명록이 삭제되었습니다.')
       } else {
+        console.log('❌ [DEBUG] Guestbook deletion failed:', data.error)
+        // 실패 시 로컬 상태 복원
+        setLocalGuestbook(guestbook)
         alert(data.error || '삭제에 실패했습니다.')
       }
     } catch (error) {
-      console.error('Error deleting guestbook:', error)
+      console.error('❌ [DEBUG] Error deleting guestbook:', error)
+      // 에러 시 로컬 상태 복원
+      setLocalGuestbook(guestbook)
       alert('삭제 중 오류가 발생했습니다.')
     }
   }
@@ -572,7 +720,7 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
         </div>
       ) : (
         <div className="space-y-4">
-          {guestbook.map((item) => (
+          {localGuestbook.map((item) => (
             <div key={item.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
@@ -594,7 +742,7 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
         </div>
       )}
       
-      {guestbook.length === 0 && !loading && (
+      {localGuestbook.length === 0 && !loading && (
         <div className="text-center text-gray-500 py-8">
           방명록이 없습니다.
         </div>
