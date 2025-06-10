@@ -14,6 +14,16 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build arguments for environment variables
+ARG NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+ARG NAVER_MAP_CLIENT_SECRET
+ARG NEXT_PUBLIC_KAKAO_JS_KEY
+
+# Set environment variables for build
+ENV NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=$NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+ENV NAVER_MAP_CLIENT_SECRET=$NAVER_MAP_CLIENT_SECRET
+ENV NEXT_PUBLIC_KAKAO_JS_KEY=$NEXT_PUBLIC_KAKAO_JS_KEY
+
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
@@ -28,6 +38,15 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Runtime environment variables
+ARG NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+ARG NAVER_MAP_CLIENT_SECRET
+ARG NEXT_PUBLIC_KAKAO_JS_KEY
+
+ENV NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=$NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+ENV NAVER_MAP_CLIENT_SECRET=$NAVER_MAP_CLIENT_SECRET
+ENV NEXT_PUBLIC_KAKAO_JS_KEY=$NEXT_PUBLIC_KAKAO_JS_KEY
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -36,6 +55,9 @@ COPY --from=builder /app/public ./public
 # Set the correct permission for prerender cache
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
+
+# Create uploads directory with proper permissions
+RUN mkdir -p ./public/uploads && chown -R nextjs:nodejs ./public/uploads
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
