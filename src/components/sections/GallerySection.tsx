@@ -146,9 +146,6 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-90"
           onClick={handleBackgroundClick}
           onKeyDown={handleKeyDown}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
           tabIndex={-1}
         >
           {/* 닫기 버튼 */}
@@ -215,7 +212,12 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           </button>
 
           {/* 이미지 컨테이너 */}
-          <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center p-4">
+          <div 
+            className="relative max-w-4xl max-h-[80vh] mx-auto flex items-center justify-center p-8"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
             {'isPlaceholder' in displayImages[currentImageIndex] && displayImages[currentImageIndex].isPlaceholder ? (
               <div className="bg-gray-100 rounded-lg flex items-center justify-center w-96 h-96">
                 <svg
@@ -234,13 +236,13 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                 </svg>
               </div>
             ) : (
-              <div className="relative w-full h-full">
+              <div className="relative w-full max-w-3xl max-h-[70vh] aspect-auto">
                 <Image
                   src={`/uploads/${displayImages[currentImageIndex]?.filename}`}
                   alt="Gallery"
                   fill
                   className="object-contain"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 80vw"
+                  sizes="(max-width: 768px) 90vw, (max-width: 1200px) 80vw, 70vw"
                 />
               </div>
             )}
