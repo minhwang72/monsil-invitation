@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
 import { validateAndPrepareFile } from '@/lib/clientImageUtils'
 import MainImageUploader from '@/components/MainImageUploader'
@@ -608,8 +608,9 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
           {galleryItems.map((item, index) => (
             <div
               key={item.id}
-              className={`flex items-center p-4 border rounded-lg ${
-                selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+              onClick={() => toggleSelection(item.id)}
+              className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+                selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
               {/* 선택 체크박스 */}
@@ -618,6 +619,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
                 checked={selectedItems.has(item.id)}
                 onChange={() => toggleSelection(item.id)}
                 className="mr-4"
+                onClick={(e) => e.stopPropagation()} // 이벤트 전파 방지
               />
 
               {/* 이미지 미리보기 */}
@@ -645,7 +647,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
               </div>
 
               {/* 순서 변경 버튼 */}
-              <div className="flex flex-col space-y-1 mr-4">
+              <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => moveItem(item.id, 'up')}
                   disabled={index === 0}
@@ -664,7 +666,10 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
 
               {/* 개별 삭제 버튼 */}
               <button
-                onClick={() => handleDeleteSingle(item.id)}
+                onClick={(e) => {
+                  e.stopPropagation(); // 이벤트 전파 방지
+                  handleDeleteSingle(item.id);
+                }}
                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
               >
                 삭제
@@ -786,11 +791,22 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
 }
 
 export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-300"></div>
+      </div>
+    }>
+      <AdminPageContent />
+    </Suspense>
+  )
+}
+
+function AdminPageContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [gallery, setGallery] = useState<Gallery[]>([])
   const [guestbook, setGuestbook] = useState<Guestbook[]>([])
   const [contacts, setContacts] = useState<ContactPerson[]>([])
-  const [activeTab, setActiveTab] = useState<'main' | 'contacts' | 'gallery' | 'guestbook'>('main')
   const [loading, setLoading] = useState({
     auth: true,
     gallery: false,
@@ -798,6 +814,33 @@ export default function AdminPage() {
     contacts: false
   })
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // URL에서 활성 탭 읽기 (기본값: 'main')
+  const getActiveTabFromUrl = useCallback((): 'main' | 'contacts' | 'gallery' | 'guestbook' => {
+    const tab = searchParams.get('tab')
+    if (tab && ['main', 'contacts', 'gallery', 'guestbook'].includes(tab)) {
+      return tab as 'main' | 'contacts' | 'gallery' | 'guestbook'
+    }
+    return 'main'
+  }, [searchParams])
+  
+  const [activeTab, setActiveTab] = useState<'main' | 'contacts' | 'gallery' | 'guestbook'>(getActiveTabFromUrl())
+  
+  // 탭 변경 함수 (URL 업데이트 포함)
+  const changeTab = (newTab: 'main' | 'contacts' | 'gallery' | 'guestbook') => {
+    setActiveTab(newTab)
+    // URL 업데이트 (히스토리에 추가)
+    router.push(`/admin?tab=${newTab}`)
+  }
+  
+  // URL 변경 감지하여 탭 상태 동기화
+  useEffect(() => {
+    const urlTab = getActiveTabFromUrl()
+    if (urlTab !== activeTab) {
+      setActiveTab(urlTab)
+    }
+  }, [searchParams, activeTab, getActiveTabFromUrl])
 
   // 인증 상태 확인
   useEffect(() => {
@@ -971,7 +1014,7 @@ export default function AdminPage() {
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook')}
+                onClick={() => changeTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? 'border-purple-500 text-purple-600'
