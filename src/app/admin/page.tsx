@@ -18,6 +18,22 @@ const LoginForm = ({ onLogin }: { onLogin: (username: string, password: string) 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const searchParams = useSearchParams()
+
+  // URL 파라미터에서 username 읽어서 초기값 설정
+  useEffect(() => {
+    const urlUsername = searchParams.get('username')
+    if (urlUsername) {
+      setUsername(urlUsername)
+      // 비밀번호 입력 필드에 포커스
+      setTimeout(() => {
+        const passwordInput = document.getElementById('password')
+        if (passwordInput) {
+          passwordInput.focus()
+        }
+      }, 100)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

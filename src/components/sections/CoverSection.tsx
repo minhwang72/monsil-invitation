@@ -1,11 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function CoverSection() {
   const [imageUrl, setImageUrl] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [showSvg, setShowSvg] = useState(false)
+  
+  // 클릭 카운터 상태
+  const [minClickCount, setMinClickCount] = useState(0)
+  const [solClickCount, setSolClickCount] = useState(0)
+  
+  // 타이머 참조
+  const minTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const solTimerRef = useRef<NodeJS.Timeout | null>(null)
+  
+  const router = useRouter()
 
   useEffect(() => {
     // 커버 이미지 API 호출
@@ -34,13 +45,71 @@ export default function CoverSection() {
     return () => cancelAnimationFrame(timer)
   }, [])
 
+  // 클릭 핸들러 함수들
+  const handleMinClick = () => {
+    const newCount = minClickCount + 1
+    setMinClickCount(newCount)
+    
+    // 기존 타이머 클리어
+    if (minTimerRef.current) {
+      clearTimeout(minTimerRef.current)
+    }
+    
+    // 5번 클릭시 관리자 페이지로 이동
+    if (newCount >= 5) {
+      setMinClickCount(0) // 카운터 리셋
+      router.push('/admin?username=min')
+      return
+    }
+    
+    // 3초 후 카운터 리셋
+    minTimerRef.current = setTimeout(() => {
+      setMinClickCount(0)
+    }, 3000)
+  }
+
+  const handleSolClick = () => {
+    const newCount = solClickCount + 1
+    setSolClickCount(newCount)
+    
+    // 기존 타이머 클리어
+    if (solTimerRef.current) {
+      clearTimeout(solTimerRef.current)
+    }
+    
+    // 5번 클릭시 관리자 페이지로 이동
+    if (newCount >= 5) {
+      setSolClickCount(0) // 카운터 리셋
+      router.push('/admin?username=sol')
+      return
+    }
+    
+    // 3초 후 카운터 리셋
+    solTimerRef.current = setTimeout(() => {
+      setSolClickCount(0)
+    }, 3000)
+  }
+
+  // 컴포넌트 언마운트시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (minTimerRef.current) clearTimeout(minTimerRef.current)
+      if (solTimerRef.current) clearTimeout(solTimerRef.current)
+    }
+  }, [])
+
   return (
     <section className="w-full min-h-screen flex flex-col justify-center py-8 md:py-12 px-6 md:px-10 font-sans">
       <div className="flex flex-col my-auto" style={{minHeight: '70vh'}}>
         {/* 이름 좌우 정렬 */}
         <div className="flex justify-center mb-4 md:mb-4">
           <div className="w-full max-w-sm flex justify-between items-center">
-            <h1 className="text-base md:text-lg font-sans font-normal text-gray-900">황민</h1>
+            <h1 
+              className="text-base md:text-lg font-sans font-normal text-gray-900 cursor-pointer select-none transition-colors hover:text-purple-600"
+              onClick={handleMinClick}
+            >
+              황민
+            </h1>
             
             {/* 장식 SVG */}
             <div className="w-32 md:w-36 h-auto">
@@ -72,7 +141,12 @@ export default function CoverSection() {
               </svg>
             </div>
             
-            <h1 className="text-base md:text-lg font-sans font-normal text-gray-900">이은솔</h1>
+            <h1 
+              className="text-base md:text-lg font-sans font-normal text-gray-900 cursor-pointer select-none transition-colors hover:text-purple-600"
+              onClick={handleSolClick}
+            >
+              이은솔
+            </h1>
           </div>
         </div>
 
