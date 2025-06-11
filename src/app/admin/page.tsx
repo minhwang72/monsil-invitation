@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
 import { validateAndPrepareFile } from '@/lib/clientImageUtils'
 import MainImageUploader from '@/components/MainImageUploader'
@@ -83,7 +84,7 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
 
   const fetchMainImage = useCallback(async () => {
     try {
-      const res = await fetch('/api/gallery')
+      const res = await fetch(`/api/gallery?t=${Date.now()}`)
       const data = await res.json()
       if (data.success) {
         const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
@@ -101,24 +102,15 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
   const handleUploadSuccess = async (fileUrl: string) => {
     console.log('✅ [DEBUG] Main image upload successful:', fileUrl)
     
-    // 새로운 API를 사용해서 기존 gallery 테이블도 업데이트
     try {
-      // fileUrl: /uploads/images/filename.jpg -> images/filename.jpg
-      const filename = fileUrl.replace('/uploads/', '')
-      const res = await fetch('/api/gallery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: filename, image_type: 'main' }),
-      })
-      
-      if (res.ok) {
-        await fetchMainImage()
-        if (onUpdate) onUpdate()
-        alert('메인 이미지가 업데이트되었습니다.')
-      }
+      // 이미지가 성공적으로 업로드되었으므로 UI를 새로고침
+      await fetchMainImage()
+      if (onUpdate) onUpdate()
+      alert('✅ 메인 이미지가 성공적으로 업데이트되었습니다!\n위의 "현재 메인 이미지"에서 변경된 이미지를 확인할 수 있습니다.')
     } catch (error) {
-      console.error('Error updating gallery:', error)
-      alert('이미지는 업로드되었지만 갤러리 업데이트에 실패했습니다.')
+      console.error('Error refreshing image data:', error)
+      // 업로드는 성공했으므로 경고만 표시
+      alert('메인 이미지가 업로드되었지만 화면 새로고침에 실패했습니다. 페이지를 새로고침해주세요.')
     }
   }
 
@@ -133,9 +125,10 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">현재 메인 이미지</h3>
             <div className="relative w-64 h-80 mx-auto">
               <img
-                src={currentImage.url}
+                src={`${currentImage.url}?t=${Date.now()}`}
                 alt="Main"
                 className="w-full h-full object-cover rounded-lg"
+                key={currentImage.url}
               />
             </div>
           </div>
@@ -804,6 +797,7 @@ export default function AdminPage() {
     guestbook: false,
     contacts: false
   })
+  const router = useRouter()
 
   // 인증 상태 확인
   useEffect(() => {
@@ -849,6 +843,7 @@ export default function AdminPage() {
     try {
       await fetch('/api/admin/logout', { method: 'POST' })
       setIsAuthenticated(false)
+      router.push('/')
     } catch (error) {
       console.error('Logout failed:', error)
     }
@@ -887,7 +882,7 @@ export default function AdminPage() {
   const updateGallery = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, gallery: true }))
-      const res = await fetch('/api/gallery')
+      const res = await fetch(`/api/gallery?t=${Date.now()}`)
       const data = await res.json()
       if (data.success) {
         setGallery(data.data)
@@ -902,7 +897,7 @@ export default function AdminPage() {
   const updateGuestbook = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, guestbook: true }))
-      const res = await fetch('/api/guestbook')
+      const res = await fetch(`/api/guestbook?t=${Date.now()}`)
       const data = await res.json()
       if (data.success) {
         setGuestbook(data.data)
@@ -918,7 +913,7 @@ export default function AdminPage() {
     try {
       console.log('🔍 [DEBUG] updateContacts called')
       setLoading(prev => ({ ...prev, contacts: true }))
-      const res = await fetch('/api/contacts')
+      const res = await fetch(`/api/contacts?t=${Date.now()}`)
       const data = await res.json()
       console.log('🔍 [DEBUG] Contacts fetch response:', data)
       if (data.success) {

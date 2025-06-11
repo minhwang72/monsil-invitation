@@ -160,11 +160,29 @@ export async function POST(request: NextRequest) {
         }
       }
       
+      // images 테이블에 저장
       await pool.query(
         `INSERT INTO images (filename, original_name, target_id, file_size, image_type, created_at, updated_at) 
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [fileName, file.name, targetId, processedFileSize, imageType, formattedTime, formattedTime]
       )
+      
+      // 호환성을 위해 gallery 테이블에도 저장 (main 타입인 경우)
+      if (imageType === 'main') {
+        // 기존 main 이미지 삭제
+        await pool.query(
+          'UPDATE gallery SET deleted_at = ? WHERE image_type = "main" AND deleted_at IS NULL',
+          [formattedTime]
+        )
+        
+        // 새 main 이미지 저장
+        await pool.query(
+          'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
+          [`images/${fileName}`, 'main', formattedTime]
+        )
+        
+        console.log('✅ [DEBUG] Main image also saved to gallery table for compatibility')
+      }
       
       console.log('✅ [DEBUG] Image info saved to database')
     } catch (dbError) {

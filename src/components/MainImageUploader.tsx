@@ -90,10 +90,18 @@ export default function MainImageUploader({
 
       const result = await response.json()
       
-      if (result.success && result.data?.url) {
+      if (result.success && result.data?.fileUrl) {
+        // 브라우저 캐싱 방지를 위해 타임스탬프 추가
+        const timestampedUrl = `${result.data.fileUrl}?t=${Date.now()}`
+        
         // 미리보기 업데이트
-        setPreview(result.data.url)
-        onUploadSuccess(result.data.url)
+        setPreview(timestampedUrl)
+        onUploadSuccess(result.data.fileUrl) // 원본 URL을 콜백으로 전달
+        
+        // 3초 후 미리보기 정리 (혼란 방지)
+        setTimeout(() => {
+          setPreview(null)
+        }, 3000)
       } else {
         throw new Error(result.error || 'Upload failed')
       }
