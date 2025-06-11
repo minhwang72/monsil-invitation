@@ -437,6 +437,23 @@ export async function POST() {
       migrations.push('gallery to images migration failed (non-critical)')
     }
 
+    // 18. gallery 테이블에 order_index 컬럼 추가 (갤러리 순서 변경 기능용)
+    try {
+      await pool.query(`
+        ALTER TABLE gallery 
+        ADD COLUMN order_index INT DEFAULT 0
+      `)
+      migrations.push('gallery: order_index column added for reordering feature')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('gallery: order_index column already exists')
+      } else {
+        console.error('Gallery order_index column error:', error)
+        migrations.push('gallery: order_index column addition failed (non-critical)')
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migration completed successfully',
