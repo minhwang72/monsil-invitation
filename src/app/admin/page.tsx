@@ -103,11 +103,12 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
     
     // 새로운 API를 사용해서 기존 gallery 테이블도 업데이트
     try {
-      const filename = fileUrl.split('/').pop() || ''
+      // fileUrl: /uploads/images/filename.jpg -> images/filename.jpg
+      const filename = fileUrl.replace('/uploads/', '')
       const res = await fetch('/api/gallery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: `images/${filename}`, image_type: 'main' }),
+        body: JSON.stringify({ filename: filename, image_type: 'main' }),
       })
       
       if (res.ok) {
