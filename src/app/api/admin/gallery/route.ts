@@ -42,11 +42,12 @@ export async function PUT(request: NextRequest) {
         ADD COLUMN order_index INT DEFAULT 0
       `)
       console.log('✅ [DEBUG] order_index column added')
-    } catch (error: any) {
-      if (error.code === 'ER_DUP_FIELDNAME') {
+    } catch (error: unknown) {
+      const mysqlError = error as { code?: string; message?: string }
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
         console.log('ℹ️ [DEBUG] order_index column already exists')
       } else {
-        console.warn('⚠️ [DEBUG] Could not add order_index column:', error.message)
+        console.warn('⚠️ [DEBUG] Could not add order_index column:', mysqlError.message || 'Unknown error')
       }
     }
 
