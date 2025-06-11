@@ -33,21 +33,40 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update order using a temporary order field (using created_at as order proxy)
-    // We'll update them in reverse order to maintain the desired sequence
+    console.log('🔍 [DEBUG] Reordering gallery with IDs:', reorderedIds)
+
+    // First, check if order_index column exists, if not add it
+    try {
+      await pool.query(`
+        ALTER TABLE gallery 
+        ADD COLUMN order_index INT DEFAULT 0
+      `)
+      console.log('✅ [DEBUG] order_index column added')
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log('ℹ️ [DEBUG] order_index column already exists')
+      } else {
+        console.warn('⚠️ [DEBUG] Could not add order_index column:', error.message)
+      }
+    }
+
+    // Update order_index for each item
     for (let i = 0; i < reorderedIds.length; i++) {
-      const newOrder = Date.now() + i // Use timestamp + index for ordering
+      const newOrder = i + 1 // Start from 1
+      console.log(`🔍 [DEBUG] Setting order_index ${newOrder} for ID ${reorderedIds[i]}`)
       await pool.query(
-        'UPDATE gallery SET created_at = FROM_UNIXTIME(?) WHERE id = ? AND deleted_at IS NULL',
-        [newOrder / 1000, reorderedIds[i]]
+        'UPDATE gallery SET order_index = ? WHERE id = ? AND deleted_at IS NULL',
+        [newOrder, reorderedIds[i]]
       )
     }
+
+    console.log('✅ [DEBUG] Gallery reordering completed')
 
     return NextResponse.json<ApiResponse<null>>({
       success: true,
     })
   } catch (error) {
-    console.error('Error reordering gallery:', error)
+    console.error('❌ [DEBUG] Error reordering gallery:', error)
     return NextResponse.json<ApiResponse<null>>(
       {
         success: false,

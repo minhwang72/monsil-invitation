@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
 import { validateAndPrepareFile } from '@/lib/clientImageUtils'
+import ImageUploader from '@/components/ImageUploader'
 
 // 로딩 컴포넌트
 const Loading = () => (
@@ -78,7 +79,6 @@ const LoginForm = ({ onLogin }: { onLogin: (username: string, password: string) 
 
 // 메인 이미지 섹션 컴포넌트
 const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
-  const [uploading, setUploading] = useState(false)
   const [currentImage, setCurrentImage] = useState<Gallery | null>(null)
 
   const fetchMainImage = useCallback(async () => {
@@ -98,74 +98,26 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
     fetchMainImage()
   }, [fetchMainImage])
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploading(true)
+  const handleUploadSuccess = async (fileUrl: string) => {
+    console.log('✅ [DEBUG] Main image upload successful:', fileUrl)
     
+    // 새로운 API를 사용해서 기존 gallery 테이블도 업데이트
     try {
-      console.log('🔍 [DEBUG] Validating and preparing file:', file.name)
-      
-      // 클라이언트 사이드에서 파일 유효성 검사
-      const validation = await validateAndPrepareFile(file)
-      
-      if (!validation.isValid) {
-        alert(validation.error || '파일 검증에 실패했습니다.')
-        return
-      }
-      
-      console.log('✅ [DEBUG] File validated successfully')
-      
-      let fileToUpload = file
-      
-      // HEIC 파일인 경우 클라이언트에서 JPEG로 변환
-      if (file.name.toLowerCase().includes('.heic') || file.type === 'image/heic') {
-        try {
-          console.log('🔍 [DEBUG] Converting HEIC to JPEG on client...')
-          const heic2any = await import('heic2any')
-          const convertedBlob = await heic2any.default({
-            blob: file,
-            toType: 'image/jpeg',
-            quality: 0.9
-          }) as Blob
-          
-          fileToUpload = new File([convertedBlob], file.name.replace(/\.heic$/i, '.jpg'), {
-            type: 'image/jpeg'
-          })
-          console.log('✅ [DEBUG] HEIC converted to JPEG successfully')
-        } catch (heicError) {
-          console.error('❌ [DEBUG] HEIC conversion failed:', heicError)
-          alert('HEIC 파일 변환에 실패했습니다. 다른 형식으로 변환해서 업로드해주세요.')
-          return
-        }
-      }
-      
-      // FormData로 파일 전송
-      const formData = new FormData()
-      formData.append('file', fileToUpload)
-      formData.append('image_type', 'main')
-      
-      const res = await fetch('/api/admin/upload', {
+      const filename = fileUrl.split('/').pop() || ''
+      const res = await fetch('/api/gallery', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: `images/${filename}`, image_type: 'main' }),
       })
-      const data = await res.json()
-
-      if (data.success) {
+      
+      if (res.ok) {
         await fetchMainImage()
-        
         if (onUpdate) onUpdate()
-        
         alert('메인 이미지가 업데이트되었습니다.')
-      } else {
-        alert(data.error || '업로드에 실패했습니다.')
       }
     } catch (error) {
-      console.error('Error uploading image:', error)
-      alert(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
-    } finally {
-      setUploading(false)
+      console.error('Error updating gallery:', error)
+      alert('이미지는 업로드되었지만 갤러리 업데이트에 실패했습니다.')
     }
   }
 
@@ -192,21 +144,19 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
           </div>
         )}
 
-        {/* 파일 업로드 */}
+        {/* 새로운 이미지 업로더 */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            새 메인 이미지 업로드
+          <label className="block text-sm font-medium text-gray-700 mb-4">
+            새 메인 이미지 업로드 (HEIC 지원 + 자동 압축)
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            disabled={uploading}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+          <ImageUploader
+            onUploadSuccess={handleUploadSuccess}
+            targetId="main_cover"
+            className="max-w-md mx-auto"
           />
-          {uploading && (
-            <p className="text-sm text-purple-600 mt-2">업로드 중...</p>
-          )}
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            HEIC 파일은 자동으로 JPEG로 변환되며, 5MB 이상 이미지는 자동 압축됩니다.
+          </p>
         </div>
       </div>
     </div>
@@ -299,7 +249,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
           <div key={contact.id} className="border rounded-lg p-4">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-lg font-medium">
+                <h3 className="text-lg font-medium text-gray-900">
                   {getSideLabel(contact.side)} {getRelationshipLabel(contact.relationship)}
                 </h3>
               </div>
@@ -379,17 +329,17 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
               </div>
             ) : (
               // 표시 모드
-              <div className="space-y-2 text-sm">
-                <p><span className="font-medium">이름:</span> {contact.name}</p>
-                <p><span className="font-medium">전화:</span> {contact.phone}</p>
+              <div className="space-y-2 text-sm text-gray-900">
+                <p><span className="font-medium text-gray-800">이름:</span> <span className="text-gray-900">{contact.name}</span></p>
+                <p><span className="font-medium text-gray-800">전화:</span> <span className="text-gray-900">{contact.phone}</span></p>
                 {contact.bank_name && (
-                  <p><span className="font-medium">은행:</span> {contact.bank_name}</p>
+                  <p><span className="font-medium text-gray-800">은행:</span> <span className="text-gray-900">{contact.bank_name}</span></p>
                 )}
                 {contact.account_number && (
-                  <p><span className="font-medium">계좌:</span> {contact.account_number}</p>
+                  <p><span className="font-medium text-gray-800">계좌:</span> <span className="text-gray-900 font-mono">{contact.account_number}</span></p>
                 )}
                 {contact.kakaopay_link && (
-                  <p><span className="font-medium">카카오페이:</span> 
+                  <p><span className="font-medium text-gray-800">카카오페이:</span> 
                     <a href={contact.kakaopay_link} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline ml-1">
                       링크
                     </a>
@@ -430,11 +380,14 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
           }
           
           let fileToUpload = file
+          let conversionAttempted = false
           
-          // HEIC 파일인 경우 클라이언트에서 JPEG로 변환
+          // HEIC 파일인 경우 클라이언트에서 JPEG로 변환 시도 (실패시 서버에서 처리)
           if (file.name.toLowerCase().includes('.heic') || file.type === 'image/heic') {
             try {
-              console.log('🔍 [DEBUG] Converting HEIC to JPEG for file:', file.name)
+              console.log('🔍 [DEBUG] Attempting HEIC to JPEG conversion for file:', file.name)
+              conversionAttempted = true
+              
               const heic2any = await import('heic2any')
               const convertedBlob = await heic2any.default({
                 blob: file,
@@ -447,8 +400,8 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
               })
               console.log('✅ [DEBUG] HEIC converted to JPEG for file:', file.name)
             } catch (heicError) {
-              console.error('❌ [DEBUG] HEIC conversion failed for file:', file.name, heicError)
-              return { success: false, error: `${file.name}: HEIC 변환 실패` }
+              console.error('❌ [DEBUG] Client HEIC conversion failed for file:', file.name, heicError)
+              return { success: false, error: `${file.name}: HEIC 파일 변환에 실패했습니다. 다른 형식(JPG, PNG)으로 변환하여 업로드해주세요.` }
             }
           }
           
@@ -461,7 +414,14 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
             method: 'POST',
             body: formData,
           })
-          return res.json()
+          const result = await res.json()
+          
+          // 결과에 변환 정보 추가
+          if (result.success && conversionAttempted && fileToUpload === file) {
+            result.serverConverted = true
+          }
+          
+          return result
         } catch (error) {
           console.error('Error validating/uploading file:', file.name, error)
           return { success: false, error: `${file.name} 처리 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}` }
@@ -471,10 +431,12 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       const results = await Promise.all(uploadPromises)
       const successCount = results.filter(result => result.success).length
       const failCount = results.length - successCount
+      const serverConvertedCount = results.filter(result => result.serverConverted).length
 
       if (successCount > 0) {
         onUpdate()
-        alert(`${successCount}개 이미지가 업로드되었습니다.${failCount > 0 ? ` (${failCount}개 실패)` : ''}`)
+        const serverConvertMessage = serverConvertedCount > 0 ? ` (${serverConvertedCount}개 파일은 서버에서 HEIC 변환됨)` : ''
+        alert(`${successCount}개 이미지가 업로드되었습니다.${failCount > 0 ? ` (${failCount}개 실패)` : ''}${serverConvertMessage}`)
       } else {
         alert('모든 이미지 업로드에 실패했습니다.')
       }
@@ -806,7 +768,7 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-medium text-lg">{item.name}</h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-800">
                     {formatDate(item.created_at)}
                   </p>
                 </div>
@@ -1020,7 +982,7 @@ export default function AdminPage() {
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-700 hover:text-gray-800 hover:border-gray-300'
                 }`}
               >
                 {tab.label}

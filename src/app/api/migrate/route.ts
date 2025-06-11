@@ -370,6 +370,73 @@ export async function POST() {
       migrations.push('HEIC cleanup failed (non-critical)')
     }
 
+    // 16. 새로운 이미지 업로드 시스템을 위한 images 테이블 생성
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS images (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          filename VARCHAR(255) NOT NULL,
+          original_name VARCHAR(255) NOT NULL,
+          target_id VARCHAR(100) NULL,
+          file_size INT NOT NULL,
+          image_type ENUM('main', 'gallery', 'profile', 'other') DEFAULT 'other',
+          created_at DATETIME NOT NULL,
+          updated_at DATETIME NOT NULL,
+          deleted_at DATETIME NULL DEFAULT NULL,
+          INDEX idx_target_id (target_id),
+          INDEX idx_image_type (image_type),
+          INDEX idx_created_at (created_at),
+          INDEX idx_deleted_at (deleted_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `)
+      migrations.push('images table created for new upload system')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_TABLE_EXISTS_ERROR') {
+        migrations.push('images table already exists')
+      } else {
+        console.error('Images table creation error:', error)
+        migrations.push('images table creation failed')
+      }
+    }
+
+    // 17. 기존 gallery 데이터를 새로운 images 테이블로 마이그레이션 (필요시)
+    try {
+      // 기존 gallery 테이블에서 images 테이블로 데이터 복사
+      const [existingData] = await pool.query(`
+        SELECT COUNT(*) as count FROM images
+      `)
+      const imageCount = (existingData as { count: number }[])[0].count
+
+      if (imageCount === 0) {
+        // images 테이블이 비어있으면 gallery 데이터 복사
+        await pool.query(`
+          INSERT INTO images (filename, original_name, target_id, file_size, image_type, created_at, updated_at, deleted_at)
+          SELECT 
+            filename,
+            SUBSTRING_INDEX(filename, '/', -1) as original_name,
+            CASE 
+              WHEN image_type = 'main' THEN 'main_cover'
+              WHEN image_type = 'gallery' THEN CONCAT('gallery_', id)
+              ELSE NULL
+            END as target_id,
+            0 as file_size,
+            image_type,
+            created_at,
+            IFNULL(updated_at, created_at) as updated_at,
+            deleted_at
+          FROM gallery 
+          WHERE filename IS NOT NULL AND filename != ''
+        `)
+        migrations.push('gallery data migrated to images table')
+      } else {
+        migrations.push('images table already has data, skipping migration')
+      }
+    } catch (error) {
+      console.error('Gallery to images migration error:', error)
+      migrations.push('gallery to images migration failed (non-critical)')
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migration completed successfully',

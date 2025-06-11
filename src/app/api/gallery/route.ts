@@ -7,15 +7,25 @@ interface DatabaseGalleryRow {
   filename: string
   image_type: 'main' | 'gallery'
   created_at: Date
+  order_index?: number
 }
 
 export async function GET() {
   try {
     const [rows] = await pool.query(`
-      SELECT id, filename, image_type, created_at 
+      SELECT id, filename, image_type, created_at, order_index
       FROM gallery 
       WHERE deleted_at IS NULL 
-      ORDER BY created_at ASC
+      ORDER BY 
+        CASE 
+          WHEN image_type = 'main' THEN 0
+          ELSE 1
+        END,
+        CASE 
+          WHEN image_type = 'gallery' THEN COALESCE(order_index, 999999)
+          ELSE created_at
+        END ASC,
+        created_at ASC
     `)
     
     const gallery = (rows as DatabaseGalleryRow[]).map(row => ({

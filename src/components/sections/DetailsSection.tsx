@@ -47,19 +47,19 @@ export default function LocationSection() {
   return (
     <>
       <section className="w-full min-h-screen flex flex-col justify-center py-16 md:py-20 px-0 font-sans bg-blue-50/50">
-        <div className="max-w-xl mx-auto text-center w-full px-4 md:px-8">
+        <div className="max-w-xl mx-auto text-center w-full px-0">
           {/* 제목 */}
-          <h2 className="text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text">
+          <h2 className="text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text px-4 md:px-8">
             LOCATION
           </h2>
 
-          {/* 지도 */}
-          <div className="mb-6 md:mb-8">
+          {/* 지도 - 좌우 패딩 제거 */}
+          <div className="mb-6 md:mb-8 px-0">
             <NaverMap />
           </div>
 
           {/* 지도 앱 연동 버튼들 - 항상 가로 배치 */}
-          <div className="flex justify-center gap-2 md:gap-4 mb-6 md:mb-8">
+          <div className="flex justify-center gap-2 md:gap-4 mb-6 md:mb-8 px-4 md:px-8">
             <button
               onClick={handleNaverMap}
               className="flex-1 bg-white hover:bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
@@ -111,7 +111,7 @@ export default function LocationSection() {
           </div>
 
           {/* 주소 정보 */}
-          <div className="space-y-4 md:space-y-6 text-left px-2 md:px-6">
+          <div className="space-y-4 md:space-y-6 text-left px-4 md:px-8">
             {/* 주소 */}
             <div>
               <div className="flex items-center gap-2 mb-3">

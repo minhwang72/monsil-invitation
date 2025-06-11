@@ -118,6 +118,20 @@ export async function POST(request: NextRequest) {
       console.log('✅ [DEBUG] Image processed and saved with Sharp')
     } catch (sharpError) {
       console.error('❌ [DEBUG] Sharp processing failed:', sharpError)
+      
+      // HEIC 파일 특별 처리
+      const isHeicFile = file.name.toLowerCase().includes('.heic') || file.type === 'image/heic'
+      
+      if (isHeicFile) {
+        return NextResponse.json<ApiResponse<null>>(
+          {
+            success: false,
+            error: 'HEIC 파일 처리에 실패했습니다. 클라이언트에서 JPEG로 변환된 파일을 사용하거나, 다른 형식(JPG, PNG)으로 변환하여 업로드해주세요.',
+          },
+          { status: 400 }
+        )
+      }
+      
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
