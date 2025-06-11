@@ -117,9 +117,33 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
       
       console.log('✅ [DEBUG] File validated successfully')
       
+      let fileToUpload = file
+      
+      // HEIC 파일인 경우 클라이언트에서 JPEG로 변환
+      if (file.name.toLowerCase().includes('.heic') || file.type === 'image/heic') {
+        try {
+          console.log('🔍 [DEBUG] Converting HEIC to JPEG on client...')
+          const heic2any = await import('heic2any')
+          const convertedBlob = await heic2any.default({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.9
+          }) as Blob
+          
+          fileToUpload = new File([convertedBlob], file.name.replace(/\.heic$/i, '.jpg'), {
+            type: 'image/jpeg'
+          })
+          console.log('✅ [DEBUG] HEIC converted to JPEG successfully')
+        } catch (heicError) {
+          console.error('❌ [DEBUG] HEIC conversion failed:', heicError)
+          alert('HEIC 파일 변환에 실패했습니다. 다른 형식으로 변환해서 업로드해주세요.')
+          return
+        }
+      }
+      
       // FormData로 파일 전송
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', fileToUpload)
       formData.append('image_type', 'main')
       
       const res = await fetch('/api/admin/upload', {
@@ -405,9 +429,32 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
             return { success: false, error: validation.error || '파일 검증 실패' }
           }
           
+          let fileToUpload = file
+          
+          // HEIC 파일인 경우 클라이언트에서 JPEG로 변환
+          if (file.name.toLowerCase().includes('.heic') || file.type === 'image/heic') {
+            try {
+              console.log('🔍 [DEBUG] Converting HEIC to JPEG for file:', file.name)
+              const heic2any = await import('heic2any')
+              const convertedBlob = await heic2any.default({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.9
+              }) as Blob
+              
+              fileToUpload = new File([convertedBlob], file.name.replace(/\.heic$/i, '.jpg'), {
+                type: 'image/jpeg'
+              })
+              console.log('✅ [DEBUG] HEIC converted to JPEG for file:', file.name)
+            } catch (heicError) {
+              console.error('❌ [DEBUG] HEIC conversion failed for file:', file.name, heicError)
+              return { success: false, error: `${file.name}: HEIC 변환 실패` }
+            }
+          }
+          
           // FormData로 파일 전송
           const formData = new FormData()
-          formData.append('file', file)
+          formData.append('file', fileToUpload)
           formData.append('image_type', 'gallery')
           
           const res = await fetch('/api/admin/upload', {
