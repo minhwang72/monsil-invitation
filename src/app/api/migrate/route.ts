@@ -454,6 +454,30 @@ export async function POST() {
       }
     }
 
+    // 19. 기존 갤러리 이미지들의 order_index를 created_at 순서로 재설정
+    try {
+      // 갤러리 이미지들을 created_at 순서로 조회
+      const [galleryRows] = await pool.query(`
+        SELECT id FROM gallery 
+        WHERE image_type = 'gallery' AND deleted_at IS NULL 
+        ORDER BY created_at ASC
+      `)
+      const galleryImages = galleryRows as { id: number }[]
+      
+      // 각 이미지에 순서대로 order_index 설정 (1부터 시작)
+      for (let i = 0; i < galleryImages.length; i++) {
+        await pool.query(
+          'UPDATE gallery SET order_index = ? WHERE id = ?',
+          [i + 1, galleryImages[i].id]
+        )
+      }
+      
+      migrations.push(`gallery: order_index updated for ${galleryImages.length} existing images`)
+    } catch (error) {
+      console.error('Gallery order_index update error:', error)
+      migrations.push('gallery: order_index update failed (non-critical)')
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migration completed successfully',

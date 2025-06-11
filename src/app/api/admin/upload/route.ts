@@ -145,15 +145,28 @@ export async function POST(request: NextRequest) {
     const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
     const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
     
+    // 갤러리 이미지인 경우 order_index 설정
+    let orderIndex = 0
+    if (image_type === 'gallery') {
+      // 기존 갤러리 이미지 개수 조회하여 다음 순서 번호 설정
+      const [countRows] = await pool.query(
+        'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
+      )
+      const countResult = countRows as { count: number }[]
+      orderIndex = countResult[0].count + 1
+      console.log('🔍 [DEBUG] Setting order_index for gallery image:', orderIndex)
+    }
+    
     console.log('🔍 [DEBUG] Inserting to database:', {
       filename: dbPath,
       image_type,
+      orderIndex,
       formattedTime
     })
 
     const insertResult = await pool.query(
-      'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
-      [dbPath, image_type, formattedTime]
+      'INSERT INTO gallery (filename, image_type, created_at, order_index) VALUES (?, ?, ?, ?)',
+      [dbPath, image_type, formattedTime, orderIndex]
     )
     
     console.log('✅ [DEBUG] Database insert result:', insertResult)
