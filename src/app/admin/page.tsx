@@ -201,16 +201,17 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
       if (data.success) {
         console.log('✅ [DEBUG] Contact saved successfully, updating local state')
         
-        // 즉시 로컬 상태 업데이트
+        // 먼저 편집 모드 종료
+        setEditingContact(null)
+        
+        // 즉시 로컬 상태 업데이트 (최신 데이터로)
         setLocalContacts(prev => 
           prev.map(contact => 
-            contact.id === editingContact.id ? editingContact : contact
+            contact.id === editingContact.id ? { ...editingContact } : contact
           )
         )
         
-        setEditingContact(null)
-        
-        // 외부 상태도 업데이트 (에러가 발생해도 로컬 상태는 유지)
+        // 외부 상태도 업데이트 (서버에서 최신 데이터 가져오기)
         try {
           await onUpdate()
           console.log('✅ [DEBUG] onUpdate completed successfully')
@@ -272,7 +273,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.name}
                     onChange={(e) => setEditingContact({ ...editingContact, name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
                 <div>
@@ -281,7 +282,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.phone}
                     onChange={(e) => setEditingContact({ ...editingContact, phone: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
                 <div>
@@ -290,7 +291,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.bank_name || ''}
                     onChange={(e) => setEditingContact({ ...editingContact, bank_name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
                 <div>
@@ -299,7 +300,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.account_number || ''}
                     onChange={(e) => setEditingContact({ ...editingContact, account_number: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
                 <div>
@@ -308,7 +309,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.kakaopay_link || ''}
                     onChange={(e) => setEditingContact({ ...editingContact, kakaopay_link: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
                 <div className="flex space-x-2">
@@ -659,14 +660,14 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
                 <button
                   onClick={() => moveItem(item.id, 'up')}
                   disabled={index === 0}
-                  className="w-8 h-6 flex items-center justify-center text-xs bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                  className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
                 >
                   ↑
                 </button>
                 <button
                   onClick={() => moveItem(item.id, 'down')}
                   disabled={index === galleryItems.length - 1}
-                  className="w-8 h-6 flex items-center justify-center text-xs bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                  className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
                 >
                   ↓
                 </button>
