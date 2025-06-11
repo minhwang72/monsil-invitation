@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
 import { validateAndPrepareFile } from '@/lib/clientImageUtils'
-import ImageUploader from '@/components/ImageUploader'
+import MainImageUploader from '@/components/MainImageUploader'
 
 // 로딩 컴포넌트
 const Loading = () => (
@@ -148,16 +148,12 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
         {/* 새로운 이미지 업로더 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-4">
-            새 메인 이미지 업로드 (HEIC 지원 + 자동 압축)
+            새 메인 이미지 업로드 (3:4 비율 크롭 지원)
           </label>
-          <ImageUploader
+          <MainImageUploader
             onUploadSuccess={handleUploadSuccess}
-            targetId="main_cover"
             className="max-w-md mx-auto"
           />
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            HEIC 파일은 자동으로 JPEG로 변환되며, 5MB 이상 이미지는 자동 압축됩니다.
-          </p>
         </div>
       </div>
     </div>
