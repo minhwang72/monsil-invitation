@@ -127,13 +127,14 @@ export async function POST(request: NextRequest) {
       // 메인 이미지는 main_cover.jpg로 저장
       dbFilename = 'main_cover.jpg'
     } else {
-      // 갤러리 이미지인 경우 순서 번호를 조회하여 gallery_(순서번호).jpg로 저장
+      // 갤러리 이미지인 경우 순서 번호를 조회하여 gallery01.jpg, gallery02.jpg로 저장
       const [countRows] = await pool.query(
         'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
       )
       const countResult = countRows as { count: number }[]
       const nextOrder = countResult[0].count + 1
-      dbFilename = `gallery_${nextOrder}.jpg`
+      const orderString = nextOrder.toString().padStart(2, '0')
+      dbFilename = `gallery${orderString}.jpg`
     }
     
     const filepath = join(imagesDir, dbFilename)

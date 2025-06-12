@@ -68,8 +68,9 @@ export async function PUT(request: NextRequest) {
       const currentItem = galleryItems.find(item => item.id === itemId)
       
       if (currentItem) {
-        // Generate new filename: gallery_(순서번호).jpg
-        const newFilename = `gallery_${newOrder}.jpg`
+        // Generate new filename: gallery01.jpg, gallery02.jpg
+        const orderString = newOrder.toString().padStart(2, '0')
+        const newFilename = `gallery${orderString}.jpg`
         const newDbPath = `images/${newFilename}`
         const currentFilename = currentItem.filename
         

@@ -571,7 +571,8 @@ async function migrateImagesToImagesFolder() {
     const galleryImage = galleryImages[i]
     const newOrder = i + 1
     const oldPath = path.join(uploadsDir, galleryImage.filename)
-    const newFilename = `gallery_${newOrder}.jpg`
+    const orderString = newOrder.toString().padStart(2, '0')
+    const newFilename = `gallery${orderString}.jpg`
     const newPath = path.join(imagesDir, newFilename)
     const newDbPath = `images/${newFilename}`
     
