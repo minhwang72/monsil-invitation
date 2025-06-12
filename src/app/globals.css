@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* 펴진고딕 웹폰트 */
 @font-face {
@@ -77,4 +80,15 @@ body {
 
 .animate-fade-in-out {
   animation: fade-in-out 3s ease-in-out forwards;
+}
+
+/* 가로 스크롤바 숨김 */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

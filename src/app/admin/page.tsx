@@ -166,15 +166,15 @@ const MainImageSection = ({ onUpdate, showToast }: { onUpdate?: () => void, show
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">메인 이미지 관리</h2>
+    <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">메인 이미지 관리</h2>
       
       <div className="space-y-6">
         {/* 현재 메인 이미지 */}
         {currentImage && currentImage.url ? (
           <div className="text-center">
             <h3 className="text-lg font-medium text-gray-900 mb-4">현재 메인 이미지</h3>
-            <div className="relative w-64 h-80 mx-auto">
+            <div className="relative w-48 sm:w-64 h-60 sm:h-80 mx-auto">
               <img
                 src={`${currentImage.url}?t=${Date.now()}`}
                 alt="Main"
@@ -283,13 +283,13 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">연락처 관리</h2>
+    <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">연락처 관리</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {localContacts.map((contact) => (
           <div key={contact.id} className="border rounded-lg p-4">
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 space-y-2 sm:space-y-0">
               <div>
                 <h3 className="text-lg font-medium text-gray-900">
                   {getSideLabel(contact.side)} {getRelationshipLabel(contact.relationship)}
@@ -298,7 +298,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
               <button
                 onClick={() => handleEdit(contact)}
                 disabled={saving}
-                className="text-purple-600 hover:text-purple-900 text-sm disabled:opacity-50"
+                className="text-purple-600 hover:text-purple-900 text-sm disabled:opacity-50 min-h-[44px] px-3 py-2 border border-purple-200 rounded hover:bg-purple-50"
               >
                 수정
               </button>
@@ -313,7 +313,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.name}
                     onChange={(e) => setEditingContact({ ...editingContact, name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -322,7 +322,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.phone}
                     onChange={(e) => setEditingContact({ ...editingContact, phone: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -331,7 +331,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.bank_name || ''}
                     onChange={(e) => setEditingContact({ ...editingContact, bank_name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -340,7 +340,7 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.account_number || ''}
                     onChange={(e) => setEditingContact({ ...editingContact, account_number: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -349,21 +349,21 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
                     type="text"
                     value={editingContact.kakaopay_link || ''}
                     onChange={(e) => setEditingContact({ ...editingContact, kakaopay_link: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
                   />
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 min-h-[44px]"
                   >
                     {saving ? '저장 중...' : '저장'}
                   </button>
                   <button
                     onClick={() => setEditingContact(null)}
                     disabled={saving}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded disabled:opacity-50"
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded disabled:opacity-50 min-h-[44px]"
                   >
                     취소
                   </button>
@@ -410,6 +410,17 @@ const GalleryImageCropper = ({
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
   const [processing, setProcessing] = useState(false)
+  const [selectedAspect, setSelectedAspect] = useState<number | null>(null) // 자유 비율
+
+  // 비율 옵션들
+  const aspectOptions = [
+    { label: '자유 비율', value: null, description: '원하는 대로 크롭' },
+    { label: '정방형 (1:1)', value: 1, description: '1:1 비율' },
+    { label: '가로형 (4:3)', value: 4/3, description: '4:3 비율' },
+    { label: '가로형 (16:9)', value: 16/9, description: '16:9 비율' },
+    { label: '세로형 (3:4)', value: 3/4, description: '3:4 비율' },
+    { label: '세로형 (9:16)', value: 9/16, description: '9:16 비율' },
+  ]
 
   // Canvas에서 크롭된 이미지 생성하는 헬퍼 함수
   const createImage = (url: string): Promise<HTMLImageElement> =>
@@ -473,32 +484,66 @@ const GalleryImageCropper = ({
     }
   }, [croppedAreaPixels, imageSrc, onCropComplete])
 
+  // 비율 변경 시 크롭 위치 초기화
+  const handleAspectChange = (newAspect: number | null) => {
+    setSelectedAspect(newAspect)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+  }
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-5xl w-full max-h-[95vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">이미지 수정 (자유 크롭)</h3>
+          <h3 className="text-lg font-medium text-gray-900">이미지 수정</h3>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 text-xl"
+            className="text-gray-400 hover:text-gray-600 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             ×
           </button>
         </div>
+
+        {/* 비율 선택 섹션 */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-3">크롭 비율 선택</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {aspectOptions.map((option) => (
+              <button
+                key={option.label}
+                onClick={() => handleAspectChange(option.value)}
+                className={`p-3 text-sm border rounded-lg transition-colors min-h-[44px] ${
+                  selectedAspect === option.value
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="font-medium">{option.label}</div>
+                <div className="text-xs text-gray-500 mt-1">{option.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
         
-        <div className="relative bg-gray-100 flex-1 min-h-[400px] rounded-lg overflow-hidden">
+        <div className="relative bg-gray-100 flex-1 min-h-[250px] sm:min-h-[400px] rounded-lg overflow-hidden">
           <Cropper
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={0} // 자유 비율을 위해 0으로 설정
+            aspect={selectedAspect || undefined}
             onCropChange={setCrop}
             onCropComplete={onCropCompleteHandler}
             onZoomChange={setZoom}
             cropShape="rect"
             showGrid={true}
-            restrictPosition={false} // 위치 제한 해제
-            cropSize={{ width: 300, height: 200 }} // 초기 크롭 영역 크기
+            restrictPosition={false}
+            style={{
+              containerStyle: {
+                width: '100%',
+                height: '100%',
+                backgroundColor: '#f3f4f6'
+              }
+            }}
           />
         </div>
         
@@ -513,31 +558,43 @@ const GalleryImageCropper = ({
               max={3}
               step={0.1}
               onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1"
+              className="flex-1 h-8"
             />
             <span className="text-sm text-gray-600 min-w-[60px]">
               {Math.round(zoom * 100)}%
             </span>
           </div>
           
+          {/* 현재 선택된 비율 표시 */}
+          <div className="text-center">
+            <span className="text-sm text-gray-600">
+              현재 비율: <span className="font-medium text-purple-600">
+                {aspectOptions.find(option => option.value === selectedAspect)?.label || '자유 비율'}
+              </span>
+            </span>
+          </div>
+          
           {/* 안내 텍스트 */}
           <p className="text-sm text-gray-600 text-center">
-            드래그로 위치 조정, 크롭 영역 모서리를 드래그하여 크기 조정, 마우스 휠로 줌 조정 가능합니다.
+            {selectedAspect === null 
+              ? '자유 비율: 크롭 영역 모서리를 드래그하여 원하는 크기로 조정하세요.'
+              : '고정 비율: 드래그로 위치 조정, 마우스 휠이나 슬라이더로 줌 조정하세요.'
+            }
           </p>
           
           {/* 버튼들 */}
-          <div className="flex justify-end space-x-3">
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               onClick={onCancel}
               disabled={processing}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 min-h-[44px]"
             >
               취소
             </button>
             <button
               onClick={handleCropConfirm}
               disabled={processing}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+              className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 min-h-[44px]"
             >
               {processing ? '처리 중...' : '수정 완료'}
             </button>
@@ -856,11 +913,11 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
 
         {/* 선택 컨트롤 */}
         {galleryItems.length > 0 && (
-          <div className="flex items-center justify-between bg-gray-50 p-3 rounded">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 p-3 sm:p-4 rounded space-y-3 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={toggleSelectAll}
-                className="text-sm text-purple-600 hover:text-purple-800"
+                className="text-sm text-purple-600 hover:text-purple-800 text-left sm:text-center min-h-[44px] flex items-center"
               >
                 {selectedItems.size === galleryItems.length ? '전체 해제' : '전체 선택'}
               </button>
@@ -876,7 +933,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
             {selectedItems.size > 0 && (
               <button
                 onClick={handleDeleteSelected}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm sm:text-base min-h-[44px] w-full sm:w-auto"
               >
                 선택 삭제 ({selectedItems.size}개)
               </button>
@@ -891,89 +948,166 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-300 mx-auto"></div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 sm:space-y-4">
           {galleryItems.map((item, index) => (
             <div
               key={item.id}
-              onClick={() => toggleSelection(item.id)}
-              className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+              className={`border rounded-lg transition-colors ${
                 selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {/* 선택 체크박스 */}
-              <input
-                type="checkbox"
-                checked={selectedItems.has(item.id)}
-                onChange={() => toggleSelection(item.id)}
-                className="mr-4"
-                onClick={(e) => e.stopPropagation()} // 이벤트 전파 방지
-              />
+              {/* 모바일 레이아웃 */}
+              <div className="block sm:hidden">
+                <div className="p-4">
+                  {/* 상단: 체크박스, 이미지, 정보 */}
+                  <div className="flex items-center space-x-3 mb-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.has(item.id)}
+                      onChange={() => toggleSelection(item.id)}
+                      className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <div className="w-16 h-16 relative">
+                      <img
+                        src={item.url}
+                        alt="Gallery"
+                        className="w-full h-full object-cover rounded"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {getFileName(item.url)}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        업로드: {new Date(item.created_at).toLocaleDateString('ko-KR')}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        순서: #{index + 1}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* 하단: 버튼들 */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* 순서 변경 버튼들 */}
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => moveItem(item.id, 'up')}
+                        disabled={index === 0}
+                        className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                      >
+                        ↑ 위로
+                      </button>
+                      <button
+                        onClick={() => moveItem(item.id, 'down')}
+                        disabled={index === galleryItems.length - 1}
+                        className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                      >
+                        ↓ 아래로
+                      </button>
+                    </div>
+                    
+                    {/* 수정/삭제 버튼들 */}
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => handleEditClick(item)}
+                        disabled={selectedItems.size > 1 || uploading}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSingle(item.id)}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white h-10 rounded text-sm"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-              {/* 이미지 미리보기 */}
-              <div className="w-16 h-16 relative mr-4">
-                <img
-                  src={item.url}
-                  alt="Gallery"
-                  className="w-full h-full object-cover rounded"
+              {/* 데스크톱 레이아웃 */}
+              <div
+                className="hidden sm:flex items-center p-4 cursor-pointer"
+                onClick={() => toggleSelection(item.id)}
+              >
+                {/* 선택 체크박스 */}
+                <input
+                  type="checkbox"
+                  checked={selectedItems.has(item.id)}
+                  onChange={() => toggleSelection(item.id)}
+                  className="mr-4 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  onClick={(e) => e.stopPropagation()}
                 />
-              </div>
 
-              {/* 파일 정보 */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-gray-900 truncate">
-                  {getFileName(item.url)}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  업로드: {new Date(item.created_at).toLocaleDateString('ko-KR')}
-                </p>
-              </div>
+                {/* 이미지 미리보기 */}
+                <div className="w-16 h-16 relative mr-4">
+                  <img
+                    src={item.url}
+                    alt="Gallery"
+                    className="w-full h-full object-cover rounded"
+                  />
+                </div>
 
-              {/* 순서 번호 */}
-              <div className="text-sm text-gray-600 mr-4">
-                #{index + 1}
-              </div>
+                {/* 파일 정보 */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                    {getFileName(item.url)}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    업로드: {new Date(item.created_at).toLocaleDateString('ko-KR')}
+                  </p>
+                </div>
 
-              {/* 순서 변경 버튼 */}
-              <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
+                {/* 순서 번호 */}
+                <div className="text-sm text-gray-600 mr-4">
+                  #{index + 1}
+                </div>
+
+                {/* 순서 변경 버튼 */}
+                <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => moveItem(item.id, 'up')}
+                    disabled={index === 0}
+                    className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => moveItem(item.id, 'down')}
+                    disabled={index === galleryItems.length - 1}
+                    className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                  >
+                    ↓
+                  </button>
+                </div>
+
+                {/* 수정 버튼 */}
                 <button
-                  onClick={() => moveItem(item.id, 'up')}
-                  disabled={index === 0}
-                  className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditClick(item);
+                  }}
+                  disabled={selectedItems.size > 1 || uploading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm mr-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                  title={selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
                 >
-                  ↑
+                  수정
                 </button>
+
+                {/* 개별 삭제 버튼 */}
                 <button
-                  onClick={() => moveItem(item.id, 'down')}
-                  disabled={index === galleryItems.length - 1}
-                  className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteSingle(item.id);
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm min-h-[44px]"
                 >
-                  ↓
+                  삭제
                 </button>
               </div>
-
-              {/* 수정 버튼 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation(); // 이벤트 전파 방지
-                  handleEditClick(item);
-                }}
-                disabled={selectedItems.size > 1 || uploading}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                title={selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
-              >
-                수정
-              </button>
-
-              {/* 개별 삭제 버튼 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation(); // 이벤트 전파 방지
-                  handleDeleteSingle(item.id);
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-              >
-                삭제
-              </button>
             </div>
           ))}
         </div>
@@ -1050,8 +1184,8 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">방명록 관리</h2>
+    <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">방명록 관리</h2>
       
       {loading ? (
         <div className="text-center py-8">
@@ -1061,8 +1195,8 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
         <div className="space-y-4">
           {localGuestbook.map((item) => (
             <div key={item.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 space-y-2 sm:space-y-0">
+                <div className="flex-1">
                   <h3 className="font-medium text-lg">{item.name}</h3>
                   <p className="text-sm text-gray-800">
                     {formatDate(item.created_at)}
@@ -1070,12 +1204,12 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
                 </div>
                 <button
                   onClick={() => handleDelete(item.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm min-h-[44px] w-full sm:w-auto"
                 >
                   삭제
                 </button>
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{item.content}</p>
+              <p className="text-gray-700 whitespace-pre-wrap break-words">{item.content}</p>
             </div>
           ))}
         </div>
@@ -1309,11 +1443,11 @@ function AdminPageContent() {
       {/* 헤더 */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <h1 className="text-3xl font-bold text-gray-900">관리자 페이지</h1>
+          <div className="flex justify-between items-center py-4 sm:py-6">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">관리자 페이지</h1>
             <button
               onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm sm:text-base min-h-[44px]"
             >
               로그아웃
             </button>
@@ -1321,35 +1455,37 @@ function AdminPageContent() {
         </div>
       </header>
 
-      {/* 탭 네비게이션 */}
-      <nav className="bg-white border-b border-gray-200">
+      {/* 탭 네비게이션 - 모바일 최적화 */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {[
-              { key: 'main', label: '메인 이미지' },
-              { key: 'contacts', label: '연락처 관리' },
-              { key: 'gallery', label: '갤러리 관리' },
-              { key: 'guestbook', label: '방명록 관리' },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => changeTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.key
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-700 hover:text-gray-800 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex overflow-x-auto scrollbar-hide">
+            <div className="flex space-x-2 sm:space-x-8 min-w-max">
+              {[
+                { key: 'main', label: '메인 이미지' },
+                { key: 'contacts', label: '연락처 관리' },
+                { key: 'gallery', label: '갤러리 관리' },
+                { key: 'guestbook', label: '방명록 관리' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => changeTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook')}
+                  className={`py-3 sm:py-4 px-3 sm:px-1 border-b-2 font-medium text-sm sm:text-base whitespace-nowrap min-h-[44px] ${
+                    activeTab === tab.key
+                      ? 'border-purple-500 text-purple-600'
+                      : 'border-transparent text-gray-700 hover:text-gray-800 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </nav>
 
       {/* 메인 컨텐츠 */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+        <div className="sm:px-0">
           {/* 메인 이미지 관리 탭 */}
           {activeTab === 'main' && <MainImageSection onUpdate={updateGallery} showToast={showToast} />}
 
