@@ -346,7 +346,7 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
 
   // 연락처 카드 컴포넌트
   const ContactCard = ({ contact }: { contact: ContactPerson }) => (
-    <div className="border rounded-lg p-4 bg-gray-50">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div>
           <h4 className="font-medium text-gray-900">
@@ -434,11 +434,20 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
 
       {/* 추가 모달 */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
-            <div className="fixed inset-0 bg-black opacity-50" onClick={() => setIsAddModalOpen(false)}></div>
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          <div 
+            className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center"
+            onClick={(e) => {
+              // 배경 클릭시 모달 닫기
+              if (e.target === e.currentTarget) {
+                setIsAddModalOpen(false)
+                resetNewContact()
+              }
+            }}
+          >
+            <div className="fixed inset-0 bg-black/50"></div>
             
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-10">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">연락처 추가</h3>
                 
@@ -552,11 +561,19 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
 
       {/* 수정 모달 */}
       {editingContact && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
-            <div className="fixed inset-0 bg-black opacity-50" onClick={() => setEditingContact(null)}></div>
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          <div 
+            className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center"
+            onClick={(e) => {
+              // 배경 클릭시 모달 닫기
+              if (e.target === e.currentTarget) {
+                setEditingContact(null)
+              }
+            }}
+          >
+            <div className="fixed inset-0 bg-black/50"></div>
             
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-10">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">연락처 수정</h3>
                 
@@ -759,7 +776,7 @@ const GalleryImageCropper = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white rounded-lg p-4 sm:p-6 max-w-5xl w-full max-h-[95vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900">이미지 수정</h3>

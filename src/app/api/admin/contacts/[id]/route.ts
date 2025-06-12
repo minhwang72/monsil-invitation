@@ -8,6 +8,11 @@ function getIdFromRequest(request: NextRequest) {
   return parseInt(paths[paths.length - 1])
 }
 
+function checkAdminAuth(request: NextRequest): boolean {
+  const sessionToken = request.cookies.get('admin_session')?.value
+  return !!(sessionToken && sessionToken.startsWith('admin_'))
+}
+
 export async function PUT(request: NextRequest) {
   try {
     // Check admin session
@@ -72,6 +77,61 @@ export async function PUT(request: NextRequest) {
       {
         success: false,
         error: 'Failed to update contact',
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  if (!checkAdminAuth(request)) {
+    return NextResponse.json<ApiResponse<null>>(
+      {
+        success: false,
+        error: 'Unauthorized',
+      },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const id = getIdFromRequest(request)
+    console.log('🔍 [DEBUG] Deleting contact ID:', id)
+
+    // Check if contact exists
+    const [existingContact] = await pool.query(
+      'SELECT * FROM contacts WHERE id = ?',
+      [id]
+    )
+    const contacts = existingContact as { id: number }[]
+    
+    if (contacts.length === 0) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: 'Contact not found',
+        },
+        { status: 404 }
+      )
+    }
+
+    // Delete contact
+    const [result] = await pool.query(
+      'DELETE FROM contacts WHERE id = ?',
+      [id]
+    )
+    
+    console.log('🔍 [DEBUG] Delete result:', result)
+
+    return NextResponse.json<ApiResponse<null>>({
+      success: true,
+    })
+  } catch (error) {
+    console.error('❌ [DEBUG] Error deleting contact:', error)
+    return NextResponse.json<ApiResponse<null>>(
+      {
+        success: false,
+        error: 'Failed to delete contact',
       },
       { status: 500 }
     )
