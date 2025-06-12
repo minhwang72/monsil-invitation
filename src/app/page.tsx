@@ -9,23 +9,34 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     // 캐시 무효화를 위한 타임스탬프 추가
     const timestamp = Date.now()
-    const response = await fetch(`https://monsil.eungming.com/api/gallery?t=${timestamp}`, {
+    
+    // 서버 사이드에서는 내부 API 호출 사용 (SSL 인증서 문제 회피)
+    const baseUrl = process.env.INTERNAL_API_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'http://localhost:1108'  // Docker 내부에서는 HTTP 사용
+        : 'http://localhost:3000')  // 개발 환경
+      
+    const response = await fetch(`${baseUrl}/api/gallery?t=${timestamp}`, {
       cache: 'no-store',
       next: { revalidate: 0 } // ISR 캐시도 무효화
     })
-    const data = await response.json()
     
-    if (data.success) {
-      const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
-      if (mainImage?.url) {
-        // URL이 상대 경로인 경우 절대 경로로 변환하고 타임스탬프 추가
-        imageUrl = mainImage.url.startsWith('http') 
-          ? `${mainImage.url}?t=${timestamp}`
-          : `https://monsil.eungming.com${mainImage.url}?t=${timestamp}`
+    if (response.ok) {
+      const data = await response.json()
+      
+      if (data.success) {
+        const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
+        if (mainImage?.url) {
+          // URL이 상대 경로인 경우 절대 경로로 변환하고 타임스탬프 추가
+          imageUrl = mainImage.url.startsWith('http') 
+            ? `${mainImage.url}?t=${timestamp}`
+            : `https://monsil.eungming.com${mainImage.url}?t=${timestamp}`
+        }
       }
     }
   } catch (error) {
     console.error('Error fetching main image for metadata:', error)
+    // SSL 오류가 발생해도 기본 이미지로 계속 진행
   }
 
   return {
