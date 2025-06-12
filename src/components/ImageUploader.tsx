@@ -176,9 +176,28 @@ export default function ImageUploader({
         formData.append('targetId', targetId)
       }
       
+      console.log('🔍 [DEBUG] Starting server upload:', {
+        fileName: processedFile.name,
+        fileSize: processedFile.size,
+        fileSizeInMB: (processedFile.size / 1024 / 1024).toFixed(2) + 'MB',
+        fileType: processedFile.type,
+        targetId: targetId,
+        formDataEntries: Array.from(formData.entries()).map(([key, value]) => [
+          key, 
+          value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value
+        ])
+      })
+      
       const response = await fetch('/api/upload/image', {
         method: 'POST',
         body: formData,
+      })
+      
+      console.log('🔍 [DEBUG] Upload response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
       })
       
       const result = await response.json()

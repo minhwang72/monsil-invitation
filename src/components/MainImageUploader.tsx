@@ -73,22 +73,51 @@ export default function MainImageUploader({
         { type: 'image/jpeg' }
       )
 
+      console.log('🔍 [DEBUG] Upload file details:', {
+        originalFileName: selectedFile.name,
+        originalSize: selectedFile.size,
+        originalType: selectedFile.type,
+        croppedFileName: croppedFile.name,
+        croppedSize: croppedFile.size,
+        croppedType: croppedFile.type
+      })
+
       // FormData 생성
       const formData = new FormData()
       formData.append('file', croppedFile)
       formData.append('targetId', 'main_cover')
 
+      console.log('🔍 [DEBUG] Starting upload request...')
+      
       // 업로드 API 호출
       const response = await fetch('/api/upload/image', {
         method: 'POST',
         body: formData,
       })
 
+      console.log('🔍 [DEBUG] Upload response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      })
+
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`)
+        // 상세한 오류 정보 수집
+        let errorDetails = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorText = await response.text()
+          if (errorText) {
+            errorDetails += ` - ${errorText}`
+          }
+        } catch (e) {
+          console.error('Could not read error response:', e)
+        }
+        throw new Error(errorDetails)
       }
 
       const result = await response.json()
+      console.log('🔍 [DEBUG] Upload result:', result)
       
       if (result.success && result.data?.fileUrl) {
         // 브라우저 캐싱 방지를 위해 타임스탬프 추가
@@ -106,7 +135,11 @@ export default function MainImageUploader({
         throw new Error(result.error || 'Upload failed')
       }
     } catch (error) {
-      console.error('Upload error:', error)
+      console.error('❌ [DEBUG] Upload error details:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
       setError(error instanceof Error ? error.message : '업로드 중 오류가 발생했습니다.')
     } finally {
       setUploading(false)

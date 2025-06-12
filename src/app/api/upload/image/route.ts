@@ -6,23 +6,61 @@ import pool from '@/lib/db'
 import { ensureImageUploadDir } from '@/lib/fileUtils'
 import type { ApiResponse } from '@/types'
 
+// Next.js API Route 설정 - 파일 업로드 제한 설정
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+// 바디 파서 설정
+export const config = {
+  api: {
+    bodyParser: false, // FormData 처리를 위해 비활성화
+    responseLimit: false,
+    externalResolver: true,
+  },
+}
+
+// 최대 파일 크기 설정 (50MB) - 상수로 선언
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
+export const maxDuration = 60 // 60초 타임아웃
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🔍 [DEBUG] New image upload API called')
+    console.log('🔍 [DEBUG] Request headers:', Object.fromEntries(request.headers.entries()))
+    console.log('🔍 [DEBUG] Request method:', request.method)
+    console.log('🔍 [DEBUG] Request URL:', request.url)
     
     // FormData에서 파일과 targetId 추출
-    const formData = await request.formData()
+    let formData: FormData
+    try {
+      formData = await request.formData()
+      console.log('🔍 [DEBUG] FormData parsed successfully')
+    } catch (formDataError) {
+      console.error('❌ [DEBUG] Failed to parse FormData:', formDataError)
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: `Failed to parse form data: ${formDataError instanceof Error ? formDataError.message : 'Unknown error'}`,
+        },
+        { status: 400 }
+      )
+    }
+    
     const file = formData.get('file') as File
     const targetId = formData.get('targetId') as string
     
     console.log('🔍 [DEBUG] Upload info:', {
       filename: file?.name,
       size: file?.size,
+      sizeInMB: file ? (file.size / 1024 / 1024).toFixed(2) + 'MB' : 'N/A',
       type: file?.type,
-      targetId
+      targetId,
+      hasFile: !!file
     })
 
     if (!file) {
+      console.error('❌ [DEBUG] No file provided in request')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -33,12 +71,20 @@ export async function POST(request: NextRequest) {
     }
 
     // 파일 크기 체크 (50MB 제한으로 증가)
-    const maxSize = 50 * 1024 * 1024 // 50MB
-    if (file.size > maxSize) {
+    console.log('🔍 [DEBUG] File size check:', {
+      fileSize: file.size,
+      maxSize: MAX_FILE_SIZE,
+      fileSizeInMB: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+      maxSizeInMB: (MAX_FILE_SIZE / 1024 / 1024).toFixed(2) + 'MB',
+      exceedsLimit: file.size > MAX_FILE_SIZE
+    })
+    
+    if (file.size > MAX_FILE_SIZE) {
+      console.error('❌ [DEBUG] File size exceeds limit')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: 'File size exceeds 50MB limit',
+          error: `File size exceeds 50MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
         },
         { status: 400 }
       )
@@ -213,10 +259,36 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('❌ [DEBUG] Error uploading file:', error)
+    
+    // 413 오류 특별 처리
+    if (error instanceof Error && error.message.includes('413')) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: '파일 크기가 너무 큽니다. 서버 제한을 초과했습니다. 파일을 압축하거나 더 작은 파일을 업로드해주세요.',
+        },
+        { status: 413 }
+      )
+    }
+    
+    // FormData 파싱 오류 처리
+    if (error instanceof Error && (
+      error.message.includes('FormData') || 
+      error.message.includes('Request Entity Too Large')
+    )) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: '요청 크기가 너무 큽니다. 파일 크기를 50MB 이하로 줄여주세요.',
+        },
+        { status: 413 }
+      )
+    }
+    
     return NextResponse.json<ApiResponse<null>>(
       {
         success: false,
-        error: 'Failed to upload file',
+        error: `파일 업로드 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
       },
       { status: 500 }
     )

@@ -5,9 +5,26 @@ import pool from '@/lib/db'
 import { ensureUploadDir, getTodayDateString } from '@/lib/fileUtils'
 import type { ApiResponse } from '@/types'
 
+// Next.js API Route 설정 - 파일 업로드 제한 설정
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+// 바디 파서 설정
+export const config = {
+  api: {
+    bodyParser: false, // FormData 처리를 위해 비활성화
+    responseLimit: false,
+    externalResolver: true,
+  },
+}
+
+// 최대 파일 크기 설정 (50MB) - 상수로 선언
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔍 [DEBUG] Upload request started')
+    console.log('🔍 [DEBUG] Admin upload request started')
+    console.log('🔍 [DEBUG] Request headers:', Object.fromEntries(request.headers.entries()))
     
     // Check admin session
     const sessionToken = request.cookies.get('admin_session')?.value
@@ -25,15 +42,31 @@ export async function POST(request: NextRequest) {
     }
 
     // FormData로 파일 직접 받기 (base64 대신)
-    const formData = await request.formData()
+    let formData: FormData
+    try {
+      formData = await request.formData()
+      console.log('🔍 [DEBUG] FormData parsed successfully')
+    } catch (formDataError) {
+      console.error('❌ [DEBUG] Failed to parse FormData:', formDataError)
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: `Failed to parse form data: ${formDataError instanceof Error ? formDataError.message : 'Unknown error'}`,
+        },
+        { status: 400 }
+      )
+    }
+    
     const file = formData.get('file') as File
     const image_type = formData.get('image_type') as string || 'gallery'
     
     console.log('🔍 [DEBUG] Upload info:', {
       filename: file?.name,
       size: file?.size,
+      sizeInMB: file ? (file.size / 1024 / 1024).toFixed(2) + 'MB' : 'N/A',
       type: file?.type,
-      image_type
+      image_type,
+      hasFile: !!file
     })
 
     if (!file) {
@@ -48,8 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 파일 크기 체크 (50MB 제한)
-    const maxSize = 50 * 1024 * 1024 // 50MB
-    if (file.size > maxSize) {
+    if (file.size > MAX_FILE_SIZE) {
       console.log('❌ [DEBUG] File too large:', file.size)
       return NextResponse.json<ApiResponse<null>>(
         {

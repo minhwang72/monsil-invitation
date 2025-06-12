@@ -83,10 +83,36 @@ export async function POST(request: Request) {
       const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
       const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
       
+      // 기존 메인 이미지 파일명 조회 후 물리적 파일 삭제
+      const [existingMainRows] = await pool.query(
+        'SELECT filename FROM gallery WHERE image_type = "main" AND deleted_at IS NULL'
+      )
+      const existingMainImages = existingMainRows as { filename: string }[]
+      
+      // 기존 메인 이미지 soft delete
       await pool.query(
         'UPDATE gallery SET deleted_at = ? WHERE image_type = "main" AND deleted_at IS NULL',
         [formattedTime]
       )
+      
+      // 기존 메인 이미지 물리적 파일 삭제
+      for (const existingImage of existingMainImages) {
+        if (existingImage.filename) {
+          try {
+            const { unlink, access } = await import('fs/promises')
+            const { join } = await import('path')
+            
+            const filePath = join(process.cwd(), 'public', 'uploads', existingImage.filename)
+            
+            // 파일이 존재하는지 확인 후 삭제
+            await access(filePath)
+            await unlink(filePath)
+            console.log('✅ [DEBUG] Deleted existing main image file:', filePath)
+          } catch (fileError) {
+            console.log('ℹ️ [DEBUG] Could not delete existing main image file (may not exist):', existingImage.filename, fileError)
+          }
+        }
+      }
     }
 
     // 새 이미지 추가
@@ -128,9 +154,9 @@ export async function DELETE(request: Request) {
       )
     }
 
-    // 이미지 존재 확인
+    // 이미지 존재 확인 및 파일명 조회
     const [existingRows] = await pool.query(
-      'SELECT id FROM gallery WHERE id = ? AND deleted_at IS NULL',
+      'SELECT id, filename FROM gallery WHERE id = ? AND deleted_at IS NULL',
       [id]
     )
 
@@ -144,6 +170,8 @@ export async function DELETE(request: Request) {
       )
     }
 
+    const existingImage = existingRows[0] as { id: number; filename: string }
+
     // Soft delete
     const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
     const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -152,6 +180,23 @@ export async function DELETE(request: Request) {
       'UPDATE gallery SET deleted_at = ? WHERE id = ?',
       [formattedTime, id]
     )
+
+    // Delete physical file
+    if (existingImage.filename) {
+      try {
+        const { unlink, access } = await import('fs/promises')
+        const { join } = await import('path')
+        
+        const filePath = join(process.cwd(), 'public', 'uploads', existingImage.filename)
+        
+        // 파일이 존재하는지 확인 후 삭제
+        await access(filePath)
+        await unlink(filePath)
+        console.log('✅ [DEBUG] Physical file deleted:', filePath)
+      } catch (fileError) {
+        console.log('ℹ️ [DEBUG] Could not delete physical file (may not exist):', existingImage.filename, fileError)
+      }
+    }
 
     return NextResponse.json<ApiResponse<null>>({
       success: true,
