@@ -56,20 +56,11 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const file = formData.get('file') as File
+    const fileData = formData.get('file')
     const image_type = formData.get('image_type') as string || 'gallery'
     
-    console.log('🔍 [DEBUG] Upload info:', {
-      filename: file?.name,
-      size: file?.size,
-      sizeInMB: file ? (file.size / 1024 / 1024).toFixed(2) + 'MB' : 'N/A',
-      type: file?.type,
-      image_type,
-      hasFile: !!file
-    })
-
-    if (!file || !(file instanceof File)) {
-      console.log('❌ [DEBUG] No valid file provided')
+    if (!fileData || typeof fileData === 'string') {
+      console.log('❌ [DEBUG] No valid file provided or file is string')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -78,10 +69,22 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    // 이제 fileData는 File | Blob 타입임이 보장됨
+    const filename = (fileData as { name?: string }).name || 'uploaded.jpg'
+    
+    console.log('🔍 [DEBUG] Upload info:', {
+      filename,
+      size: fileData.size,
+      sizeInMB: (fileData.size / 1024 / 1024).toFixed(2) + 'MB',
+      type: (fileData as { type?: string }).type,
+      image_type,
+      hasFile: true
+    })
 
     // 파일 크기 체크 (50MB 제한)
-    if (file.size > MAX_FILE_SIZE) {
-      console.log('❌ [DEBUG] File too large:', file.size)
+    if (fileData.size > MAX_FILE_SIZE) {
+      console.log('❌ [DEBUG] File too large:', fileData.size)
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 파일을 버퍼로 읽기
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const buffer = Buffer.from(await fileData.arrayBuffer())
     console.log('🔍 [DEBUG] File buffer size:', buffer.length)
 
     // Generate paths and filename - images 폴더로 통합
@@ -212,7 +215,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ [DEBUG] Sharp processing failed:', sharpError)
       
       // HEIC 파일 특별 처리
-      const isHeicFile = file.name.toLowerCase().includes('.heic') || file.type === 'image/heic'
+      const isHeicFile = filename.toLowerCase().includes('.heic') || (fileData as { type?: string }).type === 'image/heic'
       
       if (isHeicFile) {
         return NextResponse.json<ApiResponse<null>>(

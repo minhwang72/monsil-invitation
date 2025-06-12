@@ -37,20 +37,11 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const file = formData.get('file') as File
+    const fileData = formData.get('file')
     const targetId = formData.get('targetId') as string
     
-    console.log('🔍 [DEBUG] Upload info:', {
-      filename: file?.name,
-      size: file?.size,
-      sizeInMB: file ? (file.size / 1024 / 1024).toFixed(2) + 'MB' : 'N/A',
-      type: file?.type,
-      targetId,
-      hasFile: !!file
-    })
-
-    if (!file || !(file instanceof File)) {
-      console.error('❌ [DEBUG] No valid file provided in request')
+    if (!fileData || typeof fileData === 'string') {
+      console.error('❌ [DEBUG] No valid file provided in request or file is string')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -59,22 +50,34 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    // 이제 fileData는 File | Blob 타입임이 보장됨
+    const filename = (fileData as { name?: string }).name || 'uploaded.jpg'
+    
+    console.log('🔍 [DEBUG] Upload info:', {
+      filename,
+      size: fileData.size,
+      sizeInMB: (fileData.size / 1024 / 1024).toFixed(2) + 'MB',
+      type: (fileData as { type?: string }).type,
+      targetId,
+      hasFile: true
+    })
 
     // 파일 크기 체크 (50MB 제한으로 증가)
     console.log('🔍 [DEBUG] File size check:', {
-      fileSize: file.size,
+      fileSize: fileData.size,
       maxSize: MAX_FILE_SIZE,
-      fileSizeInMB: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+      fileSizeInMB: (fileData.size / 1024 / 1024).toFixed(2) + 'MB',
       maxSizeInMB: (MAX_FILE_SIZE / 1024 / 1024).toFixed(2) + 'MB',
-      exceedsLimit: file.size > MAX_FILE_SIZE
+      exceedsLimit: fileData.size > MAX_FILE_SIZE
     })
     
-    if (file.size > MAX_FILE_SIZE) {
+    if (fileData.size > MAX_FILE_SIZE) {
       console.error('❌ [DEBUG] File size exceeds limit')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: `File size exceeds 50MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+          error: `File size exceeds 50MB limit. Current size: ${(fileData.size / 1024 / 1024).toFixed(2)}MB`,
         },
         { status: 400 }
       )
@@ -82,8 +85,9 @@ export async function POST(request: NextRequest) {
 
     // 지원되는 파일 형식 체크 (클라이언트에서 HEIC 변환됨)
     const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const fileType = (fileData as { type?: string }).type || ''
     
-    if (!supportedTypes.includes(file.type)) {
+    if (!supportedTypes.includes(fileType)) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -137,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 파일을 버퍼로 읽기
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const buffer = Buffer.from(await fileData.arrayBuffer())
     console.log('🔍 [DEBUG] File buffer size:', buffer.length)
 
     // Sharp를 사용하여 이미지 처리 및 저장
