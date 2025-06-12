@@ -176,6 +176,7 @@ export async function POST(request: NextRequest) {
     let processedFileSize = 0
     try {
       const processedBuffer = await sharp(buffer)
+        .rotate() // EXIF 방향 정보에 따라 자동 회전
         .jpeg({ 
           quality: 85,
           progressive: true 
@@ -189,7 +190,7 @@ export async function POST(request: NextRequest) {
       processedFileSize = processedBuffer.length
       
       await writeFile(filePath, processedBuffer)
-      console.log('✅ [DEBUG] Image processed and saved with Sharp')
+      console.log('✅ [DEBUG] Image processed and saved with Sharp (auto-rotated)')
     } catch (sharpError) {
       console.error('❌ [DEBUG] Sharp processing failed:', sharpError)
       return NextResponse.json<ApiResponse<null>>(
