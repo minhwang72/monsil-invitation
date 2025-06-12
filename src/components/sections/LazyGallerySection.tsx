@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
 import GallerySection from './GallerySection'
 import type { Gallery } from '@/types'
@@ -13,15 +13,23 @@ const apiCache = new Map<string, CacheData>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5분
 
 // 캐시된 API 호출 함수
-const fetchWithCache = async (url: string) => {
+const fetchWithCache = async (url: string, forceRefresh = false) => {
   const now = Date.now()
   const cached = apiCache.get(url)
   
-  if (cached && now - cached.timestamp < CACHE_DURATION) {
+  if (!forceRefresh && cached && now - cached.timestamp < CACHE_DURATION) {
     return cached.data
   }
   
-  const response = await fetch(url)
+  // Cache busting을 위한 timestamp 추가
+  const timestamp = Date.now()
+  const response = await fetch(`${url}?t=${timestamp}`, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  })
   const data = await response.json()
   
   apiCache.set(url, { data, timestamp: now })
@@ -62,32 +70,42 @@ export default function LazyGallerySection() {
     triggerOnce: true
   })
 
+  const fetchGallery = useCallback(async (forceRefresh = false) => {
+    try {
+      setLoading(true)
+      const galleryData = await fetchWithCache('/api/gallery', forceRefresh)
+      
+      if (galleryData && typeof galleryData === 'object' && 'success' in galleryData && galleryData.success) {
+        setGallery((galleryData as { data: Gallery[] }).data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching gallery:', error)
+      setGallery([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (shouldLoad && !hasLoaded) {
-      const fetchGallery = async () => {
-        try {
-          setLoading(true)
-          const galleryData = await fetchWithCache('/api/gallery')
-          
-          if (galleryData && typeof galleryData === 'object' && 'success' in galleryData && galleryData.success) {
-            setGallery((galleryData as { data: Gallery[] }).data || [])
-          }
-        } catch (error) {
-          console.error('Error fetching gallery:', error)
-          setGallery([])
-        } finally {
-          setLoading(false)
-          setHasLoaded(true)
-        }
-      }
-
-      fetchGallery()
+      fetchGallery().then(() => setHasLoaded(true))
     }
-  }, [shouldLoad, hasLoaded])
+  }, [shouldLoad, hasLoaded, fetchGallery])
+
+  // 주기적 리프레시 (30초마다)
+  useEffect(() => {
+    if (hasLoaded) {
+      const interval = setInterval(() => {
+        fetchGallery(true) // 강제 리프레시
+      }, 30000)
+
+      return () => clearInterval(interval)
+    }
+  }, [hasLoaded, fetchGallery])
 
   return (
     <div ref={ref}>
-      {loading || !hasLoaded ? (
+      {loading && !hasLoaded ? (
         <GalleryLoading />
       ) : (
         <GallerySection gallery={gallery} />

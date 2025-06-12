@@ -1,30 +1,45 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { ContactPerson } from '@/types'
 
 export default function ContactSection() {
   const [contacts, setContacts] = useState<ContactPerson[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        const response = await fetch('/api/contacts')
-        const data = await response.json()
-        
-        if (data.success) {
-          setContacts(data.data || [])
+  const fetchContacts = useCallback(async () => {
+    try {
+      // Cache busting을 위한 timestamp 추가
+      const timestamp = Date.now()
+      const response = await fetch(`/api/contacts?t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
-      } catch (error) {
-        console.error('Error fetching contacts:', error)
-      } finally {
-        setLoading(false)
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        setContacts(data.data || [])
       }
+    } catch (error) {
+      console.error('Error fetching contacts:', error)
+    } finally {
+      setLoading(false)
     }
-
-    fetchContacts()
   }, [])
+
+  useEffect(() => {
+    fetchContacts()
+    
+    // 30초마다 자동 리프레시
+    const interval = setInterval(() => {
+      fetchContacts()
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [fetchContacts])
 
   const handleCall = (phone: string) => {
     if (phone && phone.trim()) {

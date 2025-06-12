@@ -22,9 +22,10 @@ export async function GET() {
       data: contacts,
     })
 
-    // 캐싱 헤더 추가 (10분 캐시)
-    response.headers.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1200')
-    response.headers.set('CDN-Cache-Control', 'public, s-maxage=600')
+    // 캐싱 헤더 제거 - 관리자 수정사항이 바로 반영되도록
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
     
     return response
   } catch (error) {
