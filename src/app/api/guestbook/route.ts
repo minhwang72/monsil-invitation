@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { encrypt, decrypt, hashPassword, verifyPassword } from '@/lib/encryption'
 import type { ApiResponse, Guestbook } from '@/types'
 
 export async function GET() {
@@ -10,9 +11,16 @@ export async function GET() {
     )
     const guestbookRows = rows as Guestbook[]
     
+    // 데이터 복호화
+    const decryptedRows = guestbookRows.map(row => ({
+      ...row,
+      name: decrypt(row.name),
+      content: decrypt(row.content)
+    }))
+    
     const response = NextResponse.json<ApiResponse<Guestbook[]>>({
       success: true,
-      data: guestbookRows,
+      data: decryptedRows,
     })
 
     // 캐싱 헤더 추가 (1분 캐시)
@@ -37,13 +45,18 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, password, content } = body
 
+    // 데이터 암호화
+    const encryptedName = encrypt(name)
+    const encryptedContent = encrypt(content)
+    const hashedPassword = hashPassword(password)
+
     // 한국 시간으로 현재 시간 생성
     const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
     const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
 
     await pool.query(
       'INSERT INTO guestbook (name, password, content, created_at) VALUES (?, ?, ?, ?)',
-      [name, password, content, formattedTime]
+      [encryptedName, hashedPassword, encryptedContent, formattedTime]
     )
 
     return NextResponse.json<ApiResponse<null>>({
@@ -77,7 +90,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    // 비밀번호 확인
+    // 저장된 해시된 비밀번호 확인
     const [passwordRows] = await pool.query(
       'SELECT password FROM guestbook WHERE id = ? AND deleted_at IS NULL',
       [id]
@@ -93,8 +106,10 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const storedPassword = (passwordRows[0] as { password: string }).password
-    if (storedPassword !== password) {
+    const storedHashedPassword = (passwordRows[0] as { password: string }).password
+    
+    // 비밀번호 검증
+    if (!verifyPassword(password, storedHashedPassword)) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,

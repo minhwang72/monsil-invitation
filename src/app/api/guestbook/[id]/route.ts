@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { encrypt, verifyPassword } from '@/lib/encryption'
 import type { ApiResponse } from '@/types'
 import type { RowDataPacket } from 'mysql2'
 
@@ -15,13 +16,24 @@ export async function PUT(request: NextRequest) {
     const { password, content } = body
     const id = getIdFromRequest(request)
 
-    // Verify password
+    // 저장된 해시된 비밀번호로 검증
     const [rows] = await pool.query(
-      'SELECT id FROM guestbook WHERE id = ? AND password = ?',
-      [id, password]
+      'SELECT password FROM guestbook WHERE id = ? AND deleted_at IS NULL',
+      [id]
     )
     const resultRows = Array.isArray(rows) ? rows as RowDataPacket[] : []
     if (!resultRows.length) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: 'Entry not found',
+        },
+        { status: 404 }
+      )
+    }
+
+    const storedHashedPassword = resultRows[0].password as string
+    if (!verifyPassword(password, storedHashedPassword)) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -31,9 +43,10 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update content
+    // 내용 암호화하여 업데이트
+    const encryptedContent = encrypt(content)
     await pool.query('UPDATE guestbook SET content = ? WHERE id = ?', [
-      content,
+      encryptedContent,
       id,
     ])
 
@@ -68,13 +81,24 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Verify password
+    // 저장된 해시된 비밀번호로 검증
     const [rows] = await pool.query(
-      'SELECT id FROM guestbook WHERE id = ? AND password = ?',
-      [id, password]
+      'SELECT password FROM guestbook WHERE id = ? AND deleted_at IS NULL',
+      [id]
     )
     const resultRows = Array.isArray(rows) ? rows as RowDataPacket[] : []
     if (!resultRows.length) {
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: 'Entry not found',
+        },
+        { status: 404 }
+      )
+    }
+
+    const storedHashedPassword = resultRows[0].password as string
+    if (!verifyPassword(password, storedHashedPassword)) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -84,8 +108,11 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete entry
-    await pool.query('DELETE FROM guestbook WHERE id = ?', [id])
+    // 한국 시간으로 deleted_at 설정
+    const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
+    const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
+
+    await pool.query('UPDATE guestbook SET deleted_at = ? WHERE id = ?', [formattedTime, id])
 
     return NextResponse.json<ApiResponse<null>>({
       success: true,
