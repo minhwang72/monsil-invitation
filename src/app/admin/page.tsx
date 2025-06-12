@@ -623,13 +623,17 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
     console.log('[DEBUG] Validating and preparing', files.length, 'files')
     
     try {
-      const uploadPromises = files.map(async (file) => {
+      const results = []
+      
+      // 파일을 순차적으로 업로드하여 중복 방지
+      for (const file of files) {
         try {
           // 클라이언트 사이드에서 각 파일 유효성 검사
           const validation = await validateAndPrepareFile(file)
           
           if (!validation.isValid) {
-            return { success: false, error: validation.error || '파일 검증 실패' }
+            results.push({ success: false, error: validation.error || '파일 검증 실패' })
+            continue
           }
           
           let fileToUpload = file
@@ -654,7 +658,8 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
               console.log('[DEBUG] HEIC converted to JPEG for file:', file.name)
             } catch (heicError) {
               console.error('[DEBUG] Client HEIC conversion failed for file:', file.name, heicError)
-              return { success: false, error: `${file.name}: HEIC 파일 변환에 실패했습니다` }
+              results.push({ success: false, error: `${file.name}: HEIC 파일 변환에 실패했습니다` })
+              continue
             }
           }
           
@@ -674,14 +679,13 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
             result.serverConverted = true
           }
           
-          return result
+          results.push(result)
         } catch (error) {
           console.error('Error validating/uploading file:', file.name, error)
-          return { success: false, error: `${file.name} 처리 실패` }
+          results.push({ success: false, error: `${file.name} 처리 실패` })
         }
-      })
+      }
 
-      const results = await Promise.all(uploadPromises)
       const successCount = results.filter(result => result.success).length
       const failCount = results.length - successCount
 
