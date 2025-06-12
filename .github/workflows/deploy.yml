@@ -36,17 +36,6 @@ jobs:
         echo "NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=${{ secrets.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID }}" >> $GITHUB_ENV
         echo "NAVER_MAP_CLIENT_SECRET=${{ secrets.NAVER_MAP_CLIENT_SECRET }}" >> $GITHUB_ENV
         echo "NEXT_PUBLIC_KAKAO_JS_KEY=${{ secrets.NEXT_PUBLIC_KAKAO_JS_KEY }}" >> $GITHUB_ENV
-    
-        echo "Loaded ENV values:"
-        echo "DOCKER_IMAGE=${{ secrets.DOCKER_IMAGE }}"
-        echo "DOCKER_TAG=${{ secrets.DOCKER_TAG }}"
-        echo "SERVER_HOST=${{ secrets.SERVER_HOST }}"
-        echo "SERVER_PORT=${{ secrets.SERVER_PORT }}"
-        echo "SERVER_USER=${{ secrets.SERVER_USER }}"
-        echo "NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=${{ secrets.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID }}"
-        echo "NEXT_PUBLIC_KAKAO_JS_KEY=${{ secrets.NEXT_PUBLIC_KAKAO_JS_KEY }}"
-      shell: bash
-      
 
     - name: Clean and Install dependencies
       run: |
@@ -111,17 +100,13 @@ jobs:
         timeout: 30s
         command_timeout: 10m
         script: |
-          # 호스트 디렉토리 준비
           echo "📁 Preparing host directories..."
           HOST_PUBLIC_DIR="/home/ubuntu/wedding-website/public"
+          mkdir -p $HOST_PUBLIC_DIR/uploads
           mkdir -p $HOST_PUBLIC_DIR/uploads/images
-          chmod 755 $HOST_PUBLIC_DIR
-          chmod 755 $HOST_PUBLIC_DIR/uploads
-          chmod 755 $HOST_PUBLIC_DIR/uploads/images
-          
-          # Docker 컨테이너 유저(1001:1001)가 접근할 수 있도록 권한 설정
+
           sudo chown -R 1001:1001 $HOST_PUBLIC_DIR
-          sudo chmod -R 755 $HOST_PUBLIC_DIR
+          sudo chmod -R 775 $HOST_PUBLIC_DIR
 
           if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
             echo "Stopping and removing previous container..."
