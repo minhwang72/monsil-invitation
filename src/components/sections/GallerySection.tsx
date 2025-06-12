@@ -5,10 +5,10 @@ interface GallerySectionProps {
   gallery: Gallery[]
 }
 
-type DisplayImage = Gallery | {
+interface DisplayImage {
   id: number
   url: string
-  isPlaceholder: boolean
+  isPlaceholder?: boolean
 }
 
 export default function GallerySection({ gallery }: GallerySectionProps) {
@@ -33,9 +33,9 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     ? galleryImages 
     : placeholderImages
 
-  // 표시할 이미지 개수 결정 (9개 제한 또는 모든 이미지)
-  const imagesToShow = showAll ? displayImages : displayImages.slice(0, 9)
-  const hasMoreImages = displayImages.length > 9
+  // 표시할 이미지 개수 결정 (8개 제한 또는 모든 이미지)
+  const imagesToShow = showAll ? displayImages : displayImages.slice(0, 8)
+  const hasMoreImages = displayImages.length > 8
 
   // 이미지 로드 실패 핸들러
   const handleImageError = (imageId: number) => {
@@ -61,15 +61,15 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
   const goToPrevious = useCallback(() => {
     setCurrentImageIndex((prev) => 
-      prev === 0 ? imagesToShow.length - 1 : prev - 1
+      prev === 0 ? displayImages.length - 1 : prev - 1
     )
-  }, [imagesToShow.length])
+  }, [displayImages.length])
 
   const goToNext = useCallback(() => {
     setCurrentImageIndex((prev) => 
-      prev === imagesToShow.length - 1 ? 0 : prev + 1
+      prev === displayImages.length - 1 ? 0 : prev + 1
     )
-  }, [imagesToShow.length])
+  }, [displayImages.length])
 
   // 터치 이벤트 핸들러
   const onTouchStart = (e: React.TouchEvent) => {
@@ -314,7 +314,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                 e.stopPropagation()
               }}
             >
-              {('isPlaceholder' in imagesToShow[currentImageIndex] && imagesToShow[currentImageIndex].isPlaceholder) || failedImages.has(imagesToShow[currentImageIndex].id) ? (
+              {('isPlaceholder' in displayImages[currentImageIndex] && displayImages[currentImageIndex].isPlaceholder) || failedImages.has(displayImages[currentImageIndex].id) ? (
                 <div className="bg-gray-100 rounded-lg flex items-center justify-center w-80 h-80 md:w-96 md:h-96">
                   <svg
                     className="w-16 h-16 md:w-24 md:h-24 text-gray-300 pointer-events-none"
@@ -334,11 +334,11 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                 </div>
               ) : (
                 <img
-                  src={imagesToShow[currentImageIndex].url}
+                  src={displayImages[currentImageIndex].url}
                   alt="Gallery"
                   className="max-w-[90vw] max-h-[80vh] md:max-w-[85vw] md:max-h-[75vh] object-contain rounded-lg pointer-events-none"
                   sizes="(max-width: 768px) 90vw, 85vw"
-                  onError={() => handleImageError(imagesToShow[currentImageIndex].id)}
+                  onError={() => handleImageError(displayImages[currentImageIndex].id)}
                 />
               )}
             </div>
@@ -377,7 +377,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
               </button>
               
               <div className="text-white text-sm font-sans px-4">
-                {currentImageIndex + 1} / {imagesToShow.length}
+                {currentImageIndex + 1} / {displayImages.length}
               </div>
               
               <button
