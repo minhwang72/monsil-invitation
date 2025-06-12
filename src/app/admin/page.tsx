@@ -234,6 +234,49 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
     })
   }
 
+  // 전화번호 포맷팅 함수 (000-0000-0000 형식)
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return ''
+    
+    // 숫자만 추출
+    const numbers = phone.replace(/\D/g, '')
+    
+    // 11자리 숫자인 경우 010-0000-0000 형식으로 포맷
+    if (numbers.length === 11) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`
+    }
+    // 10자리 숫자인 경우 00-0000-0000 형식으로 포맷
+    else if (numbers.length === 10) {
+      return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6)}`
+    }
+    // 그 외의 경우 원본 반환
+    return phone
+  }
+
+  // 전화번호 입력 핸들러 (숫자만 허용) - 새 연락처용
+  const handleNewContactPhoneChange = (value: string) => {
+    // 숫자만 추출
+    const numbersOnly = value.replace(/\D/g, '')
+    
+    // 11자리까지만 허용
+    if (numbersOnly.length <= 11) {
+      setNewContact(prev => ({ ...prev, phone: numbersOnly }))
+    }
+  }
+
+  // 전화번호 입력 핸들러 (숫자만 허용) - 수정용
+  const handleEditContactPhoneChange = (value: string) => {
+    if (!editingContact) return
+    
+    // 숫자만 추출
+    const numbersOnly = value.replace(/\D/g, '')
+    
+    // 11자리까지만 허용
+    if (numbersOnly.length <= 11) {
+      setEditingContact(prev => prev ? ({ ...prev, phone: numbersOnly }) : null)
+    }
+  }
+
   // 신랑측/신부측 연락처 분리
   const groomContacts = contacts.filter(contact => contact.side === 'groom')
   const brideContacts = contacts.filter(contact => contact.side === 'bride')
@@ -371,7 +414,7 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
       </div>
       
       <div className="space-y-1 text-sm text-gray-600">
-        <p>전화: {contact.phone}</p>
+        <p>전화: {formatPhoneNumber(contact.phone)}</p>
         {contact.bank_name && <p>은행: {contact.bank_name}</p>}
         {contact.account_number && <p>계좌: {contact.account_number}</p>}
         {contact.kakaopay_link && (
@@ -494,10 +537,15 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
                     <input
                       type="text"
                       value={newContact.phone}
-                      onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                      onChange={(e) => handleNewContactPhoneChange(e.target.value)}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
-                      placeholder="전화번호를 입력하세요"
+                      placeholder="숫자만 입력 (예: 01012345678)"
+                      inputMode="numeric"
+                      maxLength={11}
                     />
+                    {newContact.phone && (
+                      <p className="text-xs text-gray-500 mt-1">미리보기: {formatPhoneNumber(newContact.phone)}</p>
+                    )}
                   </div>
                   
                   <div>
@@ -619,9 +667,15 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
                     <input
                       type="text"
                       value={editingContact.phone}
-                      onChange={(e) => setEditingContact({ ...editingContact, phone: e.target.value })}
+                      onChange={(e) => handleEditContactPhoneChange(e.target.value)}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder="숫자만 입력 (예: 01012345678)"
+                      inputMode="numeric"
+                      maxLength={11}
                     />
+                    {editingContact.phone && (
+                      <p className="text-xs text-gray-500 mt-1">미리보기: {formatPhoneNumber(editingContact.phone)}</p>
+                    )}
                   </div>
                   
                   <div>
