@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import type { ApiResponse } from '@/types'
-import { join } from 'path'
 
 // Check admin authentication
 function checkAdminAuth(request: NextRequest) {
@@ -52,51 +51,19 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Get current filenames for renaming
-    const [galleryRows] = await pool.query(
-      'SELECT id, filename FROM gallery WHERE id IN (?) AND deleted_at IS NULL',
-      [reorderedIds]
-    )
-    const galleryItems = galleryRows as { id: number; filename: string }[]
-    
-    console.log('🔍 [DEBUG] Current gallery items:', galleryItems)
-
-    // Update order_index and filename for each item
+    // Update only order_index for each item (파일명 변경 제거)
     for (let i = 0; i < reorderedIds.length; i++) {
       const newOrder = i + 1 // Start from 1
       const itemId = reorderedIds[i]
-      const currentItem = galleryItems.find(item => item.id === itemId)
       
-      if (currentItem) {
-        // Generate new filename: gallery01.jpg, gallery02.jpg
-        const orderString = newOrder.toString().padStart(2, '0')
-        const newFilename = `gallery${orderString}.jpg`
-        const newDbPath = `images/${newFilename}`
-        const currentFilename = currentItem.filename
-        
-        // Rename physical file if filename changed
-        if (currentFilename !== newDbPath) {
-          try {
-            const oldFilePath = join(process.cwd(), 'public', 'uploads', currentFilename)
-            const newFilePath = join(process.cwd(), 'public', 'uploads', newDbPath)
-            
-            await import('fs/promises').then(fs => fs.rename(oldFilePath, newFilePath))
-            console.log(`✅ [DEBUG] Renamed file: ${currentFilename} -> ${newDbPath}`)
-          } catch (renameError) {
-            console.warn(`⚠️ [DEBUG] Failed to rename file: ${currentFilename}`, renameError)
-          }
-        }
-        
-        // Update database with new order and filename
-        console.log(`🔍 [DEBUG] Updating ID ${itemId}: order=${newOrder}, filename=${newDbPath}`)
-        await pool.query(
-          'UPDATE gallery SET order_index = ?, filename = ? WHERE id = ? AND deleted_at IS NULL',
-          [newOrder, newDbPath, itemId]
-        )
-      }
+      console.log(`🔍 [DEBUG] Updating ID ${itemId}: order=${newOrder}`)
+      await pool.query(
+        'UPDATE gallery SET order_index = ? WHERE id = ? AND deleted_at IS NULL',
+        [newOrder, itemId]
+      )
     }
 
-    console.log('✅ [DEBUG] Gallery reordering and renaming completed')
+    console.log('✅ [DEBUG] Gallery reordering completed')
 
     return NextResponse.json<ApiResponse<null>>({
       success: true,

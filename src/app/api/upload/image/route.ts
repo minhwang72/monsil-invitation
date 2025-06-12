@@ -8,19 +8,11 @@ import type { ApiResponse } from '@/types'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// 바디 파서 설정
-export const config = {
-  api: {
-    bodyParser: false, // FormData 처리를 위해 비활성화
-    responseLimit: false,
-    externalResolver: true,
-  },
-}
+// 파일 크기 제한 설정
+export const maxDuration = 60 // 60초 타임아웃
 
 // 최대 파일 크기 설정 (50MB) - 상수로 선언
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
-
-export const maxDuration = 60 // 60초 타임아웃
 
 export async function POST(request: NextRequest) {
   try {
@@ -105,22 +97,27 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const fileExtension = '.jpg' // 항상 JPEG로 변환하여 저장
     const fileName = targetId ? `${targetId}${fileExtension}` : `${timestamp}${fileExtension}`
+    
+    // images 폴더 구조로 변경
     const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    const filePath = join(uploadsDir, fileName)
-    const fileUrl = `/uploads/images/${fileName}`
+    const imagesDir = join(uploadsDir, 'images')
+    const filePath = join(imagesDir, fileName)
+    const fileUrl = `/uploads/images/${fileName}` // 올바른 URL 경로
 
     console.log('🔍 [DEBUG] File paths:', {
       uploadsDir,
+      imagesDir,
       fileName, 
-      filePath
+      filePath,
+      fileUrl
     })
 
-    // uploads 디렉토리 생성 확인
+    // uploads/images 디렉토리 생성 확인
     try {
-      await access(uploadsDir)
+      await access(imagesDir)
     } catch {
-      await mkdir(uploadsDir, { recursive: true })
-      console.log('✅ [DEBUG] Created uploads directory')
+      await mkdir(imagesDir, { recursive: true })
+      console.log('✅ [DEBUG] Created images directory')
     }
 
     // 기존 파일이 있으면 삭제 (동일 targetId인 경우)
