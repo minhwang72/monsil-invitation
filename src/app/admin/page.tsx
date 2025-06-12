@@ -1563,14 +1563,8 @@ const GuestbookSection = ({ guestbook, onUpdate, loading, setGlobalLoading }: { 
   }
 
   const formatDate = (dateString: string | Date) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    // API에서 이미 "YYYY. MM. DD HH:mm" 형식으로 포맷된 시간을 보내주므로 그대로 사용
+    return String(dateString)
   }
 
   return (
