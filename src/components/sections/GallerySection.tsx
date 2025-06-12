@@ -155,7 +155,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           <div className="w-full h-px bg-gray-200 mb-6 md:mb-8"></div>
 
           {/* 갤러리 그리드 */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 mb-6 md:mb-8">
+          <div className="grid grid-cols-2 gap-2 md:gap-3 mb-6 md:mb-8">
             {imagesToShow.map((item, index) => (
               <div 
                 key={item.id} 

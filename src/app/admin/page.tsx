@@ -1709,7 +1709,8 @@ function AdminPageContent() {
     try {
       await fetch('/api/admin/logout', { method: 'POST' })
       setIsAuthenticated(false)
-      router.push('/')
+      // 메인페이지로 이동 후 리로드
+      window.location.href = '/'
     } catch (error) {
       console.error('Logout failed:', error)
     }
