@@ -47,7 +47,7 @@ export default function WeddingDateSection() {
       return `h-10 md:h-12 w-full text-center flex items-center justify-center text-sm md:text-base relative ${weekendClass}`
     }
     
-    return `h-10 md:h-12 w-full text-center flex items-center justify-center text-sm md:text-base text-gray-700 hover:bg-gray-100 transition-colors rounded ${weekendClass}`
+    return `h-10 md:h-12 w-full text-center flex items-center justify-center text-sm md:text-base text-gray-700 transition-colors rounded ${weekendClass}`
   }
 
   return (

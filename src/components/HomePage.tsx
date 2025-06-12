@@ -207,7 +207,7 @@ export default function HomePage() {
       <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 flex items-center gap-3" data-share-buttons>
         {/* 카카오톡 공유 버튼 */}
         <button
-          className={`bg-yellow-400 hover:bg-yellow-500 text-black p-3 md:p-4 rounded-full shadow-lg transition-all duration-300 ${
+          className={`bg-yellow-500 text-black p-3 md:p-4 rounded-full shadow-lg transition-all duration-300 ${
             shareMenuOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
           }`}
           onClick={shareKakao}
@@ -219,7 +219,7 @@ export default function HomePage() {
 
         {/* 링크 복사 버튼 */}
         <button
-          className={`bg-gray-600 hover:bg-gray-700 text-white p-3 md:p-4 rounded-full shadow-lg transition-all duration-300 ${
+          className={`bg-gray-700 text-white p-3 md:p-4 rounded-full shadow-lg transition-all duration-300 ${
             shareMenuOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
           }`}
           onClick={copyLink}
@@ -231,7 +231,7 @@ export default function HomePage() {
 
         {/* 메인 공유 버튼 */}
         <button
-          className="bg-purple-300 hover:bg-purple-400 text-white p-3 md:p-4 rounded-full shadow-lg transition-colors"
+          className="bg-purple-400 text-white p-3 md:p-4 rounded-full shadow-lg transition-colors"
           onClick={defaultShare}
         >
           {shareMenuOpen ? (

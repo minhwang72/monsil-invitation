@@ -62,7 +62,7 @@ export default function LocationSection() {
           <div className="flex justify-center gap-2 md:gap-4 mb-6 md:mb-8 px-4 md:px-8">
             <button
               onClick={handleNaverMap}
-              className="flex-1 bg-white hover:bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
+              className="flex-1 bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
             >
               <svg width="18" height="14" viewBox="0 0 21 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="md:w-[21px] md:h-[16px] flex-shrink-0">
                 <path d="M6.09879 0C2.86879 0 0.258789 2.61 0.258789 5.84C0.258789 6.18 0.298789 6.53 0.368789 6.89C0.558789 7.83 0.948789 8.71 1.49879 9.49L6.08879 16L8.73879 12.24L10.6788 9.49C11.2288 8.71 11.6188 7.83 11.8088 6.89C11.8788 6.53 11.9188 6.18 11.9188 5.84C11.9188 2.62 9.30879 0 6.07879 0L6.09879 0ZM5.35879 5.73V7.9H4.02879V3.78H5.35879L6.83879 5.95V3.78H8.16879V7.89H6.83879L5.35879 5.72V5.73Z" fill="#04C75A"/>
@@ -75,7 +75,7 @@ export default function LocationSection() {
             </button>
             <button
               onClick={handleTMap}
-              className="flex-1 bg-white hover:bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
+              className="flex-1 bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
             >
               <svg width="14" height="12" viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="md:w-[16px] md:h-[14px] flex-shrink-0">
                 <path d="M12.6951 0H0.955078V3.1H12.6951V0Z" fill="url(#paint0_linear_1343_17036)"/>
@@ -99,7 +99,7 @@ export default function LocationSection() {
             </button>
             <button
               onClick={handleKakaoMap}
-              className="flex-1 bg-white hover:bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
+              className="flex-1 bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
             >
               <svg width="14" height="14" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" className="md:w-[16px] md:h-[16px] flex-shrink-0">
                 <rect width="600" height="600" rx="100" ry="100" fill="#FFCD00"/>
@@ -128,7 +128,7 @@ export default function LocationSection() {
                   </p>
                   <button
                     onClick={handleCopyAddress}
-                    className="text-gray-500 hover:text-gray-700 transition-colors p-1 flex-shrink-0"
+                    className="text-gray-700 transition-colors p-1 flex-shrink-0"
                     aria-label="주소 복사"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,7 +140,7 @@ export default function LocationSection() {
                   <p className="text-gray-700 font-medium text-sm md:text-base">정동제일교회</p>
                   <button
                     onClick={handleCallChurch}
-                    className="text-blue-500 hover:text-blue-700 transition-colors p-1 flex-shrink-0"
+                    className="text-blue-700 transition-colors p-1 flex-shrink-0"
                     aria-label="교회 전화걸기"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

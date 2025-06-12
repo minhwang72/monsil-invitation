@@ -117,15 +117,17 @@ export default function HeartMoneySection() {
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
               <button
                 onClick={() => toggleSide('groom')}
-                className="w-full px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left flex justify-between items-center border-b border-gray-100"
+                className="w-full px-4 py-3 bg-gray-50 transition-colors text-left flex justify-between items-center border-b border-gray-100"
               >
-                <span className="text-base font-medium text-gray-800">신랑측</span>
-                <svg
-                  className={`w-4 h-4 text-gray-600 transition-transform duration-500 ${
-                    expandedSides.has('groom') ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm md:text-base font-medium text-gray-800">
+                    {groomSide.length > 0 ? getSideLabel('groom') : '신랑측'}
+                  </span>
+                </div>
+                <svg 
+                  className={`w-5 h-5 text-gray-500 transition-transform ${expandedSides.has('groom') ? 'transform rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -176,7 +178,7 @@ export default function HeartMoneySection() {
                               {contact.kakaopay_link && (
                                 <button
                                   onClick={() => openKakaoPay(contact.kakaopay_link!)}
-                                  className="text-gray-800 hover:text-black transition-colors p-1"
+                                  className="text-gray-900 transition-colors p-1"
                                   aria-label={`${contact.name} 카카오페이로 송금`}
                                 >
                                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -198,15 +200,17 @@ export default function HeartMoneySection() {
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
               <button
                 onClick={() => toggleSide('bride')}
-                className="w-full px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left flex justify-between items-center border-b border-gray-100"
+                className="w-full px-4 py-3 bg-gray-50 transition-colors text-left flex justify-between items-center border-b border-gray-100"
               >
-                <span className="text-base font-medium text-gray-800">신부측</span>
-                <svg
-                  className={`w-4 h-4 text-gray-600 transition-transform duration-500 ${
-                    expandedSides.has('bride') ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm md:text-base font-medium text-gray-800">
+                    {brideSide.length > 0 ? getSideLabel('bride') : '신부측'}
+                  </span>
+                </div>
+                <svg 
+                  className={`w-5 h-5 text-gray-500 transition-transform ${expandedSides.has('bride') ? 'transform rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -257,7 +261,7 @@ export default function HeartMoneySection() {
                               {contact.kakaopay_link && (
                                 <button
                                   onClick={() => openKakaoPay(contact.kakaopay_link!)}
-                                  className="text-gray-800 hover:text-black transition-colors p-1"
+                                  className="text-gray-900 transition-colors p-1"
                                   aria-label={`${contact.name} 카카오페이로 송금`}
                                 >
                                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">

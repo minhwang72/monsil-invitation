@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 [DEBUG] File buffer size:', buffer.length)
 
     // Sharp를 사용하여 이미지 처리 및 저장 (성능 최적화)
-    const quality = 75 // 85 → 75로 품질 낮춰서 처리 속도 향상
+    const quality = 85
     const outputBuffer = await sharp(buffer)
       .rotate() // EXIF 방향 정보에 따라 자동 회전
       .jpeg({ 
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         progressive: true,
         mozjpeg: true // mozjpeg 압축 사용 (더 빠름)
       })
-      .resize(1200, null, { // 1920 → 1200으로 낮춰서 처리 속도 향상
+      .resize(1920, null, { // 1920 → 1200으로 낮춰서 처리 속도 향상
         withoutEnlargement: true,
         fit: 'inside',
         kernel: sharp.kernel.nearest // 빠른 리사이징 알고리즘

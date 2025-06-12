@@ -94,8 +94,8 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
       return
     }
 
-    if (formData.password.length < 6) {
-      showToast('비밀번호는 6자리 이상 입력해주세요.', 'error')
+    if (formData.password.length < 4) {
+      showToast('비밀번호는 4자리 이상 입력해주세요.', 'error')
       return
     }
 
@@ -217,7 +217,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
           <div className="flex justify-end mb-4 md:mb-6">
             <button
               onClick={handleWrite}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-300 hover:bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium text-sm md:text-base"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium text-sm md:text-base"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -249,7 +249,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                       </div>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="text-pink-300 hover:text-pink-400 transition-colors p-1 flex-shrink-0"
+                        className="text-pink-400 transition-colors p-1 flex-shrink-0"
                         aria-label="메시지 삭제"
                       >
                         <svg
@@ -283,7 +283,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   <div className="flex justify-center mt-6 md:mt-8">
                     <button
                       onClick={() => setShowAll(!showAll)}
-                      className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors font-sans"
+                      className="flex items-center gap-2 text-gray-800 transition-colors font-sans"
                     >
                       <span className="text-sm font-light">
                         {showAll ? '접기' : '더보기'}
@@ -364,7 +364,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent text-sm md:text-base"
-                  placeholder="비밀번호를 입력해주세요 (6~12자리)"
+                  placeholder="비밀번호를 입력해주세요 (4~12자리)"
                 />
               </div>
 
@@ -372,14 +372,14 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="flex-1 py-2 px-4 text-sm md:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  className="flex-1 py-2 px-4 text-sm md:text-base text-gray-700 bg-gray-200 rounded-md transition-colors"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2 px-4 text-sm md:text-base bg-purple-300 hover:bg-purple-400 disabled:bg-purple-200 text-white rounded-md transition-colors"
+                  className="flex-1 py-2 px-4 text-sm md:text-base bg-purple-400 disabled:bg-purple-200 text-white rounded-md transition-colors"
                 >
                   {isSubmitting ? '작성 중...' : '작성하기'}
                 </button>
@@ -415,14 +415,14 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
             <div className="flex gap-3">
               <button
                 onClick={handleDeleteCancel}
-                className="flex-1 py-2 px-4 text-sm md:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                className="flex-1 py-2 px-4 text-sm md:text-base text-gray-700 bg-gray-200 rounded-md transition-colors"
               >
                 취소
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="flex-1 py-2 px-4 text-sm md:text-base bg-pink-300 hover:bg-pink-400 disabled:bg-pink-200 text-white rounded-md transition-colors"
+                className="flex-1 py-2 px-4 text-sm md:text-base bg-pink-400 disabled:bg-pink-200 text-white rounded-md transition-colors"
               >
                 {isDeleting ? '삭제 중...' : '삭제'}
               </button>

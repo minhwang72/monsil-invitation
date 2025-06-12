@@ -1,5 +1,8 @@
+'use client'
+
 import { useState, useEffect, useCallback } from 'react'
 import type { Gallery } from '@/types'
+import { useScrollAnimation } from '@/hooks/useScrollAnimation'
 
 interface GallerySectionProps {
   gallery: Gallery[]
@@ -18,6 +21,11 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
   const [showAll, setShowAll] = useState(false)
+
+  // 스크롤 애니메이션 훅들
+  const titleAnimation = useScrollAnimation({ threshold: 0.4, animationDelay: 200 })
+  const gridAnimation = useScrollAnimation({ threshold: 0.3, animationDelay: 400 })
+  const moreButtonAnimation = useScrollAnimation({ threshold: 0.2, animationDelay: 600 })
 
   // 실제 갤러리 이미지가 있으면 사용하고, 없으면 12개의 기본 placeholder 이미지 생성 (더보기 기능 테스트용)
   const placeholderImages: DisplayImage[] = Array.from({ length: 12 }, (_, i) => ({
@@ -40,10 +48,6 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
   // 이미지 로드 실패 핸들러
   const handleImageError = (imageId: number) => {
     setFailedImages(prev => new Set(prev).add(imageId))
-  }
-
-  const toggleShowAll = () => {
-    setShowAll(!showAll)
   }
 
   const openModal = useCallback((index: number) => {
@@ -112,13 +116,6 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     }
   }, [closeModal])
 
-  // X 버튼 클릭 핸들러
-  const handleCloseClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    closeModal()
-  }, [closeModal])
-
   // 컴포넌트 언마운트 시 스크롤 복원
   useEffect(() => {
     return () => {
@@ -147,7 +144,10 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
       <section className="w-full min-h-screen flex flex-col justify-center py-12 md:py-16 px-0 font-sans bg-white">
         <div className="max-w-xl mx-auto text-center w-full px-4 md:px-6">
           {/* 제목 */}
-          <h2 className="text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text">
+          <h2 
+            ref={titleAnimation.ref}
+            className={`text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text transition-all duration-800 ${titleAnimation.animationClass}`}
+          >
             GALLERY
           </h2>
 
@@ -155,11 +155,14 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           <div className="w-full h-px bg-gray-200 mb-6 md:mb-8"></div>
 
           {/* 갤러리 그리드 */}
-          <div className="grid grid-cols-2 gap-2 md:gap-3 mb-6 md:mb-8">
+          <div 
+            ref={gridAnimation.ref}
+            className={`grid grid-cols-2 gap-2 md:gap-3 mb-6 md:mb-8 transition-all duration-800 ${gridAnimation.animationClass}`}
+          >
             {imagesToShow.map((item, index) => (
-              <div 
-                key={item.id} 
-                className="relative aspect-square cursor-pointer hover:opacity-80 transition-opacity rounded-lg overflow-hidden"
+              <div
+                key={index}
+                className="relative aspect-square cursor-pointer transition-opacity rounded-lg overflow-hidden"
                 onClick={() => openModal(index)}
               >
                 {('isPlaceholder' in item && item.isPlaceholder) || failedImages.has(item.id) ? (
@@ -193,10 +196,13 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 더보기/접기 버튼 */}
           {hasMoreImages && (
-            <div className="flex justify-center mb-6 md:mb-8">
+            <div 
+              ref={moreButtonAnimation.ref}
+              className={`flex justify-center mb-6 md:mb-8 transition-all duration-800 ${moreButtonAnimation.animationClass}`}
+            >
               <button
-                onClick={toggleShowAll}
-                className="flex flex-col items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors font-sans"
+                onClick={() => setShowAll(!showAll)}
+                className="flex flex-col items-center gap-2 text-gray-800 transition-colors font-sans"
               >
                 <span className="text-sm font-light">
                   {showAll ? '접기' : '더보기'}
@@ -233,9 +239,8 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
         >
           {/* 닫기 버튼 */}
           <button
-            onClick={handleCloseClick}
-            onTouchEnd={handleCloseClick}
-            className="absolute top-4 right-4 z-[10001] text-white hover:text-gray-300 transition-colors p-2 touch-manipulation"
+            onClick={closeModal}
+            className="absolute top-4 right-4 z-[10001] text-white transition-colors p-2 touch-manipulation"
           >
             <svg
               className="w-8 h-8 md:w-10 md:h-10 pointer-events-none"
@@ -255,52 +260,32 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           </button>
 
           {/* 이전 버튼 - 데스크톱에서만 표시 */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              goToPrevious()
-            }}
-            className="hidden md:block absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-[10001]"
-          >
-            <svg
-              className="w-10 h-10 pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+          {currentImageIndex > 0 && (
+            <button
+              onClick={goToPrevious}
+              disabled={currentImageIndex === 0}
+              className="text-white transition-colors p-2 flex items-center gap-2 touch-manipulation"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              이전
+            </button>
+          )}
 
           {/* 다음 버튼 - 데스크톱에서만 표시 */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              goToNext()
-            }}
-            className="hidden md:block absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-[10001]"
-          >
-            <svg
-              className="w-10 h-10 pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+          {currentImageIndex < displayImages.length - 1 && (
+            <button
+              onClick={goToNext}
+              disabled={currentImageIndex === displayImages.length - 1}
+              className="text-white transition-colors p-2 flex items-center gap-2 touch-manipulation"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              다음
+            </button>
+          )}
 
           {/* 중앙 이미지 영역 - 크기 제한 */}
           <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8 pointer-events-none">
