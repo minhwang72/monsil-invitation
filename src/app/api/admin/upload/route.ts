@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { join } from 'path'
 import sharp from 'sharp'
 import pool from '@/lib/db'
-import { ensureUploadDir, getTodayDateString } from '@/lib/fileUtils'
 import type { ApiResponse } from '@/types'
 
 // Next.js API Route 설정 - 파일 업로드 제한 설정
@@ -96,13 +95,22 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     console.log('🔍 [DEBUG] File buffer size:', buffer.length)
 
-    // Generate paths and filename (강화된 디렉토리 생성)
-    const dateString = getTodayDateString()
-    let datePath: string
+    // Generate paths and filename - images 폴더로 통합
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    const imagesDir = join(uploadsDir, 'images')
+    
+    // images 디렉토리 확인 및 생성
     try {
-      datePath = await ensureUploadDir(dateString)
+      await import('fs/promises').then(async (fs) => {
+        try {
+          await fs.access(imagesDir)
+        } catch {
+          await fs.mkdir(imagesDir, { recursive: true })
+          console.log('✅ [DEBUG] Created images directory')
+        }
+      })
     } catch (dirError) {
-      console.error('❌ [DEBUG] Failed to ensure upload directory:', dirError)
+      console.error('❌ [DEBUG] Failed to ensure images directory:', dirError)
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -112,18 +120,31 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const timestamp = Date.now()
-    const cleanName = file.name.replace(/\.[^/.]+$/, '') // 확장자 제거
-    const dbFilename = `${timestamp}_${cleanName}.jpg` // 항상 .jpg로 저장
-    const filepath = join(datePath, dbFilename)
-    const dbPath = `${dateString}/${dbFilename}` // DB에 저장할 상대 경로
+    // 파일명 생성 로직 개선
+    let dbFilename: string
+    
+    if (image_type === 'main') {
+      // 메인 이미지는 main_cover.jpg로 저장
+      dbFilename = 'main_cover.jpg'
+    } else {
+      // 갤러리 이미지인 경우 순서 번호를 조회하여 gallery_(순서번호).jpg로 저장
+      const [countRows] = await pool.query(
+        'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
+      )
+      const countResult = countRows as { count: number }[]
+      const nextOrder = countResult[0].count + 1
+      dbFilename = `gallery_${nextOrder}.jpg`
+    }
+    
+    const filepath = join(imagesDir, dbFilename)
+    const dbPath = `images/${dbFilename}` // DB에 저장할 상대 경로
     
     console.log('🔍 [DEBUG] File paths:', {
-      dateString,
-      datePath,
+      imagesDir,
       dbFilename,
       filepath,
-      dbPath
+      dbPath,
+      image_type
     })
 
     // Handle main image type - soft delete existing main image and remove physical files
@@ -204,28 +225,15 @@ export async function POST(request: NextRequest) {
     const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
     const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
     
-    // 갤러리 이미지인 경우 order_index 설정
-    let orderIndex = 0
-    if (image_type === 'gallery') {
-      // 기존 갤러리 이미지 개수 조회하여 다음 순서 번호 설정
-      const [countRows] = await pool.query(
-        'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
-      )
-      const countResult = countRows as { count: number }[]
-      orderIndex = countResult[0].count + 1
-      console.log('🔍 [DEBUG] Setting order_index for gallery image:', orderIndex)
-    }
-    
     console.log('🔍 [DEBUG] Inserting to database:', {
       filename: dbPath,
       image_type,
-      orderIndex,
       formattedTime
     })
 
     const insertResult = await pool.query(
-      'INSERT INTO gallery (filename, image_type, created_at, order_index) VALUES (?, ?, ?, ?)',
-      [dbPath, image_type, formattedTime, orderIndex]
+      'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
+      [dbPath, image_type, formattedTime]
     )
     
     console.log('✅ [DEBUG] Database insert result:', insertResult)
