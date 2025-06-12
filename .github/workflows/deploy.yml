@@ -102,11 +102,13 @@ jobs:
         script: |
           echo "📁 Preparing host directories..."
           HOST_PUBLIC_DIR="/home/ubuntu/wedding-website/public"
-          mkdir -p $HOST_PUBLIC_DIR/uploads
           mkdir -p $HOST_PUBLIC_DIR/uploads/images
-
+          
+          # 권한 설정: docker 컨테이너 user 1001:1001 기준
+          chmod 755 $HOST_PUBLIC_DIR
+          chmod 755 $HOST_PUBLIC_DIR/uploads
+          chmod 755 $HOST_PUBLIC_DIR/uploads/images
           sudo chown -R 1001:1001 $HOST_PUBLIC_DIR
-          sudo chmod -R 775 $HOST_PUBLIC_DIR
 
           if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
             echo "Stopping and removing previous container..."
