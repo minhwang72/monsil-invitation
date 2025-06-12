@@ -68,12 +68,12 @@ export async function POST(request: NextRequest) {
       hasFile: !!file
     })
 
-    if (!file) {
-      console.log('❌ [DEBUG] No file provided')
+    if (!file || !(file instanceof File)) {
+      console.log('❌ [DEBUG] No valid file provided')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: 'No file provided',
+          error: '유효한 파일이 아닙니다.',
         },
         { status: 400 }
       )
@@ -172,10 +172,20 @@ export async function POST(request: NextRequest) {
         if (image.filename) {
           const oldFilePath = join(process.cwd(), 'public', 'uploads', image.filename)
           try {
-            await import('fs/promises').then(fs => fs.unlink(oldFilePath))
-            console.log('✅ [DEBUG] Deleted physical file:', oldFilePath)
+            await import('fs/promises').then(async fs => {
+              try {
+                await fs.unlink(oldFilePath)
+                console.log('✅ [DEBUG] Deleted physical file:', oldFilePath)
+              } catch (unlinkError: any) {
+                if (unlinkError.code !== 'ENOENT') {
+                  console.log('⚠️ [DEBUG] Failed to delete file:', unlinkError)
+                } else {
+                  console.log('ℹ️ [DEBUG] File not found (already deleted):', oldFilePath)
+                }
+              }
+            })
           } catch (error) {
-            console.log('ℹ️ [DEBUG] File deletion info:', error)
+            console.log('ℹ️ [DEBUG] File deletion wrapper error:', error)
           }
         }
       }

@@ -49,12 +49,12 @@ export async function POST(request: NextRequest) {
       hasFile: !!file
     })
 
-    if (!file) {
-      console.error('❌ [DEBUG] No file provided in request')
+    if (!file || !(file instanceof File)) {
+      console.error('❌ [DEBUG] No valid file provided in request')
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: 'No file provided',
+          error: '유효한 파일이 아닙니다.',
         },
         { status: 400 }
       )
