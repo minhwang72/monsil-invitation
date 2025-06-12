@@ -5,12 +5,14 @@ import ImageCropper from './ImageCropper'
 
 interface MainImageUploaderProps {
   onUploadSuccess: (fileUrl: string) => void
+  setGlobalLoading: (loading: boolean, message?: string) => void
   className?: string
   disabled?: boolean
 }
 
 export default function MainImageUploader({
   onUploadSuccess,
+  setGlobalLoading,
   className = "",
   disabled = false
 }: MainImageUploaderProps) {
@@ -62,6 +64,8 @@ export default function MainImageUploader({
   const handleCropComplete = useCallback(async (croppedImageBlob: Blob) => {
     if (!selectedFile) return
 
+    // 크롭 완료 즉시 전역 로딩 시작
+    setGlobalLoading(true, '메인 이미지 업로드 중...')
     setUploading(true)
     setShowCropper(false)
     
@@ -150,7 +154,7 @@ export default function MainImageUploader({
       }
       setSelectedFile(null)
     }
-  }, [selectedFile, originalImageUrl, onUploadSuccess])
+  }, [selectedFile, originalImageUrl, onUploadSuccess, setGlobalLoading])
 
   // 크롭 취소
   const handleCropCancel = useCallback(() => {

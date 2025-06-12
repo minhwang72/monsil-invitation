@@ -201,6 +201,7 @@ const MainImageSection = ({ onUpdate, showToast, setGlobalLoading }: { onUpdate?
           </label>
           <MainImageUploader
             onUploadSuccess={handleUploadSuccess}
+            setGlobalLoading={setGlobalLoading}
             className="max-w-md mx-auto"
           />
         </div>
