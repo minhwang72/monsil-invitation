@@ -161,10 +161,22 @@ const MainImageSection = ({ onUpdate, showToast, setGlobalLoading }: { onUpdate?
       await fetchMainImage()
       if (onUpdate) onUpdate()
       showToast('메인 이미지가 업데이트되었습니다', 'success')
+      
+      // 메타데이터와 공유 이미지 갱신을 위해 잠시 후 페이지 새로고침
+      setTimeout(() => {
+        console.log('[DEBUG] Reloading page to update metadata and sharing images')
+        window.location.reload()
+      }, 2000) // 2초 후 새로고침
+      
     } catch (error) {
       console.error('Error refreshing image data:', error)
       // 업로드는 성공했으므로 경고만 표시
       showToast('화면 새로고침에 실패했습니다', 'error')
+      
+      // 에러가 발생해도 메타데이터 갱신을 위해 새로고침
+      setTimeout(() => {
+        window.location.reload()
+      }, 3000)
     } finally {
       setGlobalLoading(false)
     }

@@ -49,16 +49,21 @@ export default function HomePage() {
   useEffect(() => {
     const fetchMainImage = async () => {
       try {
-        const response = await fetch('/api/gallery')
+        // 캐시 무효화를 위한 타임스탬프 추가
+        const timestamp = Date.now()
+        const response = await fetch(`/api/gallery?t=${timestamp}`)
         const data = await response.json()
         if (data.success) {
           const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
           if (mainImage?.url) {
-            // 상대 경로라면 절대 경로로 변환
+            // 상대 경로라면 절대 경로로 변환하고 타임스탬프 추가
             const imageUrl = mainImage.url.startsWith('http') 
-              ? mainImage.url 
-              : `https://monsil.eungming.com${mainImage.url}`
+              ? `${mainImage.url}?t=${timestamp}`
+              : `https://monsil.eungming.com${mainImage.url}?t=${timestamp}`
             setMainImageUrl(imageUrl)
+          } else {
+            // 메인 이미지가 없으면 기본 이미지 사용
+            setMainImageUrl('https://monsil.eungming.com/images/cover-image.jpg')
           }
         }
       } catch (error) {
@@ -109,12 +114,17 @@ export default function HomePage() {
   const shareKakao = () => {
     try {
       if (window.Kakao && window.Kakao.isInitialized()) {
+        // 최신 메인 이미지 URL 확보 (타임스탬프 포함)
+        const shareImageUrl = mainImageUrl || 'https://monsil.eungming.com/images/cover-image.jpg'
+        
+        console.log('카카오 공유 이미지 URL:', shareImageUrl)
+        
         window.Kakao.Share.sendDefault({
           objectType: 'feed',
           content: {
             title: '황민 ♥ 이은솔 결혼합니다',
             description: '2025년 11월 8일 오후 12시 30분\n정동제일교회에서 결혼식을 올립니다.\nWe invite you to our wedding.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.',
-            imageUrl: mainImageUrl || 'https://monsil.eungming.com/images/cover-image.jpg',
+            imageUrl: shareImageUrl,
             link: {
               mobileWebUrl: 'https://monsil.eungming.com',
               webUrl: 'https://monsil.eungming.com',
@@ -130,6 +140,8 @@ export default function HomePage() {
             },
           ],
         })
+        
+        console.log('카카오 공유 요청 완료')
       } else {
         console.error('카카오 SDK가 초기화되지 않았습니다')
         showToastMessage('카카오톡 공유 기능을 사용할 수 없습니다')

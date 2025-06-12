@@ -7,17 +7,21 @@ export async function generateMetadata(): Promise<Metadata> {
   let imageUrl = 'https://monsil.eungming.com/images/cover-image.jpg'
   
   try {
-    const response = await fetch('https://monsil.eungming.com/api/gallery', {
-      cache: 'no-store'
+    // 캐시 무효화를 위한 타임스탬프 추가
+    const timestamp = Date.now()
+    const response = await fetch(`https://monsil.eungming.com/api/gallery?t=${timestamp}`, {
+      cache: 'no-store',
+      next: { revalidate: 0 } // ISR 캐시도 무효화
     })
     const data = await response.json()
     
     if (data.success) {
       const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
       if (mainImage?.url) {
+        // URL이 상대 경로인 경우 절대 경로로 변환하고 타임스탬프 추가
         imageUrl = mainImage.url.startsWith('http') 
-          ? mainImage.url 
-          : `https://monsil.eungming.com${mainImage.url}`
+          ? `${mainImage.url}?t=${timestamp}`
+          : `https://monsil.eungming.com${mainImage.url}?t=${timestamp}`
       }
     }
   } catch (error) {
@@ -58,6 +62,7 @@ export async function generateMetadata(): Promise<Metadata> {
     other: {
       'og:image:width': '1200',
       'og:image:height': '630',
+      'og:updated_time': new Date().toISOString(), // 메타데이터 갱신 시간
     }
   }
 }

@@ -17,11 +17,37 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/uploads/images/main_cover.jpg',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'image/jpeg',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, s-maxage=300', // 5분 캐시 (메인 이미지는 짧게)
+          },
+        ],
+      },
+      {
         source: '/uploads/:path*',
         headers: [
           {
             key: 'Content-Type',
             value: 'image/*',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable', // 일반 업로드 이미지는 긴 캐시
+          },
+        ],
+      },
+      {
+        source: '/api/gallery',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
           },
         ],
       },
