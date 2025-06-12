@@ -30,10 +30,10 @@ export default function MainImageUploader({
 
     setError(null)
     
-    // 파일 크기 체크 (10MB)
-    const maxSize = 10 * 1024 * 1024
+    // 파일 크기 체크 (50MB로 증가)
+    const maxSize = 50 * 1024 * 1024 // 50MB
     if (file.size > maxSize) {
-      setError('파일 크기는 10MB 이하여야 합니다.')
+      setError(`파일 크기가 너무 큽니다. 최대 50MB까지 업로드할 수 있습니다. (현재: ${(file.size / 1024 / 1024).toFixed(1)}MB)`)
       return
     }
 

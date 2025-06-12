@@ -47,13 +47,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 파일 크기 체크 (50MB 제한)
+    const maxSize = 50 * 1024 * 1024 // 50MB
+    if (file.size > maxSize) {
+      console.log('❌ [DEBUG] File too large:', file.size)
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: 'File size exceeds 50MB limit',
+        },
+        { status: 400 }
+      )
+    }
+
     // 파일을 버퍼로 읽기
     const buffer = Buffer.from(await file.arrayBuffer())
     console.log('🔍 [DEBUG] File buffer size:', buffer.length)
 
-    // Generate paths and filename
+    // Generate paths and filename (강화된 디렉토리 생성)
     const dateString = getTodayDateString()
-    const datePath = await ensureUploadDir(dateString)
+    let datePath: string
+    try {
+      datePath = await ensureUploadDir(dateString)
+    } catch (dirError) {
+      console.error('❌ [DEBUG] Failed to ensure upload directory:', dirError)
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: `Failed to prepare upload directory: ${dirError instanceof Error ? dirError.message : 'Unknown error'}`,
+        },
+        { status: 500 }
+      )
+    }
+    
     const timestamp = Date.now()
     const cleanName = file.name.replace(/\.[^/.]+$/, '') // 확장자 제거
     const dbFilename = `${timestamp}_${cleanName}.jpg` // 항상 .jpg로 저장
@@ -93,9 +119,9 @@ export async function POST(request: NextRequest) {
           const oldFilePath = join(process.cwd(), 'public', 'uploads', image.filename)
           try {
             await import('fs/promises').then(fs => fs.unlink(oldFilePath))
-            console.log('🔍 [DEBUG] Deleted physical file:', oldFilePath)
+            console.log('✅ [DEBUG] Deleted physical file:', oldFilePath)
           } catch (error) {
-            console.log('🔍 [DEBUG] File deletion info:', error)
+            console.log('ℹ️ [DEBUG] File deletion info:', error)
           }
         }
       }

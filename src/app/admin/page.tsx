@@ -806,6 +806,168 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
   )
 }
 
+// 시스템 상태 섹션 컴포넌트
+const SystemStatusSection = () => {
+  const [systemStatus, setSystemStatus] = useState<{
+    directories: Array<{
+      name: string;
+      path: string;
+      exists: boolean;
+      writable: boolean;
+      stats?: {
+        isDirectory: boolean;
+        mode: number;
+        size: number;
+        mtime: Date;
+      };
+    }>;
+    process: {
+      nodeVersion: string;
+      platform: string;
+      arch: string;
+      cwd: string;
+      env: Record<string, string | undefined>;
+      uid: string | number;
+      gid: string | number;
+    };
+    timestamp: string;
+  } | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const checkSystemStatus = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin/system-status')
+      const data = await res.json()
+      if (data.success) {
+        setSystemStatus(data.data)
+      } else {
+        alert(data.error || '시스템 상태 확인에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('Error checking system status:', error)
+      alert('시스템 상태 확인 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-white shadow rounded-lg p-6">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">시스템 상태 확인</h2>
+      
+      <div className="mb-6">
+        <button
+          onClick={checkSystemStatus}
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        >
+          {loading ? '확인 중...' : '시스템 상태 확인'}
+        </button>
+        <p className="text-sm text-gray-600 mt-2">
+          서버 디렉토리 권한과 파일 업로드 문제를 진단합니다.
+        </p>
+      </div>
+
+      {systemStatus && (
+        <div className="space-y-6">
+          {/* 디렉토리 상태 */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">디렉토리 상태</h3>
+            <div className="space-y-3">
+              {systemStatus.directories.map((dir: {
+                name: string;
+                path: string;
+                exists: boolean;
+                writable: boolean;
+                stats?: {
+                  isDirectory: boolean;
+                  mode: number;
+                  size: number;
+                  mtime: Date;
+                };
+              }, index: number) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-900">{dir.name}</span>
+                    <div className="flex space-x-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        dir.exists ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {dir.exists ? '존재함' : '없음'}
+                      </span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        dir.writable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {dir.writable ? '쓰기 가능' : '쓰기 불가'}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 font-mono break-all">{dir.path}</p>
+                  {dir.stats && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      <span>권한: {dir.stats.mode?.toString(8)}</span>
+                      {dir.stats.mtime && (
+                        <span className="ml-4">수정: {new Date(dir.stats.mtime).toLocaleString('ko-KR')}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 프로세스 정보 */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">프로세스 정보</h3>
+            <div className="border rounded-lg p-4 space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Node.js 버전:</span>
+                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.nodeVersion}</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">플랫폼:</span>
+                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.platform}</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">아키텍처:</span>
+                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.arch}</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">환경:</span>
+                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.env.NODE_ENV}</span>
+                </div>
+                {systemStatus.process.uid !== 'N/A' && (
+                  <>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">UID:</span>
+                      <span className="ml-2 text-sm text-gray-900">{systemStatus.process.uid}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">GID:</span>
+                      <span className="ml-2 text-sm text-gray-900">{systemStatus.process.gid}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="mt-4">
+                <span className="text-sm font-medium text-gray-700">작업 디렉토리:</span>
+                <p className="text-sm text-gray-900 font-mono break-all">{systemStatus.process.cwd}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 체크 시간 */}
+          <div className="text-sm text-gray-500">
+            마지막 확인: {new Date(systemStatus.timestamp).toLocaleString('ko-KR')}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AdminPage() {
   return (
     <Suspense fallback={
@@ -833,18 +995,18 @@ function AdminPageContent() {
   const searchParams = useSearchParams()
   
   // URL에서 활성 탭 읽기 (기본값: 'main')
-  const getActiveTabFromUrl = useCallback((): 'main' | 'contacts' | 'gallery' | 'guestbook' => {
+  const getActiveTabFromUrl = useCallback((): 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status' => {
     const tab = searchParams.get('tab')
-    if (tab && ['main', 'contacts', 'gallery', 'guestbook'].includes(tab)) {
-      return tab as 'main' | 'contacts' | 'gallery' | 'guestbook'
+    if (tab && ['main', 'contacts', 'gallery', 'guestbook', 'system-status'].includes(tab)) {
+      return tab as 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status'
     }
     return 'main'
   }, [searchParams])
   
-  const [activeTab, setActiveTab] = useState<'main' | 'contacts' | 'gallery' | 'guestbook'>(getActiveTabFromUrl())
+  const [activeTab, setActiveTab] = useState<'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status'>(getActiveTabFromUrl())
   
   // 탭 변경 함수 (URL 업데이트 포함)
-  const changeTab = (newTab: 'main' | 'contacts' | 'gallery' | 'guestbook') => {
+  const changeTab = (newTab: 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status') => {
     setActiveTab(newTab)
     // URL 업데이트 (히스토리에 추가)
     router.push(`/admin?tab=${newTab}`)
@@ -1027,10 +1189,11 @@ function AdminPageContent() {
               { key: 'contacts', label: '연락처 관리' },
               { key: 'gallery', label: '갤러리 관리' },
               { key: 'guestbook', label: '방명록 관리' },
+              { key: 'system-status', label: '시스템 상태' },
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => changeTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook')}
+                onClick={() => changeTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? 'border-purple-500 text-purple-600'
@@ -1064,6 +1227,9 @@ function AdminPageContent() {
           {activeTab === 'guestbook' && (
             <GuestbookSection guestbook={guestbook} onUpdate={updateGuestbook} loading={loading.guestbook} />
           )}
+
+          {/* 시스템 상태 탭 */}
+          {activeTab === 'system-status' && <SystemStatusSection />}
         </div>
       </main>
     </div>

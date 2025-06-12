@@ -1,3 +1,9 @@
+// 타입 정의
+interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+
 // HEIC 변환을 위한 동적 import 함수
 async function convertHeicToJpeg(file: File): Promise<File> {
   try {
@@ -113,16 +119,34 @@ export async function convertImageToBase64(
 }
 
 // 클라이언트 사이드 파일 검증 및 전처리 함수
-export async function validateAndPrepareFile(file: File): Promise<{ isValid: boolean; error?: string }> {
-  console.log('🔍 [DEBUG] Validating file:', file.name, 'Type:', file.type, 'Size:', file.size);
-  
-  // 파일 크기 체크 (10MB 제한)
-  const maxSize = 10 * 1024 * 1024; // 10MB
+export async function validateAndPrepareFile(file: File): Promise<ValidationResult> {
+  console.log('🔍 [DEBUG] Validating file:', {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    lastModified: file.lastModified
+  })
+
+  // 기본 유효성 검사
+  if (!file) {
+    return { isValid: false, error: '파일이 선택되지 않았습니다.' }
+  }
+
+  if (!file.name) {
+    return { isValid: false, error: '파일명이 없습니다.' }
+  }
+
+  // 파일 크기 검사 (50MB로 증가)
+  const maxSize = 50 * 1024 * 1024; // 50MB
   if (file.size > maxSize) {
-    return {
-      isValid: false,
-      error: '파일 크기가 너무 큽니다. 10MB 이하의 파일을 선택해주세요.'
-    };
+    return { 
+      isValid: false, 
+      error: `파일 크기가 너무 큽니다. 최대 50MB까지 업로드할 수 있습니다. (현재: ${(file.size / 1024 / 1024).toFixed(1)}MB)` 
+    }
+  }
+
+  if (file.size === 0) {
+    return { isValid: false, error: '빈 파일은 업로드할 수 없습니다.' }
   }
   
   // 지원되는 이미지 형식 체크 (서버에서 HEIC 처리하므로 모든 이미지 허용)

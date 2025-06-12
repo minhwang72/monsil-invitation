@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { join } from 'path'
-import { writeFile, mkdir, unlink } from 'fs/promises'
-import { existsSync } from 'fs'
+import { writeFile } from 'fs/promises'
 import sharp from 'sharp'
 import pool from '@/lib/db'
+import { ensureImageUploadDir } from '@/lib/fileUtils'
 import type { ApiResponse } from '@/types'
 
 export async function POST(request: NextRequest) {
@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 파일 크기 체크 (10MB 제한)
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    // 파일 크기 체크 (50MB 제한으로 증가)
+    const maxSize = 50 * 1024 * 1024 // 50MB
     if (file.size > maxSize) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: 'File size exceeds 10MB limit',
+          error: 'File size exceeds 50MB limit',
         },
         { status: 400 }
       )
@@ -57,11 +57,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // uploads/images 디렉토리 생성
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'images')
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
-      console.log('✅ [DEBUG] Created uploads/images directory')
+    // uploads/images 디렉토리 생성 (강화된 권한 처리)
+    let uploadsDir: string
+    try {
+      uploadsDir = await ensureImageUploadDir()
+    } catch (dirError) {
+      console.error('❌ [DEBUG] Failed to ensure upload directory:', dirError)
+      return NextResponse.json<ApiResponse<null>>(
+        {
+          success: false,
+          error: `Failed to prepare upload directory: ${dirError instanceof Error ? dirError.message : 'Unknown error'}`,
+        },
+        { status: 500 }
+      )
     }
 
     // 파일명 생성 (targetId가 있으면 사용, 없으면 timestamp)
@@ -89,10 +97,14 @@ export async function POST(request: NextRequest) {
         
         // 기존 물리 파일들 삭제
         for (const existingImage of existingImages) {
-          const oldFilePath = join(process.cwd(), 'public', 'uploads', 'images', existingImage.filename)
-          if (existsSync(oldFilePath)) {
+          const oldFilePath = join(uploadsDir, existingImage.filename)
+          try {
+            const { unlink, access } = await import('fs/promises')
+            await access(oldFilePath)
             await unlink(oldFilePath)
             console.log('✅ [DEBUG] Deleted existing file:', oldFilePath)
+          } catch {
+            console.log('ℹ️ [DEBUG] Could not delete existing file (may not exist):', oldFilePath)
           }
         }
         
