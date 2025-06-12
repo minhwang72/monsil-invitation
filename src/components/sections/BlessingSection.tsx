@@ -19,19 +19,6 @@ export default function BlessingSection() {
             </p>
           </div>
 
-          {/* 두 번째 문단 */}
-          <div className="space-y-3 md:space-y-4">
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
-              따스한 축복 아래, 새로운 시작을 앞두고
-            </p>
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
-              저희 두 사람이 주님 안에서
-            </p>
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
-              사랑과 믿음으로 가정을 이루려 합니다.
-            </p>
-          </div>
-
           {/* 세 번째 문단 */}
           <div className="space-y-3 md:space-y-4">
             <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">

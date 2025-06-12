@@ -4,7 +4,8 @@ import HomePage from '@/components/HomePage'
 
 // 동적 메타데이터 생성
 export async function generateMetadata(): Promise<Metadata> {
-  let imageUrl = 'https://monsil.eungming.com/images/cover-image.jpg'
+  // 기본 이미지를 실제 존재하는 메인 이미지로 설정
+  let imageUrl = 'https://monsil.eungming.com/uploads/images/main_cover.jpg'
   
   try {
     // 캐시 무효화를 위한 타임스탬프 추가
@@ -16,27 +17,40 @@ export async function generateMetadata(): Promise<Metadata> {
         ? 'http://localhost:1108'  // Docker 내부에서는 HTTP 사용
         : 'http://localhost:3000')  // 개발 환경
       
+    console.log(`[DEBUG] Fetching gallery data from: ${baseUrl}/api/gallery`)
     const response = await fetch(`${baseUrl}/api/gallery?t=${timestamp}`, {
       cache: 'no-store',
-      next: { revalidate: 0 } // ISR 캐시도 무효화
+      next: { revalidate: 0 }, // ISR 캐시도 무효화
+      headers: {
+        'User-Agent': 'MonsilBot/1.0 (Wedding Invitation Metadata Generator)',
+      }
     })
+    
+    console.log(`[DEBUG] Gallery API response status: ${response.status}`)
     
     if (response.ok) {
       const data = await response.json()
+      console.log(`[DEBUG] Gallery API response data:`, data)
       
       if (data.success) {
         const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
+        console.log(`[DEBUG] Found main image:`, mainImage)
+        
         if (mainImage?.url) {
           // URL이 상대 경로인 경우 절대 경로로 변환하고 타임스탬프 추가
           imageUrl = mainImage.url.startsWith('http') 
-            ? `${mainImage.url}?t=${timestamp}`
-            : `https://monsil.eungming.com${mainImage.url}?t=${timestamp}`
+            ? `${mainImage.url}?v=${timestamp}`
+            : `https://monsil.eungming.com${mainImage.url}?v=${timestamp}`
+          console.log(`[DEBUG] Final image URL:`, imageUrl)
         }
       }
+    } else {
+      console.error(`[DEBUG] Gallery API failed with status: ${response.status}`)
     }
   } catch (error) {
     console.error('Error fetching main image for metadata:', error)
-    // SSL 오류가 발생해도 기본 이미지로 계속 진행
+    // 오류 발생 시 기본 메인 이미지 사용
+    console.log(`[DEBUG] Using fallback image: ${imageUrl}`)
   }
 
   return {
@@ -73,7 +87,12 @@ export async function generateMetadata(): Promise<Metadata> {
     other: {
       'og:image:width': '1200',
       'og:image:height': '630',
+      'og:image:type': 'image/jpeg',
+      'og:image:secure_url': imageUrl,
       'og:updated_time': new Date().toISOString(), // 메타데이터 갱신 시간
+      // 카카오톡 전용 메타데이터
+      'al:web:url': 'https://monsil.eungming.com',
+      'al:web:should_fallback': 'true',
     }
   }
 }

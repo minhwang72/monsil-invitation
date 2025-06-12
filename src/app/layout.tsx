@@ -45,17 +45,20 @@ export default function RootLayout({
             }
           `}
         </style>
+        <meta property="og:updated_time" content={new Date().toISOString()} />
+        <meta name="robots" content="index,follow" />
+        <meta name="googlebot" content="index,follow" />
         <script
           type="text/javascript"
-          src={`https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID}`}
+          src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=7if040vbw7"
           defer
-        ></script>
+        />
         <script
           src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
           integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4"
           crossOrigin="anonymous"
           defer
-        ></script>
+        />
       </head>
       <body className="bg-sky-100 text-text">
         {children}
