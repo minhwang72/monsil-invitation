@@ -846,9 +846,9 @@ const GalleryImageCropper = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-5xl w-full max-h-[95vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">이미지 수정</h3>
+      <div className="bg-white rounded-lg p-3 sm:p-6 max-w-5xl w-full max-h-[95vh] flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900">이미지 수정</h3>
           <button
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 text-xl min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -857,85 +857,90 @@ const GalleryImageCropper = ({
           </button>
         </div>
 
-        {/* 비율 선택 섹션 */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-3">크롭 비율 선택</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {aspectOptions.map((option) => (
-              <button
-                key={option.label}
-                onClick={() => handleAspectChange(option.value)}
-                className={`p-3 text-sm border rounded-lg transition-colors min-h-[44px] ${
-                  selectedAspect === option.value
-                    ? 'border-purple-500 bg-purple-50 text-purple-700'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="font-medium">{option.label}</div>
-                <div className="text-xs text-gray-500 mt-1">{option.description}</div>
-              </button>
-            ))}
+        {/* 스크롤 가능한 컨텐츠 영역 */}
+        <div className="flex-1 overflow-y-auto">
+          {/* 비율 선택 섹션 - 모바일 최적화 */}
+          <div className="mb-3 sm:mb-4">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">크롭 비율 선택</label>
+            <div className="grid grid-cols-3 sm:grid-cols-3 gap-1 sm:gap-2">
+              {aspectOptions.map((option) => (
+                <button
+                  key={option.label}
+                  onClick={() => handleAspectChange(option.value)}
+                  className={`p-1.5 sm:p-3 text-xs sm:text-sm border rounded-lg transition-colors min-h-[36px] sm:min-h-[44px] ${
+                    selectedAspect === option.value
+                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="font-medium text-[10px] sm:text-sm leading-tight">{option.label}</div>
+                  <div className="text-[8px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 leading-tight">{option.description}</div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        
-        <div className="relative bg-gray-100 flex-1 min-h-[250px] sm:min-h-[400px] rounded-lg overflow-hidden">
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            aspect={selectedAspect || undefined}
-            onCropChange={setCrop}
-            onCropComplete={onCropCompleteHandler}
-            onZoomChange={setZoom}
-            cropShape="rect"
-            showGrid={true}
-            restrictPosition={false}
-            style={{
-              containerStyle: {
-                width: '100%',
-                height: '100%',
-                backgroundColor: '#f3f4f6'
-              }
-            }}
-          />
-        </div>
-        
-        <div className="mt-4 space-y-4">
-          {/* 줌 컨트롤 */}
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600 min-w-[40px]">줌:</span>
-            <input
-              type="range"
-              value={zoom}
-              min={1}
-              max={3}
-              step={0.1}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1 h-8"
+          
+          <div className="relative bg-gray-100 flex-1 min-h-[200px] sm:min-h-[400px] rounded-lg overflow-hidden mb-3 sm:mb-4">
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={selectedAspect || undefined}
+              onCropChange={setCrop}
+              onCropComplete={onCropCompleteHandler}
+              onZoomChange={setZoom}
+              cropShape="rect"
+              showGrid={true}
+              restrictPosition={false}
+              style={{
+                containerStyle: {
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: '#f3f4f6'
+                }
+              }}
             />
-            <span className="text-sm text-gray-600 min-w-[60px]">
-              {Math.round(zoom * 100)}%
-            </span>
           </div>
           
-          {/* 현재 선택된 비율 표시 */}
-          <div className="text-center">
-            <span className="text-sm text-gray-600">
-              현재 비율: <span className="font-medium text-purple-600">
-                {aspectOptions.find(option => option.value === selectedAspect)?.label || '자유 비율'}
+          <div className="space-y-3 sm:space-y-4">
+            {/* 줌 컨트롤 */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <span className="text-xs sm:text-sm text-gray-600 min-w-[30px] sm:min-w-[40px]">줌:</span>
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="flex-1 h-6 sm:h-8"
+              />
+              <span className="text-xs sm:text-sm text-gray-600 min-w-[45px] sm:min-w-[60px]">
+                {Math.round(zoom * 100)}%
               </span>
-            </span>
+            </div>
+            
+            {/* 현재 선택된 비율 표시 */}
+            <div className="text-center">
+              <span className="text-xs sm:text-sm text-gray-600">
+                현재 비율: <span className="font-medium text-purple-600">
+                  {aspectOptions.find(option => option.value === selectedAspect)?.label || '자유 비율'}
+                </span>
+              </span>
+            </div>
+            
+            {/* 안내 텍스트 */}
+            <p className="text-xs sm:text-sm text-gray-600 text-center leading-relaxed">
+              {selectedAspect === null 
+                ? '자유 비율: 크롭 영역 모서리를 드래그하여 원하는 크기로 조정하세요.'
+                : '고정 비율: 드래그로 위치 조정, 마우스 휠이나 슬라이더로 줌 조정하세요.'
+              }
+            </p>
           </div>
-          
-          {/* 안내 텍스트 */}
-          <p className="text-sm text-gray-600 text-center">
-            {selectedAspect === null 
-              ? '자유 비율: 크롭 영역 모서리를 드래그하여 원하는 크기로 조정하세요.'
-              : '고정 비율: 드래그로 위치 조정, 마우스 휠이나 슬라이더로 줌 조정하세요.'
-            }
-          </p>
-          
-          {/* 버튼들 */}
+        </div>
+        
+        {/* 하단 고정 버튼들 */}
+        <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               onClick={onCancel}

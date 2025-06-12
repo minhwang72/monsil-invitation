@@ -123,22 +123,17 @@ export async function POST(request: NextRequest) {
       console.log('ℹ️ [DEBUG] Directory access/creation failed (continuing anyway):', dirError)
     }
     
-    // 파일명 생성 로직 개선 (성능 최적화)
+    // 파일명 생성 로직 개선 (랜덤 문자열 사용)
     let dbFilename: string
     
     if (image_type === 'main') {
       // 메인 이미지는 main_cover.jpg로 저장
       dbFilename = 'main_cover.jpg'
     } else {
-      // 갤러리 이미지인 경우 - 성능 최적화된 순서 번호 계산
-      // MAX(order_index) 사용으로 COUNT보다 빠른 조회
-      const [maxRows] = await pool.query(
-        'SELECT COALESCE(MAX(CAST(SUBSTRING(filename, 8, 2) AS UNSIGNED)), 0) as max_order FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL AND filename LIKE "images/gallery%.jpg"'
-      )
-      const maxResult = maxRows as { max_order: number }[]
-      const nextOrder = (maxResult[0]?.max_order || 0) + 1
-      const orderString = nextOrder.toString().padStart(2, '0')
-      dbFilename = `gallery${orderString}.jpg`
+      // 갤러리 이미지인 경우 - 랜덤 문자열 사용 (순서 혼동 방지)
+      const randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      const timestamp = Date.now()
+      dbFilename = `gallery_${timestamp}_${randomString}.jpg`
     }
     
     const filepath = join(imagesDir, dbFilename)
