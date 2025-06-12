@@ -96,12 +96,27 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     }
   }
 
-  // 배경 클릭 핸들러 (모바일 호환성 개선)
-  const handleBackgroundClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  // 배경 클릭 핸들러 (마우스 이벤트)
+  const handleBackgroundClick = useCallback((e: React.MouseEvent) => {
     // 이벤트 타겟이 배경 자체인 경우에만 모달 닫기
     if (e.target === e.currentTarget) {
       closeModal()
     }
+  }, [closeModal])
+
+  // 터치 이벤트용 배경 핸들러
+  const handleBackgroundTouch = useCallback((e: React.TouchEvent) => {
+    // 이벤트 타겟이 배경 자체인 경우에만 모달 닫기
+    if (e.target === e.currentTarget) {
+      closeModal()
+    }
+  }, [closeModal])
+
+  // X 버튼 클릭 핸들러
+  const handleCloseClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    closeModal()
   }, [closeModal])
 
   // 컴포넌트 언마운트 시 스크롤 복원
@@ -212,23 +227,15 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
       {/* 모달 */}
       {isModalOpen && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
+          className="fixed inset-0 z-[9999] bg-black/80"
           onClick={handleBackgroundClick}
-          onTouchEnd={handleBackgroundClick}
+          onTouchEnd={handleBackgroundTouch}
         >
           {/* 닫기 버튼 */}
           <button
-            onClick={(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              closeModal()
-            }}
-            onTouchEnd={(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              closeModal()
-            }}
-            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors p-2 touch-manipulation"
+            onClick={handleCloseClick}
+            onTouchEnd={handleCloseClick}
+            className="absolute top-4 right-4 z-[10001] text-white hover:text-gray-300 transition-colors p-2 touch-manipulation"
           >
             <svg
               className="w-8 h-8 md:w-10 md:h-10 pointer-events-none"
@@ -238,6 +245,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
+                className="pointer-events-none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
@@ -252,7 +260,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
               e.stopPropagation()
               goToPrevious()
             }}
-            className="hidden md:block absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-20"
+            className="hidden md:block absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-[10001]"
           >
             <svg
               className="w-10 h-10 pointer-events-none"
@@ -276,7 +284,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
               e.stopPropagation()
               goToNext()
             }}
-            className="hidden md:block absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-20"
+            className="hidden md:block absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-[10001]"
           >
             <svg
               className="w-10 h-10 pointer-events-none"
@@ -294,16 +302,13 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
             </svg>
           </button>
 
-          {/* 이미지 컨테이너 */}
-          <div 
-            className="relative w-full h-full flex items-center justify-center p-4 md:p-8 z-10"
-            onClick={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-          >
+          {/* 중앙 이미지 영역 - 크기 제한 */}
+          <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8 pointer-events-none">
             <div 
-              className="flex-1 flex items-center justify-center w-full h-full"
+              className="relative max-w-[90vw] max-h-[80vh] md:max-w-[85vw] md:max-h-[75vh] pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
               onTouchEnd={(e) => {
                 onTouchEnd()
                 e.stopPropagation()
@@ -319,6 +324,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
+                      className="pointer-events-none"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={1.5}
@@ -327,83 +333,81 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                   </svg>
                 </div>
               ) : (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <img
-                    src={imagesToShow[currentImageIndex].url}
-                    alt="Gallery"
-                    className="max-w-[90vw] max-h-[80vh] md:max-w-[85vw] md:max-h-[75vh] object-contain rounded-lg pointer-events-none"
-                    sizes="(max-width: 768px) 90vw, 85vw"
-                    onError={() => handleImageError(imagesToShow[currentImageIndex].id)}
-                  />
-                </div>
+                <img
+                  src={imagesToShow[currentImageIndex].url}
+                  alt="Gallery"
+                  className="max-w-[90vw] max-h-[80vh] md:max-w-[85vw] md:max-h-[75vh] object-contain rounded-lg pointer-events-none"
+                  sizes="(max-width: 768px) 90vw, 85vw"
+                  onError={() => handleImageError(imagesToShow[currentImageIndex].id)}
+                />
               )}
             </div>
+          </div>
 
-            {/* 모바일용 네비게이션 바 - 연결된 검은 배경 */}
-            <div className="md:hidden absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-4">
-              <div className="flex justify-between items-center max-w-sm mx-auto">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    goToPrevious()
-                  }}
-                  onTouchEnd={(e) => {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    goToPrevious()
-                  }}
-                  className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
+          {/* 모바일용 네비게이션 바 - 연결된 검은 배경 */}
+          <div className="md:hidden absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-4 z-[10000]">
+            <div className="flex justify-between items-center max-w-sm mx-auto">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  goToPrevious()
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  goToPrevious()
+                }}
+                className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
+              >
+                <svg
+                  className="w-6 h-6 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <svg
-                    className="w-6 h-6 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  <span className="text-sm pointer-events-none">이전</span>
-                </button>
-                
-                <div className="text-white text-sm font-sans px-4">
-                  {currentImageIndex + 1} / {imagesToShow.length}
-                </div>
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    goToNext()
-                  }}
-                  onTouchEnd={(e) => {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    goToNext()
-                  }}
-                  className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
-                >
-                  <span className="text-sm pointer-events-none">다음</span>
-                  <svg
-                    className="w-6 h-6 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                <span className="text-sm pointer-events-none">이전</span>
+              </button>
+              
+              <div className="text-white text-sm font-sans px-4">
+                {currentImageIndex + 1} / {imagesToShow.length}
               </div>
+              
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  goToNext()
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  goToNext()
+                }}
+                className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
+              >
+                <span className="text-sm pointer-events-none">다음</span>
+                <svg
+                  className="w-6 h-6 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

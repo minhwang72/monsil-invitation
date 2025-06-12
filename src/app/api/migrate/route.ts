@@ -355,7 +355,7 @@ export async function POST() {
       migrations.push('admin setup failed (non-critical)')
     }
 
-    // 15. HEIC 파일들 정리 (404 오류 방지)
+    // 15. HEIC 파일들 정리는 유지하지만 images 테이블 관련 코드는 제거
     try {
       const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
       const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
@@ -372,73 +372,6 @@ export async function POST() {
     } catch (error) {
       console.error('HEIC cleanup error:', error)
       migrations.push('HEIC cleanup failed (non-critical)')
-    }
-
-    // 16. 새로운 이미지 업로드 시스템을 위한 images 테이블 생성
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS images (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          filename VARCHAR(255) NOT NULL,
-          original_name VARCHAR(255) NOT NULL,
-          target_id VARCHAR(100) NULL,
-          file_size INT NOT NULL,
-          image_type ENUM('main', 'gallery', 'profile', 'other') DEFAULT 'other',
-          created_at DATETIME NOT NULL,
-          updated_at DATETIME NOT NULL,
-          deleted_at DATETIME NULL DEFAULT NULL,
-          INDEX idx_target_id (target_id),
-          INDEX idx_image_type (image_type),
-          INDEX idx_created_at (created_at),
-          INDEX idx_deleted_at (deleted_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `)
-      migrations.push('images table created for new upload system')
-    } catch (error: unknown) {
-      const mysqlError = error as MySQLError
-      if (mysqlError.code === 'ER_TABLE_EXISTS_ERROR') {
-        migrations.push('images table already exists')
-      } else {
-        console.error('Images table creation error:', error)
-        migrations.push('images table creation failed')
-      }
-    }
-
-    // 17. 기존 gallery 데이터를 새로운 images 테이블로 마이그레이션 (필요시)
-    try {
-      // 기존 gallery 테이블에서 images 테이블로 데이터 복사
-      const [existingData] = await pool.query(`
-        SELECT COUNT(*) as count FROM images
-      `)
-      const imageCount = (existingData as { count: number }[])[0].count
-
-      if (imageCount === 0) {
-        // images 테이블이 비어있으면 gallery 데이터 복사
-        await pool.query(`
-          INSERT INTO images (filename, original_name, target_id, file_size, image_type, created_at, updated_at, deleted_at)
-          SELECT 
-            filename,
-            SUBSTRING_INDEX(filename, '/', -1) as original_name,
-            CASE 
-              WHEN image_type = 'main' THEN 'main_cover'
-              WHEN image_type = 'gallery' THEN CONCAT('gallery_', id)
-              ELSE NULL
-            END as target_id,
-            0 as file_size,
-            image_type,
-            created_at,
-            IFNULL(updated_at, created_at) as updated_at,
-            deleted_at
-          FROM gallery 
-          WHERE filename IS NOT NULL AND filename != ''
-        `)
-        migrations.push('gallery data migrated to images table')
-      } else {
-        migrations.push('images table already has data, skipping migration')
-      }
-    } catch (error) {
-      console.error('Gallery to images migration error:', error)
-      migrations.push('gallery to images migration failed (non-critical)')
     }
 
     // 18. gallery 테이블에 order_index 컬럼 추가 (갤러리 순서 변경 기능용)
@@ -482,9 +415,6 @@ export async function POST() {
       migrations.push('gallery: order_index update failed (non-critical)')
     }
 
-    // 기존 이미지들을 images 폴더로 이동 및 파일명 정리
-    await migrateImagesToImagesFolder()
-
     console.log('✅ [DEBUG] Migration completed successfully')
 
     return NextResponse.json<ApiResponse<{ message: string }>>({
@@ -501,133 +431,4 @@ export async function POST() {
       { status: 500 }
     )
   }
-}
-
-async function migrateImagesToImagesFolder() {
-  const fs = await import('fs/promises')
-  const path = await import('path')
-  
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
-  const imagesDir = path.join(uploadsDir, 'images')
-  
-  // images 디렉토리 생성
-  try {
-    await fs.access(imagesDir)
-  } catch {
-    await fs.mkdir(imagesDir, { recursive: true })
-    console.log('✅ [DEBUG] Created images directory')
-  }
-  
-  // 현재 갤러리 데이터 조회
-  const [galleryRows] = await pool.query(
-    'SELECT id, filename, image_type, order_index FROM gallery WHERE deleted_at IS NULL ORDER BY image_type, order_index'
-  )
-  const galleryItems = galleryRows as { id: number; filename: string; image_type: string; order_index: number }[]
-  
-  console.log('🔍 [DEBUG] Found gallery items to migrate:', galleryItems.length)
-  
-  // 갤러리 이미지 순서 재정렬
-  const galleryImages = galleryItems.filter(item => item.image_type === 'gallery')
-  const mainImages = galleryItems.filter(item => item.image_type === 'main')
-  
-  // 메인 이미지 처리
-  for (const mainImage of mainImages) {
-    const oldPath = path.join(uploadsDir, mainImage.filename)
-    const newFilename = 'main_cover.jpg'
-    const newPath = path.join(imagesDir, newFilename)
-    const newDbPath = `images/${newFilename}`
-    
-    try {
-      // 파일이 이미 images/main_cover.jpg가 아니라면 이동
-      if (mainImage.filename !== newDbPath) {
-        // 기존 파일 확인
-        try {
-          await fs.access(oldPath)
-          // 대상 위치에 이미 파일이 있으면 삭제
-          try {
-            await fs.access(newPath)
-            await fs.unlink(newPath)
-          } catch {}
-          
-          await fs.rename(oldPath, newPath)
-          console.log(`✅ [DEBUG] Moved main image: ${mainImage.filename} -> ${newDbPath}`)
-          
-          // DB 업데이트
-          await pool.query(
-            'UPDATE gallery SET filename = ? WHERE id = ?',
-            [newDbPath, mainImage.id]
-          )
-        } catch (fileError) {
-          console.warn(`⚠️ [DEBUG] Could not move main image file: ${mainImage.filename}`, fileError)
-        }
-      }
-    } catch (error) {
-      console.warn(`⚠️ [DEBUG] Error processing main image ${mainImage.id}:`, error)
-    }
-  }
-  
-  // 갤러리 이미지 처리 (순서대로)
-  for (let i = 0; i < galleryImages.length; i++) {
-    const galleryImage = galleryImages[i]
-    const newOrder = i + 1
-    const oldPath = path.join(uploadsDir, galleryImage.filename)
-    const orderString = newOrder.toString().padStart(2, '0')
-    const newFilename = `gallery${orderString}.jpg`
-    const newPath = path.join(imagesDir, newFilename)
-    const newDbPath = `images/${newFilename}`
-    
-    try {
-      // 파일이 이미 올바른 위치에 있지 않다면 이동
-      if (galleryImage.filename !== newDbPath) {
-        // 기존 파일 확인
-        try {
-          await fs.access(oldPath)
-          // 대상 위치에 이미 파일이 있으면 삭제
-          try {
-            await fs.access(newPath)
-            await fs.unlink(newPath)
-          } catch {}
-          
-          await fs.rename(oldPath, newPath)
-          console.log(`✅ [DEBUG] Moved gallery image: ${galleryImage.filename} -> ${newDbPath}`)
-        } catch (fileError) {
-          console.warn(`⚠️ [DEBUG] Could not move gallery file: ${galleryImage.filename}`, fileError)
-        }
-      }
-      
-      // DB 업데이트 (파일명과 order_index 모두)
-      await pool.query(
-        'UPDATE gallery SET filename = ?, order_index = ? WHERE id = ?',
-        [newDbPath, newOrder, galleryImage.id]
-      )
-      
-    } catch (error) {
-      console.warn(`⚠️ [DEBUG] Error processing gallery image ${galleryImage.id}:`, error)
-    }
-  }
-  
-  // 빈 날짜 폴더들 정리 (선택사항)
-  try {
-    const uploadsDirContents = await fs.readdir(uploadsDir)
-    for (const item of uploadsDirContents) {
-      if (item.match(/^\d{4}-\d{2}-\d{2}$/) && item !== 'images') {
-        const dateFolderPath = path.join(uploadsDir, item)
-        try {
-          const folderContents = await fs.readdir(dateFolderPath)
-          if (folderContents.length === 0) {
-            await fs.rmdir(dateFolderPath)
-            console.log(`✅ [DEBUG] Removed empty date folder: ${item}`)
-          } else {
-            console.log(`ℹ️ [DEBUG] Date folder ${item} still contains files:`, folderContents)
-          }
-        } catch (folderError) {
-          console.warn(`⚠️ [DEBUG] Could not process date folder ${item}:`, folderError)
-        }
-      }
-    }
-  } catch (cleanupError) {
-    console.warn('⚠️ [DEBUG] Could not clean up date folders:', cleanupError)
-  }
-  
-  console.log('✅ [DEBUG] Image migration to images folder completed')
 }
