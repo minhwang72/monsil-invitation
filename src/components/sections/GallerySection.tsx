@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Gallery } from '@/types'
 
 interface GallerySectionProps {
@@ -46,42 +46,30 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     setShowAll(!showAll)
   }
 
-  const openModal = (index: number) => {
+  const openModal = useCallback((index: number) => {
     setCurrentImageIndex(index)
     setIsModalOpen(true)
     // 모달 열릴 때 body 스크롤 방지
     document.body.style.overflow = 'hidden'
-  }
+  }, [])
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsModalOpen(false)
     // 모달 닫힐 때 body 스크롤 복원
     document.body.style.overflow = 'unset'
-  }
+  }, [])
 
-  const goToPrevious = () => {
+  const goToPrevious = useCallback(() => {
     setCurrentImageIndex((prev) => 
       prev === 0 ? imagesToShow.length - 1 : prev - 1
     )
-  }
+  }, [imagesToShow.length])
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     setCurrentImageIndex((prev) => 
       prev === imagesToShow.length - 1 ? 0 : prev + 1
     )
-  }
-
-  const handleBackgroundClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      closeModal()
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') closeModal()
-    if (e.key === 'ArrowLeft') goToPrevious()
-    if (e.key === 'ArrowRight') goToNext()
-  }
+  }, [imagesToShow.length])
 
   // 터치 이벤트 핸들러
   const onTouchStart = (e: React.TouchEvent) => {
@@ -108,12 +96,36 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     }
   }
 
+  // 배경 클릭 핸들러 (모바일 호환성 개선)
+  const handleBackgroundClick = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // 이벤트 타겟이 배경 자체인 경우에만 모달 닫기
+    if (e.target === e.currentTarget) {
+      closeModal()
+    }
+  }, [closeModal])
+
   // 컴포넌트 언마운트 시 스크롤 복원
   useEffect(() => {
     return () => {
       document.body.style.overflow = 'unset'
     }
   }, [])
+
+  // 키보드 이벤트 리스너 추가
+  useEffect(() => {
+    if (isModalOpen) {
+      const handleKeyPress = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') closeModal()
+        if (e.key === 'ArrowLeft') goToPrevious()
+        if (e.key === 'ArrowRight') goToNext()
+      }
+
+      document.addEventListener('keydown', handleKeyPress)
+      return () => {
+        document.removeEventListener('keydown', handleKeyPress)
+      }
+    }
+  }, [isModalOpen, closeModal, goToPrevious, goToNext])
 
   return (
     <>
@@ -202,16 +214,24 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
           onClick={handleBackgroundClick}
-          onKeyDown={handleKeyDown}
-          tabIndex={-1}
+          onTouchEnd={handleBackgroundClick}
         >
           {/* 닫기 버튼 */}
           <button
-            onClick={closeModal}
-            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors p-2"
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              closeModal()
+            }}
+            onTouchEnd={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              closeModal()
+            }}
+            className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors p-2 touch-manipulation"
           >
             <svg
-              className="w-8 h-8 md:w-10 md:h-10"
+              className="w-8 h-8 md:w-10 md:h-10 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -228,11 +248,14 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 이전 버튼 - 데스크톱에서만 표시 */}
           <button
-            onClick={goToPrevious}
+            onClick={(e) => {
+              e.stopPropagation()
+              goToPrevious()
+            }}
             className="hidden md:block absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-20"
           >
             <svg
-              className="w-10 h-10"
+              className="w-10 h-10 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -249,11 +272,14 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 다음 버튼 - 데스크톱에서만 표시 */}
           <button
-            onClick={goToNext}
+            onClick={(e) => {
+              e.stopPropagation()
+              goToNext()
+            }}
             className="hidden md:block absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors p-2 z-20"
           >
             <svg
-              className="w-10 h-10"
+              className="w-10 h-10 pointer-events-none"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -270,16 +296,23 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
 
           {/* 이미지 컨테이너 */}
           <div 
-            className="relative w-full max-w-[90vw] md:max-w-4xl max-h-[80vh] md:max-h-[70vh] mx-auto flex flex-col items-center justify-center p-4 md:p-8 z-10"
+            className="relative w-full h-full flex items-center justify-center p-4 md:p-8 z-10"
+            onClick={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
           >
-            <div className="flex-1 flex items-center justify-center w-full">
+            <div 
+              className="flex-1 flex items-center justify-center w-full h-full"
+              onTouchEnd={(e) => {
+                onTouchEnd()
+                e.stopPropagation()
+              }}
+            >
               {('isPlaceholder' in imagesToShow[currentImageIndex] && imagesToShow[currentImageIndex].isPlaceholder) || failedImages.has(imagesToShow[currentImageIndex].id) ? (
                 <div className="bg-gray-100 rounded-lg flex items-center justify-center w-80 h-80 md:w-96 md:h-96">
                   <svg
-                    className="w-16 h-16 md:w-24 md:h-24 text-gray-300"
+                    className="w-16 h-16 md:w-24 md:h-24 text-gray-300 pointer-events-none"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -294,65 +327,83 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                   </svg>
                 </div>
               ) : (
-                <div className="relative w-full h-full max-w-[85vw] md:max-w-[800px] max-h-[70vh] md:max-h-[600px] flex items-center justify-center">
+                <div className="relative w-full h-full flex items-center justify-center">
                   <img
                     src={imagesToShow[currentImageIndex].url}
                     alt="Gallery"
-                    className="max-w-full max-h-full object-contain rounded-lg"
-                    sizes="(max-width: 768px) 85vw, 800px"
+                    className="max-w-[90vw] max-h-[80vh] md:max-w-[85vw] md:max-h-[75vh] object-contain rounded-lg pointer-events-none"
+                    sizes="(max-width: 768px) 90vw, 85vw"
                     onError={() => handleImageError(imagesToShow[currentImageIndex].id)}
                   />
                 </div>
               )}
             </div>
 
-            {/* 모바일용 네비게이션 버튼들 - 이미지 아래로 이동 */}
-            <div className="md:hidden flex justify-between items-center w-full max-w-sm mt-6">
-              <button
-                onClick={goToPrevious}
-                className="text-white hover:text-gray-300 transition-colors p-3 flex items-center gap-2"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
+            {/* 모바일용 네비게이션 바 - 연결된 검은 배경 */}
+            <div className="md:hidden absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-4">
+              <div className="flex justify-between items-center max-w-sm mx-auto">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    goToPrevious()
+                  }}
+                  onTouchEnd={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    goToPrevious()
+                  }}
+                  className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-                <span className="text-sm">이전</span>
-              </button>
-              
-              <div className="text-white text-sm font-sans">
-                {currentImageIndex + 1} / {imagesToShow.length}
+                  <svg
+                    className="w-6 h-6 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                  <span className="text-sm pointer-events-none">이전</span>
+                </button>
+                
+                <div className="text-white text-sm font-sans px-4">
+                  {currentImageIndex + 1} / {imagesToShow.length}
+                </div>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    goToNext()
+                  }}
+                  onTouchEnd={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    goToNext()
+                  }}
+                  className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
+                >
+                  <span className="text-sm pointer-events-none">다음</span>
+                  <svg
+                    className="w-6 h-6 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
               </div>
-              
-              <button
-                onClick={goToNext}
-                className="text-white hover:text-gray-300 transition-colors p-3 flex items-center gap-2"
-              >
-                <span className="text-sm">다음</span>
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
             </div>
           </div>
         </div>
