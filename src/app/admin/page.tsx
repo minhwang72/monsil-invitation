@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
 import { validateAndPrepareFile } from '@/lib/clientImageUtils'
 import MainImageUploader from '@/components/MainImageUploader'
+import GlobalLoading from '@/components/GlobalLoading'
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop'
 
@@ -130,7 +131,7 @@ const LoginForm = ({ onLogin }: { onLogin: (username: string, password: string) 
 }
 
 // 메인 이미지 섹션 컴포넌트
-const MainImageSection = ({ onUpdate, showToast }: { onUpdate?: () => void, showToast: (message: string, type: 'success' | 'error') => void }) => {
+const MainImageSection = ({ onUpdate, showToast, setGlobalLoading }: { onUpdate?: () => void, showToast: (message: string, type: 'success' | 'error') => void, setGlobalLoading: (loading: boolean, message?: string) => void }) => {
   const [currentImage, setCurrentImage] = useState<Gallery | null>(null)
 
   const fetchMainImage = useCallback(async () => {
@@ -153,6 +154,8 @@ const MainImageSection = ({ onUpdate, showToast }: { onUpdate?: () => void, show
   const handleUploadSuccess = async (fileUrl: string) => {
     console.log('[DEBUG] Main image upload successful:', fileUrl)
     
+    setGlobalLoading(true, '메인 이미지 업데이트 중...')
+    
     try {
       // 이미지가 성공적으로 업로드되었으므로 UI를 새로고침
       await fetchMainImage()
@@ -162,6 +165,8 @@ const MainImageSection = ({ onUpdate, showToast }: { onUpdate?: () => void, show
       console.error('Error refreshing image data:', error)
       // 업로드는 성공했으므로 경고만 표시
       showToast('화면 새로고침에 실패했습니다', 'error')
+    } finally {
+      setGlobalLoading(false)
     }
   }
 
@@ -205,7 +210,7 @@ const MainImageSection = ({ onUpdate, showToast }: { onUpdate?: () => void, show
 }
 
 // 연락처 관리 섹션 컴포넌트
-const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactPerson[], onUpdate: () => void, showToast: (message: string, type: 'success' | 'error') => void }) => {
+const ContactsSection = ({ contacts, onUpdate, showToast, setGlobalLoading }: { contacts: ContactPerson[], onUpdate: () => void, showToast: (message: string, type: 'success' | 'error') => void, setGlobalLoading: (loading: boolean, message?: string) => void }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<ContactPerson | null>(null)
   const [saving, setSaving] = useState(false)
@@ -310,6 +315,8 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
     }
 
     setSaving(true)
+    setGlobalLoading(true, '연락처 추가 중...')
+    
     try {
       const res = await fetch('/api/admin/contacts', {
         method: 'POST',
@@ -331,6 +338,7 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
       console.error('Add contact error:', err)
     } finally {
       setSaving(false)
+      setGlobalLoading(false)
     }
   }
 
@@ -339,6 +347,8 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
     if (!editingContact) return
 
     setSaving(true)
+    setGlobalLoading(true, '연락처 수정 중...')
+    
     try {
       const res = await fetch(`/api/admin/contacts/${editingContact.id}`, {
         method: 'PUT',
@@ -359,6 +369,7 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
       console.error('Save contact error:', err)
     } finally {
       setSaving(false)
+      setGlobalLoading(false)
     }
   }
 
@@ -367,6 +378,8 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
     if (!confirm('정말로 이 연락처를 삭제하시겠습니까?')) return
 
     setDeleting(id)
+    setGlobalLoading(true, '연락처 삭제 중...')
+    
     try {
       const res = await fetch(`/api/admin/contacts/${id}`, {
         method: 'DELETE',
@@ -384,6 +397,7 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
       console.error('Delete contact error:', err)
     } finally {
       setDeleting(null)
+      setGlobalLoading(false)
     }
   }
 
@@ -544,7 +558,7 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
                       maxLength={11}
                     />
                     {newContact.phone && (
-                      <p className="text-xs text-gray-500 mt-1">미리보기: {formatPhoneNumber(newContact.phone)}</p>
+                      <p className="text-xs text-gray-500 mt-1">전화: {formatPhoneNumber(newContact.phone)}</p>
                     )}
                   </div>
                   
@@ -674,7 +688,7 @@ const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactP
                       maxLength={11}
                     />
                     {editingContact.phone && (
-                      <p className="text-xs text-gray-500 mt-1">미리보기: {formatPhoneNumber(editingContact.phone)}</p>
+                      <p className="text-xs text-gray-500 mt-1">전화: {formatPhoneNumber(editingContact.phone)}</p>
                     )}
                   </div>
                   
@@ -944,7 +958,7 @@ const GalleryImageCropper = ({
 }
 
 // 갤러리 관리 섹션 컴포넌트
-const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Gallery[], onUpdate: () => void, loading: boolean, showToast: (message: string, type: 'success' | 'error') => void }) => {
+const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoading }: { gallery: Gallery[], onUpdate: () => void, loading: boolean, showToast: (message: string, type: 'success' | 'error') => void, setGlobalLoading: (loading: boolean, message?: string) => void }) => {
   const [uploading, setUploading] = useState(false)
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
   const [editingItem, setEditingItem] = useState<Gallery | null>(null)
@@ -958,6 +972,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
     if (files.length === 0) return
 
     setUploading(true)
+    setGlobalLoading(true, `${files.length}개 이미지 업로드 중...`)
     console.log('[DEBUG] Validating and preparing', files.length, 'files')
     
     try {
@@ -1041,6 +1056,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
       showToast('업로드 중 오류 발생', 'error')
     } finally {
       setUploading(false)
+      setGlobalLoading(false)
     }
   }
 
@@ -1048,6 +1064,8 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
   const handleDeleteSelected = async () => {
     if (selectedItems.size === 0) return
     if (!confirm(`선택된 ${selectedItems.size}개 이미지를 삭제하시겠습니까?`)) return
+
+    setGlobalLoading(true, `${selectedItems.size}개 이미지 삭제 중...`)
 
     try {
       console.log('[DEBUG] Deleting selected items:', Array.from(selectedItems))
@@ -1076,12 +1094,16 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
     } catch (error) {
       console.error('[DEBUG] Error deleting images:', error)
       showToast('삭제 중 오류 발생', 'error')
+    } finally {
+      setGlobalLoading(false)
     }
   }
 
   // 단일 아이템 삭제
   const handleDeleteSingle = async (id: number) => {
     if (!confirm('이 이미지를 삭제하시겠습니까?')) return
+
+    setGlobalLoading(true, '이미지 삭제 중...')
 
     try {
       const res = await fetch(`/api/admin/gallery/${id}`, {
@@ -1098,6 +1120,8 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
     } catch (error) {
       console.error('[DEBUG] Error deleting image:', error)
       showToast('삭제 중 오류 발생', 'error')
+    } finally {
+      setGlobalLoading(false)
     }
   }
 
@@ -1169,6 +1193,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
 
     setShowCropper(false)
     setUploading(true)
+    setGlobalLoading(true, '이미지 수정 중...')
 
     try {
       // 크롭된 이미지를 File 객체로 변환
@@ -1212,6 +1237,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
     } finally {
       setUploading(false)
       setEditingItem(null)
+      setGlobalLoading(false)
     }
   }
 
@@ -1465,7 +1491,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Ga
 }
 
 // 방명록 관리 섹션 컴포넌트
-const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbook[], onUpdate: () => void, loading: boolean }) => {
+const GuestbookSection = ({ guestbook, onUpdate, loading, setGlobalLoading }: { guestbook: Guestbook[], onUpdate: () => void, loading: boolean, setGlobalLoading: (loading: boolean, message?: string) => void }) => {
   const [localGuestbook, setLocalGuestbook] = useState<Guestbook[]>(guestbook)
 
   // guestbook prop이 변경되면 로컬 상태도 업데이트
@@ -1475,6 +1501,8 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
 
   const handleDelete = async (id: number) => {
     if (!confirm('정말로 이 방명록을 삭제하시겠습니까?')) return
+
+    setGlobalLoading(true, '방명록 삭제 중...')
 
     try {
       console.log('🔍 [DEBUG] Deleting guestbook:', id)
@@ -1511,6 +1539,8 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
     } catch (error) {
       console.error('❌ [DEBUG] Error deleting guestbook:', error)
       alert('삭제 중 오류가 발생했습니다.')
+    } finally {
+      setGlobalLoading(false)
     }
   }
 
@@ -1590,6 +1620,11 @@ function AdminPageContent() {
     guestbook: false,
     contacts: false
   })
+  // 전역 로딩 상태 추가
+  const [globalLoading, setGlobalLoading] = useState({
+    isLoading: false,
+    message: 'LOADING'
+  })
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -1603,6 +1638,11 @@ function AdminPageContent() {
   }, [searchParams])
   
   const [activeTab, setActiveTab] = useState<'main' | 'contacts' | 'gallery' | 'guestbook'>(getActiveTabFromUrl())
+  
+  // 전역 로딩 설정 함수
+  const setGlobalLoadingState = useCallback((isLoading: boolean, message: string = 'LOADING') => {
+    setGlobalLoading({ isLoading, message })
+  }, [])
   
   // 탭 변경 함수 (URL 업데이트 포함)
   const changeTab = (newTab: 'main' | 'contacts' | 'gallery' | 'guestbook') => {
@@ -1779,6 +1819,9 @@ function AdminPageContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 전역 로딩 스크린 */}
+      <GlobalLoading isLoading={globalLoading.isLoading} message={globalLoading.message} />
+      
       {/* 토스트 컨테이너 */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
@@ -1829,21 +1872,21 @@ function AdminPageContent() {
       <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         <div className="sm:px-0">
           {/* 메인 이미지 관리 탭 */}
-          {activeTab === 'main' && <MainImageSection onUpdate={updateGallery} showToast={showToast} />}
+          {activeTab === 'main' && <MainImageSection onUpdate={updateGallery} showToast={showToast} setGlobalLoading={setGlobalLoadingState} />}
 
           {/* 연락처 관리 탭 */}
           {activeTab === 'contacts' && (
-            <ContactsSection contacts={contacts} onUpdate={updateContacts} showToast={showToast} />
+            <ContactsSection contacts={contacts} onUpdate={updateContacts} showToast={showToast} setGlobalLoading={setGlobalLoadingState} />
           )}
 
           {/* 갤러리 관리 탭 */}
           {activeTab === 'gallery' && (
-            <GallerySection gallery={gallery} onUpdate={updateGallery} loading={loading.gallery} showToast={showToast} />
+            <GallerySection gallery={gallery} onUpdate={updateGallery} loading={loading.gallery} showToast={showToast} setGlobalLoading={setGlobalLoadingState} />
           )}
 
           {/* 방명록 관리 탭 */}
           {activeTab === 'guestbook' && (
-            <GuestbookSection guestbook={guestbook} onUpdate={updateGuestbook} loading={loading.guestbook} />
+            <GuestbookSection guestbook={guestbook} onUpdate={updateGuestbook} loading={loading.guestbook} setGlobalLoading={setGlobalLoadingState} />
           )}
         </div>
       </main>
