@@ -99,25 +99,25 @@ export async function POST(request: NextRequest) {
     const uploadsDir = join(process.cwd(), 'public', 'uploads')
     const imagesDir = join(uploadsDir, 'images')
     
-    // images 디렉토리 확인 및 생성
+    // images 디렉토리 확인 및 생성 (권한 오류 무시)
     try {
       await import('fs/promises').then(async (fs) => {
         try {
           await fs.access(imagesDir)
+          console.log('✅ [DEBUG] Images directory already exists')
         } catch {
-          await fs.mkdir(imagesDir, { recursive: true })
-          console.log('✅ [DEBUG] Created images directory')
+          try {
+            await fs.mkdir(imagesDir, { recursive: true })
+            console.log('✅ [DEBUG] Created images directory')
+          } catch (mkdirError) {
+            // 권한 오류 등으로 디렉토리 생성 실패 시, 이미 존재한다고 가정하고 계속 진행
+            console.log('ℹ️ [DEBUG] Could not create directory (assuming it exists):', mkdirError)
+          }
         }
       })
     } catch (dirError) {
-      console.error('❌ [DEBUG] Failed to ensure images directory:', dirError)
-      return NextResponse.json<ApiResponse<null>>(
-        {
-          success: false,
-          error: `Failed to prepare upload directory: ${dirError instanceof Error ? dirError.message : 'Unknown error'}`,
-        },
-        { status: 500 }
-      )
+      // 디렉토리 처리 실패해도 계속 진행 (Docker 볼륨 마운트에서는 이미 존재)
+      console.log('ℹ️ [DEBUG] Directory access/creation failed (continuing anyway):', dirError)
     }
     
     // 파일명 생성 로직 개선

@@ -112,12 +112,18 @@ export async function POST(request: NextRequest) {
       fileUrl
     })
 
-    // uploads/images 디렉토리 생성 확인
+    // uploads/images 디렉토리 생성 확인 (권한 오류 무시)
     try {
       await access(imagesDir)
+      console.log('✅ [DEBUG] Images directory already exists')
     } catch {
-      await mkdir(imagesDir, { recursive: true })
-      console.log('✅ [DEBUG] Created images directory')
+      try {
+        await mkdir(imagesDir, { recursive: true })
+        console.log('✅ [DEBUG] Created images directory')
+      } catch (mkdirError) {
+        // 권한 오류 등으로 디렉토리 생성 실패 시, 이미 존재한다고 가정하고 계속 진행
+        console.log('ℹ️ [DEBUG] Could not create directory (assuming it exists):', mkdirError)
+      }
     }
 
     // 기존 파일이 있으면 삭제 (동일 targetId인 경우)
