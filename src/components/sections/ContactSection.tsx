@@ -2,10 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { ContactPerson } from '@/types'
+import { useScrollAnimation } from '@/hooks/useScrollAnimation'
 
 export default function ContactSection() {
   const [contacts, setContacts] = useState<ContactPerson[]>([])
   const [loading, setLoading] = useState(true)
+
+  // 스크롤 애니메이션 훅들 - 로딩 중일 때는 비활성화
+  const titleAnimation = useScrollAnimation({ threshold: 0.4, animationDelay: 200, disabled: loading })
+  const groomAnimation = useScrollAnimation({ threshold: 0.3, animationDelay: 400, disabled: loading })
+  const brideAnimation = useScrollAnimation({ threshold: 0.2, animationDelay: 600, disabled: loading })
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -101,13 +107,19 @@ export default function ContactSection() {
     <section className="w-full flex flex-col justify-center py-8 md:py-12 px-6 md:px-10 font-sans bg-blue-50/50">
       <div className="max-w-xl mx-auto text-center w-full">
         {/* 제목 */}
-        <h2 className="text-3xl md:text-4xl font-light mb-8 md:mb-12 tracking-wider text-gray-700 font-english english-text">
+        <h2 
+          ref={titleAnimation.ref}
+          className={`text-3xl md:text-4xl font-light mb-8 md:mb-12 tracking-wider text-gray-700 font-english english-text transition-all duration-800 ${titleAnimation.animationClass}`}
+        >
           CONTACT
         </h2>
         
         <div className="max-w-md mx-auto space-y-6 md:space-y-8">
           {/* 신랑측 */}
-          <div className="space-y-4">
+          <div 
+            ref={groomAnimation.ref}
+            className={`space-y-4 transition-all duration-800 ${groomAnimation.animationClass}`}
+          >
             <div className="text-center">
               <span className="inline-block bg-purple-300 text-white px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-medium">
                 신랑
@@ -155,7 +167,10 @@ export default function ContactSection() {
           </div>
 
           {/* 신부측 */}
-          <div className="space-y-4">
+          <div 
+            ref={brideAnimation.ref}
+            className={`space-y-4 transition-all duration-800 ${brideAnimation.animationClass}`}
+          >
             <div className="text-center">
               <span className="inline-block bg-purple-300 text-white px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-medium">
                 신부

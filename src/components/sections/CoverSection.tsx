@@ -107,7 +107,7 @@ export default function CoverSection() {
           className={`flex justify-center mb-4 md:mb-4 transition-all duration-800 ${nameRowAnimation.animationClass}`}
         >
           <div className="w-full max-w-sm flex justify-between items-center">
-            <span className="text-base md:text-lg font-sans font-normal cursor-pointer select-none transition-colors"
+            <span className="text-base md:text-lg font-sans font-normal text-black cursor-pointer select-none transition-colors"
               onClick={handleMinClick}
             >
               황민
@@ -116,7 +116,7 @@ export default function CoverSection() {
             {/* 장식 SVG - 스크롤 기준 애니메이션 적용 */}
             <div 
               ref={heartAnimation.ref}
-              className={`w-32 md:w-36 h-auto transition-all duration-800 ${heartAnimation.animationClass}`}
+              className={`w-32 md:w-36 h-auto transition-all duration-1600 ${heartAnimation.animationClass}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 160 46" width="150" height="43" preserveAspectRatio="xMidYMid meet" style={{width: "100%", height: "100%", transform: "translate3d(0px, 0px, 0px)"}}>
                 <defs>
@@ -148,7 +148,7 @@ export default function CoverSection() {
             </div>
             
             <span 
-              className="text-base md:text-lg font-sans font-normal cursor-pointer select-none transition-colors"
+              className="text-base md:text-lg font-sans font-normal text-black cursor-pointer select-none transition-colors"
               onClick={handleSolClick}
             >
               이은솔

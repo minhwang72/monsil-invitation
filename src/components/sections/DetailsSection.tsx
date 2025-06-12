@@ -1,9 +1,19 @@
+'use client'
+
 import NaverMap from '../NaverMap'
 import { useState } from 'react'
+import { useScrollAnimation } from '@/hooks/useScrollAnimation'
 
 export default function LocationSection() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+
+  // 스크롤 애니메이션 훅들
+  const titleAnimation = useScrollAnimation({ threshold: 0.4, animationDelay: 200 })
+  const mapAnimation = useScrollAnimation({ threshold: 0.3, animationDelay: 400 })
+  const mapButtonsAnimation = useScrollAnimation({ threshold: 0.3, animationDelay: 500 })
+  const venueInfoAnimation = useScrollAnimation({ threshold: 0.2, animationDelay: 600 })
+  const transportAnimation = useScrollAnimation({ threshold: 0.1, animationDelay: 800 })
 
   const handleNaverMap = () => {
     window.open('https://map.naver.com/p/search/정동제일교회', '_blank')
@@ -49,20 +59,29 @@ export default function LocationSection() {
       <section className="w-full min-h-screen flex flex-col justify-center py-16 md:py-20 px-0 font-sans bg-blue-50/50">
         <div className="max-w-xl mx-auto text-center w-full px-0">
           {/* 제목 */}
-          <h2 className="text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text px-4 md:px-8">
+          <h2 
+            ref={titleAnimation.ref}
+            className={`text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text px-4 md:px-8 transition-all duration-800 ${titleAnimation.animationClass}`}
+          >
             LOCATION
           </h2>
 
           {/* 지도 - 좌우 패딩 제거 */}
-          <div className="mb-6 md:mb-8 px-0">
+          <div 
+            ref={mapAnimation.ref}
+            className={`mb-6 md:mb-8 px-0 transition-all duration-800 ${mapAnimation.animationClass}`}
+          >
             <NaverMap />
           </div>
 
           {/* 지도 앱 연동 버튼들 - 항상 가로 배치 */}
-          <div className="flex justify-center gap-2 md:gap-4 mb-6 md:mb-8 px-4 md:px-8">
+          <div 
+            ref={mapButtonsAnimation.ref}
+            className={`flex justify-center gap-2 md:gap-4 mb-6 md:mb-8 px-4 md:px-8 transition-all duration-800 ${mapButtonsAnimation.animationClass}`}
+          >
             <button
               onClick={handleNaverMap}
-              className="flex-1 bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
+              className="flex-1 bg-white text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px] hover:bg-gray-50"
             >
               <svg width="18" height="14" viewBox="0 0 21 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="md:w-[21px] md:h-[16px] flex-shrink-0">
                 <path d="M6.09879 0C2.86879 0 0.258789 2.61 0.258789 5.84C0.258789 6.18 0.298789 6.53 0.368789 6.89C0.558789 7.83 0.948789 8.71 1.49879 9.49L6.08879 16L8.73879 12.24L10.6788 9.49C11.2288 8.71 11.6188 7.83 11.8088 6.89C11.8788 6.53 11.9188 6.18 11.9188 5.84C11.9188 2.62 9.30879 0 6.07879 0L6.09879 0ZM5.35879 5.73V7.9H4.02879V3.78H5.35879L6.83879 5.95V3.78H8.16879V7.89H6.83879L5.35879 5.72V5.73Z" fill="#04C75A"/>
@@ -75,7 +94,7 @@ export default function LocationSection() {
             </button>
             <button
               onClick={handleTMap}
-              className="flex-1 bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
+              className="flex-1 bg-white text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px] hover:bg-gray-50"
             >
               <svg width="14" height="12" viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="md:w-[16px] md:h-[14px] flex-shrink-0">
                 <path d="M12.6951 0H0.955078V3.1H12.6951V0Z" fill="url(#paint0_linear_1343_17036)"/>
@@ -99,7 +118,7 @@ export default function LocationSection() {
             </button>
             <button
               onClick={handleKakaoMap}
-              className="flex-1 bg-gray-50 text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px]"
+              className="flex-1 bg-white text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px] hover:bg-gray-50"
             >
               <svg width="14" height="14" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" className="md:w-[16px] md:h-[16px] flex-shrink-0">
                 <rect width="600" height="600" rx="100" ry="100" fill="#FFCD00"/>
@@ -111,7 +130,10 @@ export default function LocationSection() {
           </div>
 
           {/* 주소 정보 */}
-          <div className="space-y-4 md:space-y-6 text-left px-4 md:px-8">
+          <div 
+            ref={venueInfoAnimation.ref}
+            className={`space-y-4 md:space-y-6 text-left px-4 md:px-8 transition-all duration-800 ${venueInfoAnimation.animationClass}`}
+          >
             {/* 주소 */}
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -153,7 +175,13 @@ export default function LocationSection() {
 
             {/* 구분선 */}
             <div className="w-full h-px bg-blue-400"></div>
+          </div>
 
+          {/* 교통 정보 */}
+          <div 
+            ref={transportAnimation.ref}
+            className={`space-y-4 md:space-y-6 text-left px-4 md:px-8 transition-all duration-800 ${transportAnimation.animationClass}`}
+          >
             {/* 지하철 */}
             <div>
               <div className="flex items-center gap-2 mb-3">

@@ -1,5 +1,8 @@
+'use client'
+
 import { useState } from 'react'
 import type { Guestbook } from '@/types'
+import { useScrollAnimation } from '@/hooks/useScrollAnimation'
 
 interface GuestbookSectionProps {
   guestbook: Guestbook[]
@@ -20,6 +23,11 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
   const [deletePassword, setDeletePassword] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [showAll, setShowAll] = useState(false)
+
+  // 스크롤 애니메이션 훅들
+  const titleAnimation = useScrollAnimation({ threshold: 0.4, animationDelay: 200 })
+  const writeButtonAnimation = useScrollAnimation({ threshold: 0.3, animationDelay: 400 })
+  const guestbookListAnimation = useScrollAnimation({ threshold: 0.2, animationDelay: 600 })
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type })
@@ -206,18 +214,24 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
 
   return (
     <>
-      <section className="w-full min-h-screen flex flex-col justify-center py-12 md:py-16 px-0 font-sans bg-gray-50/30">
+      <section className="w-full min-h-screen flex flex-col justify-center py-12 md:py-16 px-0 font-sans bg-purple-50/50">
         <div className="max-w-xl mx-auto text-center w-full px-6 md:px-8">
           {/* 제목 */}
-          <h2 className="text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text">
+          <h2 
+            ref={titleAnimation.ref}
+            className={`text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text transition-all duration-800 ${titleAnimation.animationClass}`}
+          >
             GUESTBOOK
           </h2>
           
           {/* 작성 버튼 */}
-          <div className="flex justify-end mb-4 md:mb-6">
+          <div 
+            ref={writeButtonAnimation.ref}
+            className={`flex justify-end mb-4 md:mb-6 transition-all duration-800 ${writeButtonAnimation.animationClass}`}
+          >
             <button
               onClick={handleWrite}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-400 text-white rounded-lg transition-colors font-sans font-medium text-sm md:text-base"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-300 hover:bg-blue-400 text-white rounded-lg transition-colors font-sans font-medium text-sm md:text-base"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -238,7 +252,10 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
           </div>
 
           {/* 방명록 리스트 */}
-          <div className="space-y-4 md:space-y-6 text-left">
+          <div 
+            ref={guestbookListAnimation.ref}
+            className={`space-y-4 md:space-y-6 text-left transition-all duration-800 ${guestbookListAnimation.animationClass}`}
+          >
             {guestbook && guestbook.length > 0 ? (
               <>
                 {(showAll ? guestbook : guestbook.slice(0, 3)).map((item) => (
@@ -319,11 +336,11 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
       {/* 작성 모달 */}
       {isModalOpen && (
         <div 
-          className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
+          className="fixed inset-0 flex items-center justify-center z-[9999] p-4 animate-modal-fade-in"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           onClick={handleBackgroundClick}
         >
-          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md font-sans max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md font-sans max-h-[90vh] overflow-y-auto animate-modal-slide-up">
             <div className="mb-4">
               <h3 className="text-base md:text-lg font-medium text-gray-900 font-sans">메시지 작성</h3>
             </div>
@@ -336,7 +353,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   type="text"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent text-sm md:text-base"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                   placeholder="이름을 입력해주세요 (최대 10글자)"
                 />
               </div>
@@ -348,7 +365,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   value={formData.content}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent resize-none text-sm md:text-base"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent resize-none text-sm md:text-base placeholder-gray-400"
                   placeholder="축하 메시지를 입력해주세요 (최대 200글자)"
                 />
                 <div className="text-xs text-gray-500 mt-1 text-right">
@@ -363,7 +380,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   type="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent text-sm md:text-base"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                   placeholder="비밀번호를 입력해주세요 (4~12자리)"
                 />
               </div>
@@ -379,7 +396,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2 px-4 text-sm md:text-base bg-purple-400 disabled:bg-purple-200 text-white rounded-md transition-colors"
+                  className="flex-1 py-2 px-4 text-sm md:text-base bg-blue-300 disabled:bg-blue-200 text-white rounded-md transition-colors"
                 >
                   {isSubmitting ? '작성 중...' : '작성하기'}
                 </button>
@@ -392,11 +409,11 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
       {/* 삭제 모달 */}
       {deleteModalOpen && (
         <div 
-          className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
+          className="fixed inset-0 flex items-center justify-center z-[9999] p-4 animate-modal-fade-in"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           onClick={handleDeleteBackgroundClick}
         >
-          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-sm font-sans">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-sm font-sans animate-modal-slide-up">
             <div className="mb-4">
               <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">메시지 삭제</h3>
               <p className="text-sm text-gray-600">삭제하려면 비밀번호를 입력해주세요.</p>
@@ -407,7 +424,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                 type="password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent text-sm md:text-base"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                 placeholder="비밀번호 입력"
               />
             </div>

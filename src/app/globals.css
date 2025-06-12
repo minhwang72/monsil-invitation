@@ -112,6 +112,37 @@ body {
   animation: heart-beat-scroll 1.5s ease-in-out infinite;
 }
 
+/* 모달 애니메이션 */
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-modal-fade-in {
+  animation: modal-fade-in 0.3s ease-out forwards;
+}
+
+.animate-modal-slide-up {
+  animation: modal-slide-up 0.3s ease-out forwards;
+}
+
 /* 가로 스크롤바 숨김 */
 @layer utilities {
   .scrollbar-hide {

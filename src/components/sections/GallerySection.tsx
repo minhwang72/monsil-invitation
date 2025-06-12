@@ -233,7 +233,7 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
       {/* 모달 */}
       {isModalOpen && (
         <div 
-          className="fixed inset-0 z-[9999] bg-black/80"
+          className="fixed inset-0 z-[9999] bg-black/80 animate-modal-fade-in"
           onClick={handleBackgroundClick}
           onTouchEnd={handleBackgroundTouch}
         >
@@ -259,38 +259,32 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
             </svg>
           </button>
 
-          {/* 이전 버튼 - 데스크톱에서만 표시 */}
-          {currentImageIndex > 0 && (
-            <button
-              onClick={goToPrevious}
-              disabled={currentImageIndex === 0}
-              className="text-white transition-colors p-2 flex items-center gap-2 touch-manipulation"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              이전
-            </button>
-          )}
+          {/* 데스크톱용 이전 버튼 - 왼쪽 중앙 */}
+          <button
+            onClick={goToPrevious}
+            disabled={currentImageIndex === 0}
+            className="hidden md:flex absolute left-4 top-1/2 transform -translate-y-1/2 z-[10001] text-white hover:text-gray-300 transition-colors p-3 items-center justify-center bg-black bg-opacity-50 rounded-full disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
 
-          {/* 다음 버튼 - 데스크톱에서만 표시 */}
-          {currentImageIndex < displayImages.length - 1 && (
-            <button
-              onClick={goToNext}
-              disabled={currentImageIndex === displayImages.length - 1}
-              className="text-white transition-colors p-2 flex items-center gap-2 touch-manipulation"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-              다음
-            </button>
-          )}
+          {/* 데스크톱용 다음 버튼 - 오른쪽 중앙 */}
+          <button
+            onClick={goToNext}
+            disabled={currentImageIndex === displayImages.length - 1}
+            className="hidden md:flex absolute right-4 top-1/2 transform -translate-y-1/2 z-[10001] text-white hover:text-gray-300 transition-colors p-3 items-center justify-center bg-black bg-opacity-50 rounded-full disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
 
           {/* 중앙 이미지 영역 - 크기 제한 */}
           <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8 pointer-events-none">
             <div 
-              className="relative max-w-[90vw] max-h-[80vh] md:max-w-[85vw] md:max-h-[75vh] pointer-events-auto"
+              className="relative max-w-[90vw] max-h-[80vh] md:max-w-[85vw] md:max-h-[75vh] pointer-events-auto animate-modal-slide-up"
               onClick={(e) => e.stopPropagation()}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
@@ -342,7 +336,8 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                   e.preventDefault()
                   goToPrevious()
                 }}
-                className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
+                disabled={currentImageIndex === 0}
+                className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <svg
                   className="w-6 h-6 pointer-events-none"
@@ -375,7 +370,8 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
                   e.preventDefault()
                   goToNext()
                 }}
-                className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation"
+                disabled={currentImageIndex === displayImages.length - 1}
+                className="text-white hover:text-gray-300 transition-colors p-2 flex items-center gap-2 touch-manipulation disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <span className="text-sm pointer-events-none">다음</span>
                 <svg
