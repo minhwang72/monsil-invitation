@@ -119,6 +119,21 @@ jobs:
           echo "Pulling new image..."
           docker pull ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
+          echo "📄 Copying static files from Docker image to host..."
+          # 임시 컨테이너를 생성하여 static 파일들을 호스트에 복사
+          TEMP_CONTAINER_ID=$(docker create ${{ env.DOCKER_IMAGE }}:${{ github.sha }})
+          docker cp $TEMP_CONTAINER_ID:/app/public/favicon.svg $HOST_PUBLIC_DIR/favicon.svg
+          docker cp $TEMP_CONTAINER_ID:/app/public/next.svg $HOST_PUBLIC_DIR/next.svg || true
+          docker cp $TEMP_CONTAINER_ID:/app/public/vercel.svg $HOST_PUBLIC_DIR/vercel.svg || true
+          docker cp $TEMP_CONTAINER_ID:/app/public/window.svg $HOST_PUBLIC_DIR/window.svg || true
+          docker cp $TEMP_CONTAINER_ID:/app/public/globe.svg $HOST_PUBLIC_DIR/globe.svg || true
+          docker cp $TEMP_CONTAINER_ID:/app/public/file.svg $HOST_PUBLIC_DIR/file.svg || true
+          docker rm $TEMP_CONTAINER_ID
+          
+          # 복사된 파일들의 권한 설정
+          sudo chown -R 1001:1001 $HOST_PUBLIC_DIR
+          chmod -R 644 $HOST_PUBLIC_DIR/*.svg
+
           echo "Starting new container..."
           docker run -d \
             --name ${{ env.CONTAINER_NAME }} \
