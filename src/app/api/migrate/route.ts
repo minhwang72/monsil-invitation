@@ -431,12 +431,16 @@ export async function POST() {
     try {
       console.log('🔍 [DEBUG] Checking for unhashed guestbook passwords...')
       
-      // 해시되지 않은 비밀번호 찾기 (콜론이 없으면 평문으로 간주)
+      // 해시되지 않은 비밀번호 찾기 
+      // 해시된 비밀번호는 'salt:hash' 형태이고 길이가 훨씬 김
       const [rows] = await pool.query(`
         SELECT id, password 
         FROM guestbook 
         WHERE deleted_at IS NULL 
-        AND password NOT LIKE '%:%'
+        AND (
+          password NOT LIKE '%:%' 
+          OR LENGTH(password) < 20
+        )
         LIMIT 50
       `)
       
@@ -450,6 +454,12 @@ export async function POST() {
         
         for (const row of unhashedRows) {
           try {
+            // 이미 해시된 것처럼 보이는지 다시 한번 확인
+            if (row.password.includes(':') && row.password.length > 20) {
+              console.log(`⏭️ [DEBUG] Skipping entry ID ${row.id} - appears to be already hashed`)
+              continue
+            }
+            
             // 비밀번호만 해시화
             const hashedPassword = hashPassword(row.password)
 
@@ -465,7 +475,7 @@ export async function POST() {
           }
         }
         
-        migrations.push(`guestbook: ${unhashedRows.length} passwords hashed`)
+        migrations.push(`guestbook: ${unhashedRows.length} passwords checked for hashing`)
       } else {
         migrations.push('guestbook: all passwords already hashed')
       }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
-import { verifyPassword } from '@/lib/encryption'
+import { verifyPassword, hashPassword } from '@/lib/encryption'
 import type { ApiResponse } from '@/types'
 import type { RowDataPacket } from 'mysql2'
 
@@ -16,7 +16,7 @@ export async function PUT(request: NextRequest) {
     const { password, content } = body
     const id = getIdFromRequest(request)
 
-    // 저장된 해시된 비밀번호로 검증
+    // 저장된 비밀번호 확인
     const [rows] = await pool.query(
       'SELECT password FROM guestbook WHERE id = ? AND deleted_at IS NULL',
       [id]
@@ -32,8 +32,35 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const storedHashedPassword = resultRows[0].password as string
-    if (!verifyPassword(password, storedHashedPassword)) {
+    const storedPassword = resultRows[0].password as string
+    
+    // 비밀번호 검증 (해시된 비밀번호와 평문 비밀번호 모두 지원)
+    let passwordMatch = false
+    
+    if (storedPassword.includes(':')) {
+      // 해시된 비밀번호로 검증
+      passwordMatch = verifyPassword(password, storedPassword)
+    } else {
+      // 평문 비밀번호로 검증 (기존 데이터 호환성)
+      passwordMatch = password === storedPassword
+      
+      // 평문 비밀번호가 일치하면 이 기회에 해시화
+      if (passwordMatch) {
+        try {
+          const hashedPassword = hashPassword(password)
+          await pool.query(
+            'UPDATE guestbook SET password = ? WHERE id = ?',
+            [hashedPassword, id]
+          )
+          console.log(`Password hashed for guestbook entry ${id}`)
+        } catch (hashError) {
+          console.error('Failed to hash password during update:', hashError)
+          // 해시화 실패해도 업데이트는 진행
+        }
+      }
+    }
+    
+    if (!passwordMatch) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
@@ -80,7 +107,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // 저장된 해시된 비밀번호로 검증
+    // 저장된 비밀번호 확인
     const [rows] = await pool.query(
       'SELECT password FROM guestbook WHERE id = ? AND deleted_at IS NULL',
       [id]
@@ -96,8 +123,35 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const storedHashedPassword = resultRows[0].password as string
-    if (!verifyPassword(password, storedHashedPassword)) {
+    const storedPassword = resultRows[0].password as string
+    
+    // 비밀번호 검증 (해시된 비밀번호와 평문 비밀번호 모두 지원)
+    let passwordMatch = false
+    
+    if (storedPassword.includes(':')) {
+      // 해시된 비밀번호로 검증
+      passwordMatch = verifyPassword(password, storedPassword)
+    } else {
+      // 평문 비밀번호로 검증 (기존 데이터 호환성)
+      passwordMatch = password === storedPassword
+      
+      // 평문 비밀번호가 일치하면 이 기회에 해시화
+      if (passwordMatch) {
+        try {
+          const hashedPassword = hashPassword(password)
+          await pool.query(
+            'UPDATE guestbook SET password = ? WHERE id = ?',
+            [hashedPassword, id]
+          )
+          console.log(`Password hashed for guestbook entry ${id}`)
+        } catch (hashError) {
+          console.error('Failed to hash password during deletion:', hashError)
+          // 해시화 실패해도 삭제는 진행
+        }
+      }
+    }
+    
+    if (!passwordMatch) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,

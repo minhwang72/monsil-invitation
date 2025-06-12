@@ -163,13 +163,9 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
         method: 'DELETE',
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
       const result = await response.json()
 
-      if (result.success) {
+      if (response.ok && result.success) {
         showToast('메시지가 삭제되었습니다.', 'success')
         setDeleteModalOpen(false)
         setDeletePassword('')
@@ -185,7 +181,9 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
           onGuestbookUpdate()
         }, 100)
       } else {
-        showToast(result.error || '삭제에 실패했습니다.', 'error')
+        // API에서 전달된 구체적인 에러 메시지 사용
+        const errorMessage = result.error || '삭제에 실패했습니다.'
+        showToast(errorMessage, 'error')
       }
     } catch (error) {
       console.error('Error deleting message:', error)
