@@ -1,7 +1,7 @@
 export interface ContactPerson {
   id: number;
   side: 'groom' | 'bride';
-  relationship: 'person' | 'father' | 'mother';
+  relationship: 'person' | 'father' | 'mother' | 'brother' | 'sister' | 'other';
   name: string;
   phone: string;
   bank_name?: string;

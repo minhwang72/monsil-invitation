@@ -163,7 +163,7 @@ export async function POST() {
         CREATE TABLE IF NOT EXISTS contacts (
           id INT AUTO_INCREMENT PRIMARY KEY,
           side ENUM('groom', 'bride') NOT NULL,
-          relationship ENUM('person', 'father', 'mother') NOT NULL,
+          relationship ENUM('person', 'father', 'mother', 'brother', 'sister', 'other') NOT NULL,
           name VARCHAR(50) NOT NULL,
           phone VARCHAR(20) NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -175,6 +175,20 @@ export async function POST() {
     } catch (error) {
       console.error('Contacts table creation error:', error)
       throw error
+    }
+
+    // 6-1. 기존 contacts 테이블의 relationship ENUM 확장
+    try {
+      await pool.query(`
+        ALTER TABLE contacts 
+        MODIFY COLUMN relationship ENUM('person', 'father', 'mother', 'brother', 'sister', 'other') NOT NULL
+      `)
+      migrations.push('contacts: relationship enum extended with new options')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      // 이미 확장된 경우 또는 기타 에러는 무시
+      console.log('Contacts relationship enum extension skipped:', mysqlError.message)
+      migrations.push('contacts: relationship enum extension skipped (may already be extended)')
     }
 
     // 7. contacts 테이블에 은행명과 계좌번호 컬럼 추가

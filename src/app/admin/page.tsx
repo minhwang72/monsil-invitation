@@ -204,25 +204,97 @@ const MainImageSection = ({ onUpdate, showToast }: { onUpdate?: () => void, show
   )
 }
 
-// 연락처 관리 섹션 컴포넌트  
-const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], onUpdate: () => void }) => {
+// 연락처 관리 섹션 컴포넌트
+const ContactsSection = ({ contacts, onUpdate, showToast }: { contacts: ContactPerson[], onUpdate: () => void, showToast: (message: string, type: 'success' | 'error') => void }) => {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<ContactPerson | null>(null)
   const [saving, setSaving] = useState(false)
-  const [localContacts, setLocalContacts] = useState<ContactPerson[]>(contacts)
+  const [deleting, setDeleting] = useState<number | null>(null)
+  
+  // 새 연락처 초기값
+  const [newContact, setNewContact] = useState({
+    side: 'groom' as 'groom' | 'bride',
+    relationship: 'other' as ContactPerson['relationship'],
+    name: '',
+    phone: '',
+    bank_name: '',
+    account_number: '',
+    kakaopay_link: ''
+  })
 
-  // contacts prop이 변경되면 로컬 상태도 업데이트
-  useEffect(() => {
-    setLocalContacts(contacts)
-  }, [contacts])
-
-  const handleEdit = (contact: ContactPerson) => {
-    setEditingContact({ ...contact })
+  const resetNewContact = () => {
+    setNewContact({
+      side: 'groom',
+      relationship: 'other',
+      name: '',
+      phone: '',
+      bank_name: '',
+      account_number: '',
+      kakaopay_link: ''
+    })
   }
 
+  // 신랑측/신부측 연락처 분리
+  const groomContacts = contacts.filter(contact => contact.side === 'groom')
+  const brideContacts = contacts.filter(contact => contact.side === 'bride')
+
+  const getRelationshipLabel = (relationship: string) => {
+    switch (relationship) {
+      case 'person': return '본인'
+      case 'father': return '아버지'
+      case 'mother': return '어머니'
+      case 'brother': return '형제'
+      case 'sister': return '자매'
+      case 'other': return '그외'
+      default: return relationship
+    }
+  }
+
+  const relationshipOptions = [
+    { value: 'person', label: '본인' },
+    { value: 'father', label: '아버지' },
+    { value: 'mother', label: '어머니' },
+    { value: 'brother', label: '형제' },
+    { value: 'sister', label: '자매' },
+    { value: 'other', label: '그외' }
+  ]
+
+  // 연락처 추가
+  const handleAdd = async () => {
+    if (!newContact.name.trim()) {
+      showToast('이름을 입력해주세요', 'error')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newContact),
+      })
+      
+      const data = await res.json()
+      if (data.success) {
+        showToast('연락처가 추가되었습니다', 'success')
+        setIsAddModalOpen(false)
+        resetNewContact()
+        onUpdate()
+      } else {
+        showToast(data.error || '추가에 실패했습니다', 'error')
+      }
+    } catch (err) {
+      showToast('추가 중 오류가 발생했습니다', 'error')
+      console.error('Add contact error:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // 연락처 수정 저장
   const handleSave = async () => {
     if (!editingContact) return
 
-    console.log('🔍 [DEBUG] Saving contact:', editingContact)
     setSaving(true)
     try {
       const res = await fetch(`/api/admin/contacts/${editingContact.id}`, {
@@ -231,167 +303,362 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
         body: JSON.stringify(editingContact),
       })
       
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`)
-      }
-      
       const data = await res.json()
-      console.log('🔍 [DEBUG] Save response:', data)
-
       if (data.success) {
-        console.log('✅ [DEBUG] Contact saved successfully, updating local state')
-        
-        // 먼저 편집 모드 종료
+        showToast('연락처가 업데이트되었습니다', 'success')
         setEditingContact(null)
-        
-        // 즉시 로컬 상태 업데이트 (최신 데이터로)
-        setLocalContacts(prev => 
-          prev.map(contact => 
-            contact.id === editingContact.id ? { ...editingContact } : contact
-          )
-        )
-        
-        // 외부 상태도 업데이트 (서버에서 최신 데이터 가져오기)
-        try {
-          await onUpdate()
-          console.log('✅ [DEBUG] onUpdate completed successfully')
-        } catch (updateError) {
-          console.warn('⚠️ [DEBUG] onUpdate failed, but local state is updated:', updateError)
-        }
-        
-        alert('연락처가 업데이트되었습니다.')
+        onUpdate()
       } else {
-        console.log('❌ [DEBUG] Save failed:', data.error)
-        alert(data.error || '업데이트에 실패했습니다.')
+        showToast(data.error || '업데이트에 실패했습니다', 'error')
       }
-    } catch (error) {
-      console.error('❌ [DEBUG] Error updating contact:', error)
-      alert('업데이트 중 오류가 발생했습니다.')
+    } catch (err) {
+      showToast('업데이트 중 오류가 발생했습니다', 'error')
+      console.error('Save contact error:', err)
     } finally {
       setSaving(false)
     }
   }
 
-  const getSideLabel = (side: string) => side === 'groom' ? '신랑' : '신부'
-  const getRelationshipLabel = (relationship: string) => {
-    switch (relationship) {
-      case 'person': return '본인'
-      case 'father': return '아버지'
-      case 'mother': return '어머니'
-      default: return relationship
+  // 연락처 삭제
+  const handleDelete = async (id: number) => {
+    if (!confirm('정말로 이 연락처를 삭제하시겠습니까?')) return
+
+    setDeleting(id)
+    try {
+      const res = await fetch(`/api/admin/contacts/${id}`, {
+        method: 'DELETE',
+      })
+      
+      const data = await res.json()
+      if (data.success) {
+        showToast('연락처가 삭제되었습니다', 'success')
+        onUpdate()
+      } else {
+        showToast(data.error || '삭제에 실패했습니다', 'error')
+      }
+    } catch (err) {
+      showToast('삭제 중 오류가 발생했습니다', 'error')
+      console.error('Delete contact error:', err)
+    } finally {
+      setDeleting(null)
     }
   }
 
+  // 연락처 카드 컴포넌트
+  const ContactCard = ({ contact }: { contact: ContactPerson }) => (
+    <div className="border rounded-lg p-4 bg-gray-50">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h4 className="font-medium text-gray-900">
+            {getRelationshipLabel(contact.relationship)} {contact.name}
+          </h4>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setEditingContact({ ...contact })}
+            className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 border border-blue-200 rounded hover:bg-blue-50"
+          >
+            수정
+          </button>
+          <button
+            onClick={() => handleDelete(contact.id)}
+            disabled={deleting === contact.id}
+            className="text-red-600 hover:text-red-800 text-sm px-2 py-1 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50"
+          >
+            {deleting === contact.id ? '삭제중...' : '삭제'}
+          </button>
+        </div>
+      </div>
+      
+      <div className="space-y-1 text-sm text-gray-600">
+        <p>전화: {contact.phone}</p>
+        {contact.bank_name && <p>은행: {contact.bank_name}</p>}
+        {contact.account_number && <p>계좌: {contact.account_number}</p>}
+        {contact.kakaopay_link && (
+          <p>
+            카카오페이: 
+            <a href={contact.kakaopay_link} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline ml-1">
+              링크
+            </a>
+          </p>
+        )}
+      </div>
+    </div>
+  )
+
   return (
     <div className="bg-white shadow rounded-lg p-4 sm:p-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">연락처 관리</h2>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {localContacts.map((contact) => (
-          <div key={contact.id} className="border rounded-lg p-4">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 space-y-2 sm:space-y-0">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  {getSideLabel(contact.side)} {getRelationshipLabel(contact.relationship)}
-                </h3>
-              </div>
-              <button
-                onClick={() => handleEdit(contact)}
-                disabled={saving}
-                className="text-purple-600 hover:text-purple-900 text-sm disabled:opacity-50 min-h-[44px] px-3 py-2 border border-purple-200 rounded hover:bg-purple-50"
-              >
-                수정
-              </button>
-            </div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">연락처 관리</h2>
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium"
+        >
+          추가
+        </button>
+      </div>
 
-            {editingContact?.id === contact.id ? (
-              // 수정 모드
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">이름</label>
-                  <input
-                    type="text"
-                    value={editingContact.name}
-                    onChange={(e) => setEditingContact({ ...editingContact, name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">전화번호</label>
-                  <input
-                    type="text"
-                    value={editingContact.phone}
-                    onChange={(e) => setEditingContact({ ...editingContact, phone: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">은행명</label>
-                  <input
-                    type="text"
-                    value={editingContact.bank_name || ''}
-                    onChange={(e) => setEditingContact({ ...editingContact, bank_name: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">계좌번호</label>
-                  <input
-                    type="text"
-                    value={editingContact.account_number || ''}
-                    onChange={(e) => setEditingContact({ ...editingContact, account_number: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">카카오페이 링크</label>
-                  <input
-                    type="text"
-                    value={editingContact.kakaopay_link || ''}
-                    onChange={(e) => setEditingContact({ ...editingContact, kakaopay_link: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:ring-purple-500 focus:border-purple-500 min-h-[44px]"
-                  />
-                </div>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 min-h-[44px]"
-                  >
-                    {saving ? '저장 중...' : '저장'}
-                  </button>
-                  <button
-                    onClick={() => setEditingContact(null)}
-                    disabled={saving}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded disabled:opacity-50 min-h-[44px]"
-                  >
-                    취소
-                  </button>
-                </div>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* 신랑측 */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-blue-200">
+            신랑측 연락처
+          </h3>
+          <div className="space-y-3">
+            {groomContacts.length > 0 ? (
+              groomContacts.map(contact => (
+                <ContactCard key={contact.id} contact={contact} />
+              ))
             ) : (
-              // 표시 모드
-              <div className="space-y-2 text-sm text-gray-900">
-                <p><span className="font-medium text-gray-800">이름:</span> <span className="text-gray-900">{contact.name}</span></p>
-                <p><span className="font-medium text-gray-800">전화:</span> <span className="text-gray-900">{contact.phone}</span></p>
-                {contact.bank_name && (
-                  <p><span className="font-medium text-gray-800">은행:</span> <span className="text-gray-900">{contact.bank_name}</span></p>
-                )}
-                {contact.account_number && (
-                  <p><span className="font-medium text-gray-800">계좌:</span> <span className="text-gray-900 font-mono">{contact.account_number}</span></p>
-                )}
-                {contact.kakaopay_link && (
-                  <p><span className="font-medium text-gray-800">카카오페이:</span> 
-                    <a href={contact.kakaopay_link} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline ml-1">
-                      링크
-                    </a>
-                  </p>
-                )}
-              </div>
+              <p className="text-gray-500 text-center py-4">등록된 연락처가 없습니다</p>
             )}
           </div>
-        ))}
+        </div>
+
+        {/* 신부측 */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-pink-200">
+            신부측 연락처
+          </h3>
+          <div className="space-y-3">
+            {brideContacts.length > 0 ? (
+              brideContacts.map(contact => (
+                <ContactCard key={contact.id} contact={contact} />
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">등록된 연락처가 없습니다</p>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* 추가 모달 */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+            <div className="fixed inset-0 bg-black opacity-50" onClick={() => setIsAddModalOpen(false)}></div>
+            
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">연락처 추가</h3>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">측</label>
+                      <select
+                        value={newContact.side}
+                        onChange={(e) => setNewContact({ ...newContact, side: e.target.value as 'groom' | 'bride' })}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        <option value="groom">신랑</option>
+                        <option value="bride">신부</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">관계</label>
+                      <select
+                        value={newContact.relationship}
+                        onChange={(e) => setNewContact({ ...newContact, relationship: e.target.value as ContactPerson['relationship'] })}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        {relationshipOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
+                    <input
+                      type="text"
+                      value={newContact.name}
+                      onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder="이름을 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                    <input
+                      type="text"
+                      value={newContact.phone}
+                      onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder="전화번호를 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">은행명</label>
+                    <input
+                      type="text"
+                      value={newContact.bank_name}
+                      onChange={(e) => setNewContact({ ...newContact, bank_name: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder="은행명을 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">계좌번호</label>
+                    <input
+                      type="text"
+                      value={newContact.account_number}
+                      onChange={(e) => setNewContact({ ...newContact, account_number: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder="계좌번호를 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">카카오페이 링크</label>
+                    <input
+                      type="text"
+                      value={newContact.kakaopay_link}
+                      onChange={(e) => setNewContact({ ...newContact, kakaopay_link: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder="카카오페이 링크를 입력하세요"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  onClick={handleAdd}
+                  disabled={saving}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  {saving ? '추가 중...' : '추가'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAddModalOpen(false)
+                    resetNewContact()
+                  }}
+                  disabled={saving}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 수정 모달 */}
+      {editingContact && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+            <div className="fixed inset-0 bg-black opacity-50" onClick={() => setEditingContact(null)}></div>
+            
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">연락처 수정</h3>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">측</label>
+                      <select
+                        value={editingContact.side}
+                        onChange={(e) => setEditingContact({ ...editingContact, side: e.target.value as 'groom' | 'bride' })}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        <option value="groom">신랑</option>
+                        <option value="bride">신부</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">관계</label>
+                      <select
+                        value={editingContact.relationship}
+                        onChange={(e) => setEditingContact({ ...editingContact, relationship: e.target.value as ContactPerson['relationship'] })}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        {relationshipOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
+                    <input
+                      type="text"
+                      value={editingContact.name}
+                      onChange={(e) => setEditingContact({ ...editingContact, name: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                    <input
+                      type="text"
+                      value={editingContact.phone}
+                      onChange={(e) => setEditingContact({ ...editingContact, phone: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">은행명</label>
+                    <input
+                      type="text"
+                      value={editingContact.bank_name || ''}
+                      onChange={(e) => setEditingContact({ ...editingContact, bank_name: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">계좌번호</label>
+                    <input
+                      type="text"
+                      value={editingContact.account_number || ''}
+                      onChange={(e) => setEditingContact({ ...editingContact, account_number: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">카카오페이 링크</label>
+                    <input
+                      type="text"
+                      value={editingContact.kakaopay_link || ''}
+                      onChange={(e) => setEditingContact({ ...editingContact, kakaopay_link: e.target.value })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  {saving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  onClick={() => setEditingContact(null)}
+                  disabled={saving}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1495,7 +1762,7 @@ function AdminPageContent() {
 
           {/* 연락처 관리 탭 */}
           {activeTab === 'contacts' && (
-            <ContactsSection contacts={contacts} onUpdate={updateContacts} />
+            <ContactsSection contacts={contacts} onUpdate={updateContacts} showToast={showToast} />
           )}
 
           {/* 갤러리 관리 탭 */}
