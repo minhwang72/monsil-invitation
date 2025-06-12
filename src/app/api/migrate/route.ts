@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
-import { encrypt, hashPassword } from '@/lib/encryption'
+import { hashPassword } from '@/lib/encryption'
 import type { ApiResponse } from '@/types'
 
-interface MySQLError extends Error {
+interface MySQLError {
   code?: string
-  errno?: number
-}
-
-interface MySQLUpdateResult {
-  affectedRows: number
+  message?: string
 }
 
 export async function POST() {
@@ -165,10 +161,12 @@ export async function POST() {
           side ENUM('groom', 'bride') NOT NULL,
           relationship ENUM('person', 'father', 'mother', 'brother', 'sister', 'other') NOT NULL,
           name VARCHAR(50) NOT NULL,
-          phone VARCHAR(20) NOT NULL,
+          phone VARCHAR(20) DEFAULT NULL,
+          bank_name VARCHAR(50) DEFAULT NULL,
+          account_number VARCHAR(50) DEFAULT NULL,
+          kakaopay_link VARCHAR(500) DEFAULT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          INDEX idx_side (side),
-          INDEX idx_relationship (relationship)
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `)
       migrations.push('contacts table created or already exists')
@@ -356,14 +354,14 @@ export async function POST() {
       migrations.push('existing admin records deleted')
       
       // 새로운 admin 두 명 추가 (암호화된 비밀번호)
-      const minPassword = encrypt('f8tgw3lshms!')
-      const solPassword = encrypt('qlrqod1027@')
+      const minPassword = hashPassword('f8tgw3lshms!')
+      const solPassword = hashPassword('qlrqod1027@')
       
       await pool.query(
         'INSERT INTO admin (username, password) VALUES (?, ?), (?, ?)',
         ['min', minPassword, 'sol', solPassword]
       )
-      migrations.push('new admin accounts (min, sol) created with encrypted passwords')
+      migrations.push('new admin accounts (min, sol) created with hashed passwords')
     } catch (error) {
       console.error('Admin setup error:', error)
       migrations.push('admin setup failed (non-critical)')
@@ -381,7 +379,7 @@ export async function POST() {
         [formattedTime]
       )
       
-      const updateResult = result as MySQLUpdateResult
+      const updateResult = result as { affectedRows: number }
       migrations.push(`HEIC files cleaned up: ${updateResult.affectedRows} files marked as deleted`)
     } catch (error) {
       console.error('HEIC cleanup error:', error)
@@ -429,57 +427,51 @@ export async function POST() {
       migrations.push('gallery: order_index update failed (non-critical)')
     }
 
-    // 5. 기존 방명록 데이터 암호화 (평문으로 저장된 데이터가 있는 경우)
+    // 5. 기존 방명록 비밀번호 해시화 (평문 비밀번호가 있는 경우만)
     try {
-      console.log('🔍 [DEBUG] Checking for unencrypted guestbook data...')
+      console.log('🔍 [DEBUG] Checking for unhashed guestbook passwords...')
       
-      // 암호화되지 않은 데이터 찾기 (콜론이 없으면 평문으로 간주)
+      // 해시되지 않은 비밀번호 찾기 (콜론이 없으면 평문으로 간주)
       const [rows] = await pool.query(`
-        SELECT id, name, content, password 
+        SELECT id, password 
         FROM guestbook 
         WHERE deleted_at IS NULL 
-        AND (name NOT LIKE '%:%' OR content NOT LIKE '%:%' OR password NOT LIKE '%:%')
+        AND password NOT LIKE '%:%'
         LIMIT 50
       `)
       
-      const unencryptedRows = rows as Array<{
+      const unhashedRows = rows as Array<{
         id: number
-        name: string
-        content: string
         password: string
       }>
 
-      if (unencryptedRows.length > 0) {
-        console.log(`🔍 [DEBUG] Found ${unencryptedRows.length} unencrypted guestbook entries`)
+      if (unhashedRows.length > 0) {
+        console.log(`🔍 [DEBUG] Found ${unhashedRows.length} unhashed password entries`)
         
-        for (const row of unencryptedRows) {
+        for (const row of unhashedRows) {
           try {
-            // 이름과 내용이 암호화되지 않은 경우에만 암호화
-            const encryptedName = row.name.includes(':') ? row.name : encrypt(row.name)
-            const encryptedContent = row.content.includes(':') ? row.content : encrypt(row.content)
-            
-            // 비밀번호가 해시되지 않은 경우에만 해시화
-            const hashedPassword = row.password.includes(':') ? row.password : hashPassword(row.password)
+            // 비밀번호만 해시화
+            const hashedPassword = hashPassword(row.password)
 
             await pool.query(`
               UPDATE guestbook 
-              SET name = ?, content = ?, password = ?
+              SET password = ?
               WHERE id = ?
-            `, [encryptedName, encryptedContent, hashedPassword, row.id])
+            `, [hashedPassword, row.id])
 
-            console.log(`✅ [DEBUG] Encrypted guestbook entry ID: ${row.id}`)
-          } catch (encryptError) {
-            console.error(`❌ [DEBUG] Failed to encrypt guestbook entry ID: ${row.id}`, encryptError)
+            console.log(`✅ [DEBUG] Hashed password for guestbook entry ID: ${row.id}`)
+          } catch (hashError) {
+            console.error(`❌ [DEBUG] Failed to hash password for guestbook entry ID: ${row.id}`, hashError)
           }
         }
         
-        migrations.push(`guestbook: ${unencryptedRows.length} entries encrypted`)
+        migrations.push(`guestbook: ${unhashedRows.length} passwords hashed`)
       } else {
-        migrations.push('guestbook: all entries already encrypted')
+        migrations.push('guestbook: all passwords already hashed')
       }
     } catch (error) {
-      console.error('Guestbook encryption migration error:', error)
-      migrations.push('guestbook: encryption migration failed')
+      console.error('Guestbook password hashing migration error:', error)
+      migrations.push('guestbook: password hashing migration failed')
     }
 
     console.log('✅ [DEBUG] Migration completed')

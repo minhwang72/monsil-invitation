@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import pool from '@/lib/db'
-import { encrypt, decrypt, hashPassword, verifyPassword } from '@/lib/encryption'
+import { hashPassword, verifyPassword } from '@/lib/encryption'
 import type { ApiResponse, Guestbook } from '@/types'
 
 export async function GET() {
@@ -11,16 +11,10 @@ export async function GET() {
     )
     const guestbookRows = rows as Guestbook[]
     
-    // 데이터 복호화
-    const decryptedRows = guestbookRows.map(row => ({
-      ...row,
-      name: decrypt(row.name),
-      content: decrypt(row.content)
-    }))
-    
+    // 이름과 내용은 평문으로 저장되므로 그대로 반환
     const response = NextResponse.json<ApiResponse<Guestbook[]>>({
       success: true,
-      data: decryptedRows,
+      data: guestbookRows,
     })
 
     // 캐싱 헤더 추가 (1분 캐시)
@@ -45,9 +39,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, password, content } = body
 
-    // 데이터 암호화
-    const encryptedName = encrypt(name)
-    const encryptedContent = encrypt(content)
+    // 이름과 내용은 평문으로 저장, 비밀번호만 해시화
     const hashedPassword = hashPassword(password)
 
     // 한국 시간으로 현재 시간 생성
@@ -56,7 +48,7 @@ export async function POST(request: Request) {
 
     await pool.query(
       'INSERT INTO guestbook (name, password, content, created_at) VALUES (?, ?, ?, ?)',
-      [encryptedName, hashedPassword, encryptedContent, formattedTime]
+      [name, hashedPassword, content, formattedTime]
     )
 
     return NextResponse.json<ApiResponse<null>>({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
-import { encrypt, verifyPassword } from '@/lib/encryption'
+import { verifyPassword } from '@/lib/encryption'
 import type { ApiResponse } from '@/types'
 import type { RowDataPacket } from 'mysql2'
 
@@ -43,10 +43,9 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // 내용 암호화하여 업데이트
-    const encryptedContent = encrypt(content)
+    // 내용은 평문으로 업데이트
     await pool.query('UPDATE guestbook SET content = ? WHERE id = ?', [
-      encryptedContent,
+      content,
       id,
     ])
 
