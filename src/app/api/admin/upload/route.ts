@@ -176,8 +176,9 @@ export async function POST(request: NextRequest) {
               try {
                 await fs.unlink(oldFilePath)
                 console.log('✅ [DEBUG] Deleted physical file:', oldFilePath)
-              } catch (unlinkError: any) {
-                if (unlinkError.code !== 'ENOENT') {
+              } catch (unlinkError: unknown) {
+                const error = unlinkError as { code?: string }
+                if (error.code !== 'ENOENT') {
                   console.log('⚠️ [DEBUG] Failed to delete file:', unlinkError)
                 } else {
                   console.log('ℹ️ [DEBUG] File not found (already deleted):', oldFilePath)
