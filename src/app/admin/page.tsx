@@ -5,6 +5,41 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
 import { validateAndPrepareFile } from '@/lib/clientImageUtils'
 import MainImageUploader from '@/components/MainImageUploader'
+import Cropper from 'react-easy-crop'
+import { Area } from 'react-easy-crop'
+
+// 토스트 타입 정의
+interface Toast {
+  id: number
+  message: string
+  type: 'success' | 'error'
+}
+
+// 토스트 컴포넌트
+const ToastContainer = ({ toasts, removeToast }: { toasts: Toast[], removeToast: (id: number) => void }) => {
+  return (
+    <div className="fixed top-4 right-4 z-50 space-y-2">
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          className={`px-4 py-2 rounded-lg shadow-lg text-white text-sm max-w-sm ${
+            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span>{toast.message}</span>
+            <button
+              onClick={() => removeToast(toast.id)}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 // 로딩 컴포넌트
 const Loading = () => (
@@ -95,7 +130,7 @@ const LoginForm = ({ onLogin }: { onLogin: (username: string, password: string) 
 }
 
 // 메인 이미지 섹션 컴포넌트
-const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
+const MainImageSection = ({ onUpdate, showToast }: { onUpdate?: () => void, showToast: (message: string, type: 'success' | 'error') => void }) => {
   const [currentImage, setCurrentImage] = useState<Gallery | null>(null)
 
   const fetchMainImage = useCallback(async () => {
@@ -116,17 +151,17 @@ const MainImageSection = ({ onUpdate }: { onUpdate?: () => void }) => {
   }, [fetchMainImage])
 
   const handleUploadSuccess = async (fileUrl: string) => {
-    console.log('✅ [DEBUG] Main image upload successful:', fileUrl)
+    console.log('[DEBUG] Main image upload successful:', fileUrl)
     
     try {
       // 이미지가 성공적으로 업로드되었으므로 UI를 새로고침
       await fetchMainImage()
       if (onUpdate) onUpdate()
-      alert('✅ 메인 이미지가 성공적으로 업데이트되었습니다!\n위의 "현재 메인 이미지"에서 변경된 이미지를 확인할 수 있습니다.')
+      showToast('메인 이미지가 업데이트되었습니다', 'success')
     } catch (error) {
       console.error('Error refreshing image data:', error)
       // 업로드는 성공했으므로 경고만 표시
-      alert('메인 이미지가 업로드되었지만 화면 새로고침에 실패했습니다. 페이지를 새로고침해주세요.')
+      showToast('화면 새로고침에 실패했습니다', 'error')
     }
   }
 
@@ -361,10 +396,164 @@ const ContactsSection = ({ contacts, onUpdate }: { contacts: ContactPerson[], on
   )
 }
 
+// 갤러리용 자유 비율 크롭 컴포넌트
+const GalleryImageCropper = ({ 
+  imageSrc, 
+  onCropComplete, 
+  onCancel 
+}: { 
+  imageSrc: string, 
+  onCropComplete: (croppedImageBlob: Blob) => void, 
+  onCancel: () => void 
+}) => {
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+  const [processing, setProcessing] = useState(false)
+
+  // Canvas에서 크롭된 이미지 생성하는 헬퍼 함수
+  const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const image = new Image()
+      image.addEventListener('load', () => resolve(image))
+      image.addEventListener('error', (error) => reject(error))
+      image.setAttribute('crossOrigin', 'anonymous')
+      image.src = url
+    })
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<Blob> => {
+    const image = await createImage(imageSrc)
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+      throw new Error('Canvas context not available')
+    }
+
+    canvas.width = pixelCrop.width
+    canvas.height = pixelCrop.height
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    )
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+      }, 'image/jpeg', 0.85)
+    })
+  }
+
+  const onCropCompleteHandler = useCallback(
+    (croppedArea: Area, croppedAreaPixels: Area) => {
+      setCroppedAreaPixels(croppedAreaPixels)
+    },
+    []
+  )
+
+  const handleCropConfirm = useCallback(async () => {
+    if (!croppedAreaPixels) return
+
+    try {
+      setProcessing(true)
+      const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels)
+      onCropComplete(croppedImage)
+    } catch (e) {
+      console.error('크롭 처리 중 오류:', e)
+    } finally {
+      setProcessing(false)
+    }
+  }, [croppedAreaPixels, imageSrc, onCropComplete])
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-900">이미지 수정 (자유 크롭)</h3>
+          <button
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 text-xl"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="relative bg-gray-100 flex-1 min-h-[400px] rounded-lg overflow-hidden">
+          <Cropper
+            image={imageSrc}
+            crop={crop}
+            zoom={zoom}
+            aspect={0} // 자유 비율을 위해 0으로 설정
+            onCropChange={setCrop}
+            onCropComplete={onCropCompleteHandler}
+            onZoomChange={setZoom}
+            cropShape="rect"
+            showGrid={true}
+            restrictPosition={false} // 위치 제한 해제
+            cropSize={{ width: 300, height: 200 }} // 초기 크롭 영역 크기
+          />
+        </div>
+        
+        <div className="mt-4 space-y-4">
+          {/* 줌 컨트롤 */}
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600 min-w-[40px]">줌:</span>
+            <input
+              type="range"
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-sm text-gray-600 min-w-[60px]">
+              {Math.round(zoom * 100)}%
+            </span>
+          </div>
+          
+          {/* 안내 텍스트 */}
+          <p className="text-sm text-gray-600 text-center">
+            드래그로 위치 조정, 크롭 영역 모서리를 드래그하여 크기 조정, 마우스 휠로 줌 조정 가능합니다.
+          </p>
+          
+          {/* 버튼들 */}
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onCancel}
+              disabled={processing}
+              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleCropConfirm}
+              disabled={processing}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+            >
+              {processing ? '처리 중...' : '수정 완료'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // 갤러리 관리 섹션 컴포넌트
-const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], onUpdate: () => void, loading: boolean }) => {
+const GallerySection = ({ gallery, onUpdate, loading, showToast }: { gallery: Gallery[], onUpdate: () => void, loading: boolean, showToast: (message: string, type: 'success' | 'error') => void }) => {
   const [uploading, setUploading] = useState(false)
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
+  const [editingItem, setEditingItem] = useState<Gallery | null>(null)
+  const [showCropper, setShowCropper] = useState(false)
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
 
@@ -374,7 +563,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
     if (files.length === 0) return
 
     setUploading(true)
-    console.log('🔍 [DEBUG] Validating and preparing', files.length, 'files')
+    console.log('[DEBUG] Validating and preparing', files.length, 'files')
     
     try {
       const uploadPromises = files.map(async (file) => {
@@ -392,7 +581,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
           // HEIC 파일인 경우 클라이언트에서 JPEG로 변환 시도 (실패시 서버에서 처리)
           if (file.name.toLowerCase().includes('.heic') || file.type === 'image/heic') {
             try {
-              console.log('🔍 [DEBUG] Attempting HEIC to JPEG conversion for file:', file.name)
+              console.log('[DEBUG] Attempting HEIC to JPEG conversion for file:', file.name)
               conversionAttempted = true
               
               const heic2any = await import('heic2any')
@@ -405,10 +594,10 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
               fileToUpload = new File([convertedBlob], file.name.replace(/\.heic$/i, '.jpg'), {
                 type: 'image/jpeg'
               })
-              console.log('✅ [DEBUG] HEIC converted to JPEG for file:', file.name)
+              console.log('[DEBUG] HEIC converted to JPEG for file:', file.name)
             } catch (heicError) {
-              console.error('❌ [DEBUG] Client HEIC conversion failed for file:', file.name, heicError)
-              return { success: false, error: `${file.name}: HEIC 파일 변환에 실패했습니다. 다른 형식(JPG, PNG)으로 변환하여 업로드해주세요.` }
+              console.error('[DEBUG] Client HEIC conversion failed for file:', file.name, heicError)
+              return { success: false, error: `${file.name}: HEIC 파일 변환에 실패했습니다` }
             }
           }
           
@@ -431,25 +620,26 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
           return result
         } catch (error) {
           console.error('Error validating/uploading file:', file.name, error)
-          return { success: false, error: `${file.name} 처리 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}` }
+          return { success: false, error: `${file.name} 처리 실패` }
         }
       })
 
       const results = await Promise.all(uploadPromises)
       const successCount = results.filter(result => result.success).length
       const failCount = results.length - successCount
-      const serverConvertedCount = results.filter(result => result.serverConverted).length
 
       if (successCount > 0) {
         onUpdate()
-        const serverConvertMessage = serverConvertedCount > 0 ? ` (${serverConvertedCount}개 파일은 서버에서 HEIC 변환됨)` : ''
-        alert(`${successCount}개 이미지가 업로드되었습니다.${failCount > 0 ? ` (${failCount}개 실패)` : ''}${serverConvertMessage}`)
+        const message = failCount > 0 
+          ? `${successCount}개 업로드 완료, ${failCount}개 실패`
+          : `${successCount}개 이미지 업로드 완료`
+        showToast(message, 'success')
       } else {
-        alert('모든 이미지 업로드에 실패했습니다.')
+        showToast('모든 이미지 업로드 실패', 'error')
       }
     } catch (error) {
-      console.error('❌ [DEBUG] Error uploading images:', error)
-      alert('업로드 중 오류가 발생했습니다.')
+      console.error('[DEBUG] Error uploading images:', error)
+      showToast('업로드 중 오류 발생', 'error')
     } finally {
       setUploading(false)
     }
@@ -461,7 +651,7 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
     if (!confirm(`선택된 ${selectedItems.size}개 이미지를 삭제하시겠습니까?`)) return
 
     try {
-      console.log('🔍 [DEBUG] Deleting selected items:', Array.from(selectedItems))
+      console.log('[DEBUG] Deleting selected items:', Array.from(selectedItems))
       const deletePromises = Array.from(selectedItems).map(async (id) => {
         const res = await fetch(`/api/admin/gallery/${id}`, {
           method: 'DELETE',
@@ -477,13 +667,16 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       onUpdate()
       
       if (successCount > 0) {
-        alert(`${successCount}개 이미지가 삭제되었습니다.${failCount > 0 ? ` (${failCount}개 실패)` : ''}`)
+        const message = failCount > 0 
+          ? `${successCount}개 삭제 완료, ${failCount}개 실패`
+          : `${successCount}개 이미지 삭제 완료`
+        showToast(message, 'success')
       } else {
-        alert('이미지 삭제에 실패했습니다.')
+        showToast('이미지 삭제 실패', 'error')
       }
     } catch (error) {
-      console.error('❌ [DEBUG] Error deleting images:', error)
-      alert('삭제 중 오류가 발생했습니다.')
+      console.error('[DEBUG] Error deleting images:', error)
+      showToast('삭제 중 오류 발생', 'error')
     }
   }
 
@@ -499,13 +692,13 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
 
       if (data.success) {
         onUpdate()
-        alert('이미지가 삭제되었습니다.')
+        showToast('이미지 삭제 완료', 'success')
       } else {
-        alert(data.error || '삭제에 실패했습니다.')
+        showToast('삭제 실패', 'error')
       }
     } catch (error) {
-      console.error('❌ [DEBUG] Error deleting image:', error)
-      alert('삭제 중 오류가 발생했습니다.')
+      console.error('[DEBUG] Error deleting image:', error)
+      showToast('삭제 중 오류 발생', 'error')
     }
   }
 
@@ -552,11 +745,11 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
       if (data.success) {
         onUpdate()
       } else {
-        alert(data.error || '순서 변경에 실패했습니다.')
+        showToast('순서 변경 실패', 'error')
       }
     } catch (error) {
-      console.error('❌ [DEBUG] Error reordering gallery:', error)
-      alert('순서 변경 중 오류가 발생했습니다.')
+      console.error('[DEBUG] Error reordering gallery:', error)
+      showToast('순서 변경 중 오류 발생', 'error')
     }
   }
 
@@ -565,10 +758,83 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
     return url.split('/').pop()?.split('.')[0] || 'Unknown'
   }
 
+  // 수정 버튼 클릭
+  const handleEditClick = (item: Gallery) => {
+    setEditingItem(item)
+    setShowCropper(true)
+  }
+
+  // 크롭 완료 후 업데이트
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    if (!editingItem) return
+
+    setShowCropper(false)
+    setUploading(true)
+
+    try {
+      // 크롭된 이미지를 File 객체로 변환
+      const croppedFile = new File(
+        [croppedImageBlob], 
+        `edited_${editingItem.id}_${Date.now()}.jpg`,
+        { type: 'image/jpeg' }
+      )
+
+      // FormData 생성
+      const formData = new FormData()
+      formData.append('file', croppedFile)
+      formData.append('image_type', 'gallery')
+
+      // 업로드 API 호출
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // 기존 이미지 삭제
+        await fetch(`/api/admin/gallery/${editingItem.id}`, {
+          method: 'DELETE',
+        })
+        
+        onUpdate()
+        showToast('이미지 수정 완료', 'success')
+      } else {
+        throw new Error(result.error || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('[DEBUG] Edit error:', error)
+      showToast('이미지 수정 실패', 'error')
+    } finally {
+      setUploading(false)
+      setEditingItem(null)
+    }
+  }
+
+  // 크롭 취소
+  const handleCropCancel = () => {
+    setShowCropper(false)
+    setEditingItem(null)
+  }
+
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">갤러리 관리</h2>
       
+      {/* 크롭 모달 */}
+      {showCropper && editingItem && (
+        <GalleryImageCropper
+          imageSrc={editingItem.url}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* 업로드 및 컨트롤 섹션 */}
       <div className="mb-6 space-y-4">
         <div>
@@ -601,6 +867,11 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
               <span className="text-sm text-gray-600">
                 {selectedItems.size}개 선택됨
               </span>
+              {selectedItems.size > 1 && (
+                <span className="text-xs text-amber-600">
+                  수정은 1개씩만 가능합니다
+                </span>
+              )}
             </div>
             {selectedItems.size > 0 && (
               <button
@@ -679,6 +950,19 @@ const GallerySection = ({ gallery, onUpdate, loading }: { gallery: Gallery[], on
                   ↓
                 </button>
               </div>
+
+              {/* 수정 버튼 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // 이벤트 전파 방지
+                  handleEditClick(item);
+                }}
+                disabled={selectedItems.size > 1 || uploading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
+              >
+                수정
+              </button>
 
               {/* 개별 삭제 버튼 */}
               <button
@@ -806,168 +1090,6 @@ const GuestbookSection = ({ guestbook, onUpdate, loading }: { guestbook: Guestbo
   )
 }
 
-// 시스템 상태 섹션 컴포넌트
-const SystemStatusSection = () => {
-  const [systemStatus, setSystemStatus] = useState<{
-    directories: Array<{
-      name: string;
-      path: string;
-      exists: boolean;
-      writable: boolean;
-      stats?: {
-        isDirectory: boolean;
-        mode: number;
-        size: number;
-        mtime: Date;
-      };
-    }>;
-    process: {
-      nodeVersion: string;
-      platform: string;
-      arch: string;
-      cwd: string;
-      env: Record<string, string | undefined>;
-      uid: string | number;
-      gid: string | number;
-    };
-    timestamp: string;
-  } | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  const checkSystemStatus = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/admin/system-status')
-      const data = await res.json()
-      if (data.success) {
-        setSystemStatus(data.data)
-      } else {
-        alert(data.error || '시스템 상태 확인에 실패했습니다.')
-      }
-    } catch (error) {
-      console.error('Error checking system status:', error)
-      alert('시스템 상태 확인 중 오류가 발생했습니다.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">시스템 상태 확인</h2>
-      
-      <div className="mb-6">
-        <button
-          onClick={checkSystemStatus}
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        >
-          {loading ? '확인 중...' : '시스템 상태 확인'}
-        </button>
-        <p className="text-sm text-gray-600 mt-2">
-          서버 디렉토리 권한과 파일 업로드 문제를 진단합니다.
-        </p>
-      </div>
-
-      {systemStatus && (
-        <div className="space-y-6">
-          {/* 디렉토리 상태 */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">디렉토리 상태</h3>
-            <div className="space-y-3">
-              {systemStatus.directories.map((dir: {
-                name: string;
-                path: string;
-                exists: boolean;
-                writable: boolean;
-                stats?: {
-                  isDirectory: boolean;
-                  mode: number;
-                  size: number;
-                  mtime: Date;
-                };
-              }, index: number) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900">{dir.name}</span>
-                    <div className="flex space-x-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        dir.exists ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {dir.exists ? '존재함' : '없음'}
-                      </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        dir.writable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {dir.writable ? '쓰기 가능' : '쓰기 불가'}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 font-mono break-all">{dir.path}</p>
-                  {dir.stats && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      <span>권한: {dir.stats.mode?.toString(8)}</span>
-                      {dir.stats.mtime && (
-                        <span className="ml-4">수정: {new Date(dir.stats.mtime).toLocaleString('ko-KR')}</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 프로세스 정보 */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">프로세스 정보</h3>
-            <div className="border rounded-lg p-4 space-y-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Node.js 버전:</span>
-                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.nodeVersion}</span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-gray-700">플랫폼:</span>
-                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.platform}</span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-gray-700">아키텍처:</span>
-                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.arch}</span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-gray-700">환경:</span>
-                  <span className="ml-2 text-sm text-gray-900">{systemStatus.process.env.NODE_ENV}</span>
-                </div>
-                {systemStatus.process.uid !== 'N/A' && (
-                  <>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">UID:</span>
-                      <span className="ml-2 text-sm text-gray-900">{systemStatus.process.uid}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">GID:</span>
-                      <span className="ml-2 text-sm text-gray-900">{systemStatus.process.gid}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="mt-4">
-                <span className="text-sm font-medium text-gray-700">작업 디렉토리:</span>
-                <p className="text-sm text-gray-900 font-mono break-all">{systemStatus.process.cwd}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 체크 시간 */}
-          <div className="text-sm text-gray-500">
-            마지막 확인: {new Date(systemStatus.timestamp).toLocaleString('ko-KR')}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function AdminPage() {
   return (
     <Suspense fallback={
@@ -985,6 +1107,7 @@ function AdminPageContent() {
   const [gallery, setGallery] = useState<Gallery[]>([])
   const [guestbook, setGuestbook] = useState<Guestbook[]>([])
   const [contacts, setContacts] = useState<ContactPerson[]>([])
+  const [toasts, setToasts] = useState<Toast[]>([])
   const [loading, setLoading] = useState({
     auth: true,
     gallery: false,
@@ -995,18 +1118,18 @@ function AdminPageContent() {
   const searchParams = useSearchParams()
   
   // URL에서 활성 탭 읽기 (기본값: 'main')
-  const getActiveTabFromUrl = useCallback((): 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status' => {
+  const getActiveTabFromUrl = useCallback((): 'main' | 'contacts' | 'gallery' | 'guestbook' => {
     const tab = searchParams.get('tab')
-    if (tab && ['main', 'contacts', 'gallery', 'guestbook', 'system-status'].includes(tab)) {
-      return tab as 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status'
+    if (tab && ['main', 'contacts', 'gallery', 'guestbook'].includes(tab)) {
+      return tab as 'main' | 'contacts' | 'gallery' | 'guestbook'
     }
     return 'main'
   }, [searchParams])
   
-  const [activeTab, setActiveTab] = useState<'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status'>(getActiveTabFromUrl())
+  const [activeTab, setActiveTab] = useState<'main' | 'contacts' | 'gallery' | 'guestbook'>(getActiveTabFromUrl())
   
   // 탭 변경 함수 (URL 업데이트 포함)
-  const changeTab = (newTab: 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status') => {
+  const changeTab = (newTab: 'main' | 'contacts' | 'gallery' | 'guestbook') => {
     setActiveTab(newTab)
     // URL 업데이트 (히스토리에 추가)
     router.push(`/admin?tab=${newTab}`)
@@ -1151,6 +1274,21 @@ function AdminPageContent() {
     }
   }, [])
 
+  // 토스트 관리 함수들
+  const showToast = useCallback((message: string, type: 'success' | 'error') => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
+    
+    // 3초 후 자동 제거
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id))
+    }, 3000)
+  }, [])
+
+  const removeToast = useCallback((id: number) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }, [])
+
   useEffect(() => {
     fetchData()
   }, [fetchData])
@@ -1165,6 +1303,9 @@ function AdminPageContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 토스트 컨테이너 */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
       {/* 헤더 */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1189,11 +1330,10 @@ function AdminPageContent() {
               { key: 'contacts', label: '연락처 관리' },
               { key: 'gallery', label: '갤러리 관리' },
               { key: 'guestbook', label: '방명록 관리' },
-              { key: 'system-status', label: '시스템 상태' },
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => changeTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook' | 'system-status')}
+                onClick={() => changeTab(tab.key as 'main' | 'contacts' | 'gallery' | 'guestbook')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? 'border-purple-500 text-purple-600'
@@ -1211,7 +1351,7 @@ function AdminPageContent() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {/* 메인 이미지 관리 탭 */}
-          {activeTab === 'main' && <MainImageSection onUpdate={updateGallery} />}
+          {activeTab === 'main' && <MainImageSection onUpdate={updateGallery} showToast={showToast} />}
 
           {/* 연락처 관리 탭 */}
           {activeTab === 'contacts' && (
@@ -1220,16 +1360,13 @@ function AdminPageContent() {
 
           {/* 갤러리 관리 탭 */}
           {activeTab === 'gallery' && (
-            <GallerySection gallery={gallery} onUpdate={updateGallery} loading={loading.gallery} />
+            <GallerySection gallery={gallery} onUpdate={updateGallery} loading={loading.gallery} showToast={showToast} />
           )}
 
           {/* 방명록 관리 탭 */}
           {activeTab === 'guestbook' && (
             <GuestbookSection guestbook={guestbook} onUpdate={updateGuestbook} loading={loading.guestbook} />
           )}
-
-          {/* 시스템 상태 탭 */}
-          {activeTab === 'system-status' && <SystemStatusSection />}
         </div>
       </main>
     </div>
