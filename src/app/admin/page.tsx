@@ -983,7 +983,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       for (const file of files) {
         try {
           // 클라이언트 사이드에서 각 파일 유효성 검사
-          const validation = await validateAndPrepareFile(file)
+            const validation = await validateAndPrepareFile(file)
           
           if (!validation.isValid) {
             results.push({ success: false, error: validation.error || '파일 검증 실패' })
@@ -1034,7 +1034,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
           }
           
           results.push(result)
-        } catch (error) {
+          } catch (error) {
           console.error('Error validating/uploading file:', file.name, error)
           results.push({ success: false, error: `${file.name} 처리 실패` })
         }
@@ -1205,15 +1205,15 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       )
 
       // FormData 생성
-      const formData = new FormData()
+              const formData = new FormData()
       formData.append('file', croppedFile)
-      formData.append('image_type', 'gallery')
-
+              formData.append('image_type', 'gallery')
+              
       // 업로드 API 호출
       const response = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      })
+                method: 'POST',
+                body: formData,
+              })
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`)
@@ -1232,7 +1232,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       } else {
         throw new Error(result.error || 'Upload failed')
       }
-    } catch (error) {
+            } catch (error) {
       console.error('[DEBUG] Edit error:', error)
       showToast('이미지 수정 실패', 'error')
     } finally {

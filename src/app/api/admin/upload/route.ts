@@ -123,19 +123,20 @@ export async function POST(request: NextRequest) {
       console.log('ℹ️ [DEBUG] Directory access/creation failed (continuing anyway):', dirError)
     }
     
-    // 파일명 생성 로직 개선
+    // 파일명 생성 로직 개선 (성능 최적화)
     let dbFilename: string
     
     if (image_type === 'main') {
       // 메인 이미지는 main_cover.jpg로 저장
       dbFilename = 'main_cover.jpg'
     } else {
-      // 갤러리 이미지인 경우 순서 번호를 조회하여 gallery01.jpg, gallery02.jpg로 저장
-      const [countRows] = await pool.query(
-        'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
+      // 갤러리 이미지인 경우 - 성능 최적화된 순서 번호 계산
+      // MAX(order_index) 사용으로 COUNT보다 빠른 조회
+      const [maxRows] = await pool.query(
+        'SELECT COALESCE(MAX(CAST(SUBSTRING(filename, 8, 2) AS UNSIGNED)), 0) as max_order FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL AND filename LIKE "images/gallery%.jpg"'
       )
-      const countResult = countRows as { count: number }[]
-      const nextOrder = countResult[0].count + 1
+      const maxResult = maxRows as { max_order: number }[]
+      const nextOrder = (maxResult[0]?.max_order || 0) + 1
       const orderString = nextOrder.toString().padStart(2, '0')
       dbFilename = `gallery${orderString}.jpg`
     }
@@ -195,19 +196,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Sharp를 사용하여 이미지 처리 (HEIC 포함 모든 형식 지원)
-    console.log('🔍 [DEBUG] Processing image with Sharp...')
+    // Sharp를 사용하여 이미지 처리 (성능 최적화)
+    console.log('🔍 [DEBUG] Processing image with Sharp (optimized)...')
     try {
-      // Sharp로 이미지 처리하여 버퍼로 출력 (메인 이미지와 동일한 방식)
+      // 성능 최적화된 Sharp 설정
       const outputBuffer = await sharp(buffer)
         .rotate() // EXIF 방향 정보에 따라 자동 회전
         .jpeg({ 
-          quality: 85,
-          progressive: true 
+          quality: 75, // 85 → 75로 낮춰서 처리 속도 향상
+          progressive: true,
+          mozjpeg: true // mozjpeg 압축 사용 (더 빠름)
         })
-        .resize(1920, null, { 
+        .resize(1200, null, { // 1920 → 1200으로 낮춰서 처리 속도 향상
           withoutEnlargement: true,
-          fit: 'inside'
+          fit: 'inside',
+          kernel: sharp.kernel.nearest // 빠른 리사이징 알고리즘
         })
         .toBuffer()
 
@@ -216,7 +219,7 @@ export async function POST(request: NextRequest) {
         await fs.writeFile(filepath, outputBuffer)
       })
       
-      console.log('✅ [DEBUG] Image processed and saved with Sharp (auto-rotated)')
+      console.log('✅ [DEBUG] Image processed and saved with Sharp (optimized)')
     } catch (sharpError) {
       console.error('❌ [DEBUG] Sharp processing failed:', sharpError)
       
