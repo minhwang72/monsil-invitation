@@ -198,7 +198,8 @@ export async function POST(request: NextRequest) {
     // Sharp를 사용하여 이미지 처리 (HEIC 포함 모든 형식 지원)
     console.log('🔍 [DEBUG] Processing image with Sharp...')
     try {
-      await sharp(buffer)
+      // Sharp로 이미지 처리하여 버퍼로 출력 (메인 이미지와 동일한 방식)
+      const outputBuffer = await sharp(buffer)
         .rotate() // EXIF 방향 정보에 따라 자동 회전
         .jpeg({ 
           quality: 85,
@@ -208,7 +209,12 @@ export async function POST(request: NextRequest) {
           withoutEnlargement: true,
           fit: 'inside'
         })
-        .toFile(filepath)
+        .toBuffer()
+
+      // 처리된 이미지를 파일로 저장 (fs/promises 사용)
+      await import('fs/promises').then(async (fs) => {
+        await fs.writeFile(filepath, outputBuffer)
+      })
       
       console.log('✅ [DEBUG] Image processed and saved with Sharp (auto-rotated)')
     } catch (sharpError) {
