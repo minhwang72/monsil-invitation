@@ -111,6 +111,18 @@ jobs:
         timeout: 30s
         command_timeout: 10m
         script: |
+          # 호스트 디렉토리 준비
+          echo "📁 Preparing host directories..."
+          HOST_PUBLIC_DIR="/home/ubuntu/wedding-website/public"
+          mkdir -p $HOST_PUBLIC_DIR/uploads/images
+          chmod 755 $HOST_PUBLIC_DIR
+          chmod 755 $HOST_PUBLIC_DIR/uploads
+          chmod 755 $HOST_PUBLIC_DIR/uploads/images
+          
+          # Docker 컨테이너 유저(1001:1001)가 접근할 수 있도록 권한 설정
+          sudo chown -R 1001:1001 $HOST_PUBLIC_DIR
+          sudo chmod -R 755 $HOST_PUBLIC_DIR
+
           if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
             echo "Stopping and removing previous container..."
             docker stop ${{ env.CONTAINER_NAME }} || true
@@ -134,7 +146,8 @@ jobs:
             -e NEXT_PUBLIC_NAVER_MAP_CLIENT_ID="${{ secrets.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID }}" \
             -e NAVER_MAP_CLIENT_SECRET="${{ secrets.NAVER_MAP_CLIENT_SECRET }}" \
             -e NEXT_PUBLIC_KAKAO_JS_KEY="${{ secrets.NEXT_PUBLIC_KAKAO_JS_KEY }}" \
-            -v /home/ubuntu/wedding-website/uploads:/app/public/uploads \
+            --user 1001:1001 \
+            -v $HOST_PUBLIC_DIR:/app/public \
             ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
           echo "Checking deployment status..."
