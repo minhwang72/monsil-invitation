@@ -91,6 +91,6 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
     ref, 
     isVisible, 
     shouldAnimate: finalShouldAnimate,
-    animationClass: finalShouldAnimate ? 'animate-fade-in-up' : 'opacity-0 translate-y-4'
+    animationClass: finalShouldAnimate ? 'animate-fade-in-up' : 'opacity-0 translate-y-4 transition-opacity duration-300'
   }
 } 

@@ -101,6 +101,7 @@ body {
   -webkit-backface-visibility: hidden;
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+  transition: opacity 0.3s ease-out;
 }
 
 /* 탭 변경 페이드인 애니메이션 */
