@@ -137,7 +137,7 @@ export default function Home() {
           {/* 흰 종이 (조금 작게) */}
           <div
             className={`absolute bottom-[-130%] left-[6%] right-[6%] h-[220%] bg-white rounded-md shadow-lg cursor-pointer transition-all duration-1000 ${
-              isTransitioning ? 'translate-y-[-110%]' : ''
+              isTransitioning ? 'translate-y-[-90%]' : ''
             }`}
             style={{
               zIndex: 2,
