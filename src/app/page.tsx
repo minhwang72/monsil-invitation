@@ -136,8 +136,8 @@ export default function Home() {
 
           {/* 흰 종이 (조금 작게) */}
           <div
-            className={`absolute bottom-2 left-[6%] right-[6%] h-[88%] bg-white rounded-md shadow-lg cursor-pointer transition-all duration-1000 ${
-              isTransitioning ? 'translate-y-[-50vh]' : ''
+            className={`absolute bottom-[-130%] left-[6%] right-[6%] h-[220%] bg-white rounded-md shadow-lg cursor-pointer transition-all duration-1000 ${
+              isTransitioning ? 'translate-y-[-110%]' : ''
             }`}
             style={{
               zIndex: 2,
@@ -187,7 +187,18 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* 날짜와 시간 */}
+            
+
+              {/* 중앙 이미지 */}
+              <div className="flex-1 flex justify-center items-center mt-4 px-8">
+                <img
+                  src="https://monsil.eungming.com/uploads/images/main_cover.jpg"
+                  alt="Cover"
+                  className="w-full h-full object-cover rounded-md"
+                />
+              </div>
+
+                {/* 날짜와 시간 */}
               <div className="text-center mb-3">
                 <p className="text-base md:text-lg font-sans font-normal text-gray-900">
                   2025. 11. 08. 12:30 PM
