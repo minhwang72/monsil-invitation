@@ -1,10 +1,25 @@
 import type { Viewport } from "next";
+import { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import "./globals.css";
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+}
+
+export const metadata: Metadata = {
+  title: '황민 ♥ 이은솔 결혼식에 초대합니다',
+  description: '2025년 11월 8일, 정동제일교회 본당에서 열리는 황민 ♥ 이은솔의 결혼식에 초대합니다.',
+  keywords: ["결혼식", "청첩장", "wedding", "invitation", "황민", "이은솔", "정동제일교회"],
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  }
 }
 
 export default function RootLayout({
@@ -60,7 +75,7 @@ export default function RootLayout({
           defer
         />
       </head>
-      <body className="bg-sky-100 text-text">
+      <body className={inter.className}>
         {children}
       </body>
     </html>
