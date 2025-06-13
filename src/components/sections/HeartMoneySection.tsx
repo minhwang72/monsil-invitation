@@ -8,7 +8,7 @@ export default function HeartMoneySection() {
   const [contacts, setContacts] = useState<ContactPerson[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedSides, setExpandedSides] = useState<Set<'groom' | 'bride'>>(new Set())
-  const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: '', show: false })
+  const [toast, setToast] = useState<{ message: string; show: boolean; type: 'success' | 'error' }>({ message: '', show: false, type: 'success' })
 
   // 스크롤 애니메이션 훅들 - 로딩 중일 때는 비활성화
   const titleAnimation = useScrollAnimation({ threshold: 0.4, animationDelay: 200, disabled: loading })
@@ -35,8 +35,8 @@ export default function HeartMoneySection() {
   }, [])
 
   const showToast = (message: string) => {
-    setToast({ message, show: true })
-    setTimeout(() => setToast({ message: '', show: false }), 3000)
+    setToast({ message, show: true, type: 'success' })
+    setTimeout(() => setToast({ message: '', show: false, type: 'success' }), 3000)
   }
 
   const copyAccountNumber = async (accountNumber: string, name: string) => {
@@ -303,13 +303,11 @@ export default function HeartMoneySection() {
 
       {/* 토스트 메시지 */}
       {toast.show && (
-        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000]">
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000] px-4">
           <div 
-            className="px-4 py-2 rounded-lg font-medium animate-fade-in-out"
-            style={{ 
-              backgroundColor: '#10b981',
-              color: 'white'
-            }}
+            className={`px-4 py-2 rounded-lg font-medium animate-fade-in-out text-sm md:text-base ${
+              toast.type === 'success' ? 'bg-gray-700 text-white' : 'bg-red-600 text-white'
+            }`}
           >
             {toast.message}
           </div>

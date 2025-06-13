@@ -14,9 +14,8 @@ import type { Gallery } from '@/types'
 
 export default function HomePage() {
   const [shareMenuOpen, setShareMenuOpen] = useState(false)
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
   const [mainImageUrl, setMainImageUrl] = useState<string>('')
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   // 카카오 SDK 초기화
   useEffect(() => {
@@ -144,20 +143,24 @@ export default function HomePage() {
         console.log('카카오 공유 요청 완료')
       } else {
         console.error('카카오 SDK가 초기화되지 않았습니다')
-        showToastMessage('카카오톡 공유 기능을 사용할 수 없습니다')
       }
     } catch (error) {
       console.error('카카오톡 공유 오류:', error)
-      showToastMessage('카카오톡 공유 중 오류가 발생했습니다')
     }
     setShareMenuOpen(false)
+  }
+
+  // 토스트 표시 함수
+  const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
   }
 
   // 링크 복사
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText('https://monsil.eungming.com')
-      showToastMessage('링크가 복사되었습니다!')
+      showToastMessage('링크가 복사되었습니다', 'success')
     } catch (err) {
       console.error('링크 복사 실패:', err)
       // 폴백: 직접 선택하여 복사
@@ -167,7 +170,7 @@ export default function HomePage() {
       textArea.select()
       document.execCommand('copy')
       document.body.removeChild(textArea)
-      showToastMessage('링크가 복사되었습니다!')
+      showToastMessage('링크가 복사되었습니다', 'success')
     }
     setShareMenuOpen(false)
   }
@@ -175,13 +178,6 @@ export default function HomePage() {
   // 기본 공유 (확장 메뉴 토글)
   const defaultShare = () => {
     setShareMenuOpen(!shareMenuOpen)
-  }
-
-  // 토스트 표시 함수
-  const showToastMessage = (message: string) => {
-    setToastMessage(message)
-    setShowToast(true)
-    setTimeout(() => setShowToast(false), 3000)
   }
 
   return (
@@ -270,17 +266,15 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Toast 메시지 */}
-      {showToast && (
-        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000]">
+      {/* 토스트 메시지 */}
+      {toast && (
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000] px-4">
           <div 
-            className="px-4 py-2 rounded-lg font-medium animate-fade-in-out"
-            style={{ 
-              backgroundColor: '#10b981',
-              color: 'white'
-            }}
+            className={`px-4 py-2 rounded-lg font-medium animate-fade-in-out text-sm md:text-base ${
+              toast.type === 'success' ? 'bg-gray-700 text-white' : 'bg-red-600 text-white'
+            }`}
           >
-            {toastMessage}
+            {toast.message}
           </div>
         </div>
       )}

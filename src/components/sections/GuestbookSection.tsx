@@ -453,7 +453,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
         <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000] px-4">
           <div 
             className={`px-4 py-2 rounded-lg font-medium animate-fade-in-out text-sm md:text-base ${
-              toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+              toast.type === 'success' ? 'bg-gray-700 text-white' : 'bg-red-600 text-white'
             }`}
           >
             {toast.message}

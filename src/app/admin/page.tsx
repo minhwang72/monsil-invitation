@@ -24,7 +24,7 @@ const ToastContainer = ({ toasts, removeToast }: { toasts: Toast[], removeToast:
         <div
           key={toast.id}
           className={`px-4 py-2 rounded-lg shadow-lg text-white text-sm max-w-sm ${
-            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            toast.type === 'success' ? 'bg-gray-700' : 'bg-red-600'
           }`}
         >
           <div className="flex items-center justify-between">

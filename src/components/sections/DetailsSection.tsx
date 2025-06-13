@@ -233,13 +233,9 @@ export default function LocationSection() {
 
       {/* Toast 메시지 */}
       {showToast && (
-        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000]">
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-[10000] px-4">
           <div 
-            className="px-4 py-2 rounded-lg font-medium animate-fade-in-out"
-            style={{ 
-              backgroundColor: '#10b981',
-              color: 'white'
-            }}
+            className={`px-4 py-2 rounded-lg font-medium animate-fade-in-out text-sm md:text-base bg-gray-700 text-white`}
           >
             {toastMessage}
           </div>
