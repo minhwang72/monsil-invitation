@@ -11,61 +11,76 @@ function getIdFromRequest(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Check admin session
-    const sessionToken = request.cookies.get('admin_session')?.value
-
-    if (!sessionToken || !sessionToken.startsWith('admin_')) {
-      return NextResponse.json<ApiResponse<null>>(
-        {
-          success: false,
-          error: 'Unauthorized',
-        },
-        { status: 401 }
-      )
-    }
-
     const id = getIdFromRequest(request)
-
-    // Get filename before deleting
-    const [existingRows] = await pool.query(
-      'SELECT filename FROM gallery WHERE id = ? AND deleted_at IS NULL',
-      [id]
-    )
-    const existingImages = existingRows as { filename: string }[]
-
-    if (existingImages.length === 0) {
+    if (!id) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: 'Gallery item not found',
+          error: 'Invalid ID',
         },
-        { status: 404 }
+        { status: 400 }
       )
     }
 
-    // Soft delete gallery item
-    const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
-    const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
+    // 트랜잭션 시작
+    const connection = await pool.getConnection()
+    await connection.beginTransaction()
 
-    await pool.query(
-      'UPDATE gallery SET deleted_at = ? WHERE id = ?',
-      [formattedTime, id]
-    )
+    try {
+      // 삭제할 항목의 정보 조회
+      const [rows] = await connection.query(
+        'SELECT filename, image_type, order_index FROM gallery WHERE id = ? AND deleted_at IS NULL',
+        [id]
+      )
+      const items = rows as { filename: string; image_type: string; order_index: number }[]
+      
+      if (items.length === 0) {
+        throw new Error('Item not found')
+      }
 
-    // Delete physical file
-    if (existingImages[0].filename) {
-      await deletePhysicalFile(existingImages[0].filename)
+      const item = items[0]
+      const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
+      const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
+
+      // 항목 삭제 처리
+      await connection.query(
+        'UPDATE gallery SET deleted_at = ? WHERE id = ?',
+        [formattedTime, id]
+      )
+
+      // 갤러리 이미지인 경우 order_index 재정렬
+      if (item.image_type === 'gallery') {
+        // 삭제된 항목보다 큰 order_index를 가진 항목들의 순서를 한 칸씩 앞으로 당김
+        await connection.query(
+          'UPDATE gallery SET order_index = order_index - 1 WHERE image_type = "gallery" AND order_index > ? AND deleted_at IS NULL',
+          [item.order_index]
+        )
+      }
+
+      // 트랜잭션 커밋
+      await connection.commit()
+
+      // 물리적 파일 삭제
+      if (item.filename) {
+        await deletePhysicalFile(item.filename)
+      }
+
+      return NextResponse.json<ApiResponse<null>>({
+        success: true,
+      })
+    } catch (error) {
+      // 에러 발생 시 롤백
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
     }
-
-    return NextResponse.json<ApiResponse<null>>({
-      success: true,
-    })
   } catch (error) {
-    console.error('Error deleting gallery item:', error)
+    console.error('Error deleting gallery entry:', error)
     return NextResponse.json<ApiResponse<null>>(
       {
         success: false,
-        error: 'Failed to delete gallery item',
+        error: 'Failed to delete gallery entry',
       },
       { status: 500 }
     )

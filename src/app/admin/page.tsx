@@ -1168,23 +1168,22 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     const currentIndex = galleryItems.findIndex(item => item.id === id)
     if (currentIndex === -1) return
     
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    if (newIndex < 0 || newIndex >= galleryItems.length) return
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    if (targetIndex < 0 || targetIndex >= galleryItems.length) return
 
-    const newOrder = [...galleryItems]
-    const [movedItem] = newOrder.splice(currentIndex, 1)
-    newOrder.splice(newIndex, 0, movedItem)
+    const sourceId = id
+    const targetId = galleryItems[targetIndex].id
 
     try {
       const res = await fetch('/api/admin/gallery', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reorderedIds: newOrder.map(item => item.id) }),
+        body: JSON.stringify({ sourceId, targetId }),
       })
       const data = await res.json()
 
       if (data.success) {
-        onUpdate()
+        onUpdate() // 갤러리 목록 새로고침
       } else {
         showToast('순서 변경 실패', 'error')
       }

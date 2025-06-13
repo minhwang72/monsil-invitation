@@ -22,10 +22,9 @@ export async function GET() {
           ELSE 1
         END,
         CASE 
-          WHEN image_type = 'gallery' THEN COALESCE(order_index, 999999)
+          WHEN image_type = 'gallery' THEN order_index
           ELSE created_at
-        END ASC,
-        created_at ASC
+        END ASC
     `)
     
     const gallery = (rows as DatabaseGalleryRow[]).map(row => ({

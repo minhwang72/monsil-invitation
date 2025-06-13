@@ -21,59 +21,68 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { reorderedIds } = body
+    const { sourceId, targetId } = body
 
-    if (!Array.isArray(reorderedIds)) {
+    if (!sourceId || !targetId) {
       return NextResponse.json<ApiResponse<null>>(
         {
           success: false,
-          error: 'Invalid data: reorderedIds must be an array',
+          error: 'Invalid data: sourceId and targetId are required',
         },
         { status: 400 }
       )
     }
 
-    console.log('🔍 [DEBUG] Reordering gallery with IDs:', reorderedIds)
+    console.log('🔍 [DEBUG] Swapping gallery order:', { sourceId, targetId })
 
-    // First, check if order_index column exists, if not add it
+    // 트랜잭션 시작
+    const connection = await pool.getConnection()
+    await connection.beginTransaction()
+
     try {
-      await pool.query(`
-        ALTER TABLE gallery 
-        ADD COLUMN order_index INT DEFAULT 0
-      `)
-      console.log('✅ [DEBUG] order_index column added')
-    } catch (error: unknown) {
-      const mysqlError = error as { code?: string; message?: string }
-      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
-        console.log('ℹ️ [DEBUG] order_index column already exists')
-      } else {
-        console.warn('⚠️ [DEBUG] Could not add order_index column:', mysqlError.message || 'Unknown error')
-      }
-    }
-
-    // Update only order_index for each item (파일명 변경 제거)
-    for (let i = 0; i < reorderedIds.length; i++) {
-      const newOrder = i + 1 // Start from 1
-      const itemId = reorderedIds[i]
-      
-      console.log(`🔍 [DEBUG] Updating ID ${itemId}: order=${newOrder}`)
-      await pool.query(
-        'UPDATE gallery SET order_index = ? WHERE id = ? AND deleted_at IS NULL',
-        [newOrder, itemId]
+      // 두 항목의 현재 order_index 조회
+      const [rows] = await connection.query(
+        'SELECT id, order_index FROM gallery WHERE id IN (?, ?) AND deleted_at IS NULL',
+        [sourceId, targetId]
       )
+      
+      const items = rows as { id: number; order_index: number }[]
+      if (items.length !== 2) {
+        throw new Error('One or both items not found')
+      }
+
+      const [item1, item2] = items
+      
+      // order_index 교환
+      await connection.query(
+        'UPDATE gallery SET order_index = ? WHERE id = ?',
+        [item2.order_index, item1.id]
+      )
+      await connection.query(
+        'UPDATE gallery SET order_index = ? WHERE id = ?',
+        [item1.order_index, item2.id]
+      )
+
+      // 트랜잭션 커밋
+      await connection.commit()
+      console.log('✅ [DEBUG] Gallery order swap completed')
+
+      return NextResponse.json<ApiResponse<null>>({
+        success: true,
+      })
+    } catch (error) {
+      // 에러 발생 시 롤백
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
     }
-
-    console.log('✅ [DEBUG] Gallery reordering completed')
-
-    return NextResponse.json<ApiResponse<null>>({
-      success: true,
-    })
   } catch (error) {
-    console.error('❌ [DEBUG] Error reordering gallery:', error)
+    console.error('❌ [DEBUG] Error swapping gallery order:', error)
     return NextResponse.json<ApiResponse<null>>(
       {
         success: false,
-        error: 'Failed to reorder gallery',
+        error: 'Failed to swap gallery order',
       },
       { status: 500 }
     )
