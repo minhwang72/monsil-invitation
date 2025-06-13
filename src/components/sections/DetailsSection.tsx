@@ -180,10 +180,10 @@ export default function LocationSection() {
           {/* 교통 정보 */}
           <div 
             ref={transportAnimation.ref}
-            className={`space-y-4 md:space-y-6 text-left px-4 md:px-8 transition-all duration-800 ${transportAnimation.animationClass}`}
+            className={`space-y-4 md:space-y-6 text-left px-4 md:px-8 pt-4 md:pt-6 transition-all duration-800 ${transportAnimation.animationClass}`}
           >
             {/* 지하철 */}
-            <div>
+            <div className="pt-2">
               <div className="flex items-center gap-2 mb-3">
                 <svg className="w-5 h-5 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />

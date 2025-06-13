@@ -19,23 +19,28 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
   
   const [isVisible, setIsVisible] = useState(false)
   const [hasTriggered, setHasTriggered] = useState(false)
-  const [shouldAnimate, setShouldAnimate] = useState(disabled) // disabled면 초기에 true
+  const [shouldAnimate, setShouldAnimate] = useState(disabled)
   const ref = useRef<HTMLDivElement>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
-    // disabled 상태가 변경될 때 처리
     if (disabled) {
       setShouldAnimate(true)
       return
     }
 
-    // disabled에서 enabled로 변경될 때 초기화
     setShouldAnimate(false)
     setHasTriggered(false)
     setIsVisible(false)
 
     const element = ref.current
     if (!element) return
+
+    // 모바일 디바이스 감지
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    
+    // 모바일에서는 더 큰 rootMargin을 사용하여 미리 로드
+    const mobileRootMargin = isMobile ? '100px' : rootMargin
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -47,9 +52,14 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
             setHasTriggered(true)
           }
           
+          // 이전 타임아웃 제거
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+          }
+          
           // 애니메이션 딜레이 적용
           if (animationDelay > 0) {
-            setTimeout(() => {
+            timeoutRef.current = setTimeout(() => {
               setShouldAnimate(true)
             }, animationDelay)
           } else {
@@ -59,23 +69,28 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
           setShouldAnimate(false)
         }
       },
-      { threshold, rootMargin }
+      { 
+        threshold, 
+        rootMargin: mobileRootMargin
+      }
     )
 
     observer.observe(element)
 
     return () => {
       observer.unobserve(element)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
     }
   }, [threshold, rootMargin, triggerOnce, animationDelay, disabled])
 
-  // 최종 애니메이션 상태 결정
   const finalShouldAnimate = disabled || (triggerOnce ? shouldAnimate : (isVisible && shouldAnimate))
 
   return { 
     ref, 
     isVisible, 
     shouldAnimate: finalShouldAnimate,
-    animationClass: finalShouldAnimate ? 'animate-fade-in-up' : 'opacity-0 translate-y-8'
+    animationClass: finalShouldAnimate ? 'animate-fade-in-up' : 'opacity-0 translate-y-4'
   }
 } 
