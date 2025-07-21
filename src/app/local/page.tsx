@@ -1,0 +1,112 @@
+import { Metadata } from 'next'
+import type { Gallery } from '@/types'
+import HomePage from '@/components/HomePage'
+
+// 동적 메타데이터 생성
+export async function generateMetadata(): Promise<Metadata> {
+  // 기본 이미지를 실제 존재하는 메인 이미지로 설정
+  let imageUrl = 'https://monsil.eungming.com/uploads/images/main_cover.jpg'
+  
+  try {
+    // 캐시 무효화를 위한 타임스탬프 추가
+    const timestamp = Date.now()
+    
+    // 서버 사이드에서는 내부 API 호출 사용 (SSL 인증서 문제 회피)
+    const baseUrl = process.env.INTERNAL_API_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'http://localhost:1108'  // Docker 내부에서는 HTTP 사용
+        : 'http://localhost:3000')  // 개발 환경
+      
+    console.log(`[DEBUG] Fetching gallery data from: ${baseUrl}/api/gallery`)
+    const response = await fetch(`${baseUrl}/api/gallery?t=${timestamp}`, {
+      cache: 'no-store',
+      next: { revalidate: 0 }, // ISR 캐시도 무효화
+      headers: {
+        'User-Agent': 'MonsilBot/1.0 (Wedding Invitation Metadata Generator)',
+      }
+    })
+    
+    console.log(`[DEBUG] Gallery API response status: ${response.status}`)
+    
+    if (response.ok) {
+      const data = await response.json()
+      console.log(`[DEBUG] Gallery API response data:`, data)
+      
+      if (data.success) {
+        const mainImage = data.data.find((img: Gallery) => img.image_type === 'main')
+        console.log(`[DEBUG] Found main image:`, mainImage)
+        
+        if (mainImage?.url) {
+          // URL이 상대 경로인 경우 절대 경로로 변환하고 타임스탬프 추가
+          imageUrl = mainImage.url.startsWith('http') 
+            ? `${mainImage.url}?v=${timestamp}`
+            : `https://monsil.eungming.com${mainImage.url}?v=${timestamp}`
+          console.log(`[DEBUG] Final image URL:`, imageUrl)
+        }
+      }
+    } else {
+      console.error(`[DEBUG] Gallery API failed with status: ${response.status}`)
+    }
+  } catch (error) {
+    console.error('Error fetching main image for metadata:', error)
+    // 오류 발생 시 기본 메인 이미지 사용
+    console.log(`[DEBUG] Using fallback image: ${imageUrl}`)
+  }
+
+  return {
+    title: "We invite you to our wedding | 황민 ♥ 이은솔 결혼합니다",
+    description: "2025년 11월 8일 오후 12시 30분, 정동제일교회에서 결혼식을 올립니다. We invite you to our wedding. 여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
+    keywords: ["결혼식", "청첩장", "wedding", "invitation", "황민", "이은솔", "정동제일교회"],
+    openGraph: {
+      title: "황민 ♥ 이은솔 결혼합니다",
+      description: "2025년 11월 8일 오후 12시 30분\n정동제일교회에서 결혼식을 올립니다.\nWe invite you to our wedding.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
+      url: "https://monsil.eungming.com",
+      siteName: "황민 ♥ 이은솔 결혼식 청첩장",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: "황민 ♥ 이은솔 결혼식 청첩장",
+        },
+      ],
+      locale: "ko_KR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "황민 ♥ 이은솔 결혼합니다",
+      description: "2025년 11월 8일 오후 12시 30분, 정동제일교회에서 결혼식을 올립니다. We invite you to our wedding.",
+      images: [imageUrl],
+    },
+    icons: {
+      icon: '/favicon.svg',
+      shortcut: '/favicon.svg',
+      apple: '/favicon.svg',
+    },
+    other: {
+      'og:image:width': '1200',
+      'og:image:height': '630',
+      'og:image:type': 'image/jpeg',
+      'og:image:secure_url': imageUrl,
+      'og:updated_time': new Date().toISOString(), // 메타데이터 갱신 시간
+      // 카카오톡 전용 메타데이터
+      'al:web:url': 'https://monsil.eungming.com',
+      'al:web:should_fallback': 'true',
+    }
+  }
+}
+
+export default function LocalPage() {
+  return (
+    <div className="min-h-screen bg-[#E0F7FF]">
+      {/* 피로연 안내문구 */}
+      <div className="w-full max-w-[500px] mx-auto bg-yellow-50 border border-yellow-200 text-yellow-900 text-center text-base md:text-lg font-sans font-normal py-4 px-2 mt-4 mb-2 rounded-md shadow-sm">
+        결혼식 1주일 전 피로연이 있습니다.<br />
+        <b>장소:</b> 제천 그랜드컨벤션<br />
+        <b>시간:</b> 오후 6시
+      </div>
+      <HomePage />
+    </div>
+  )
+} 
