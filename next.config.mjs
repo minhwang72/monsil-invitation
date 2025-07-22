@@ -17,6 +17,19 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/favicon.svg',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'image/svg+xml',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
         source: '/uploads/images/main_cover.jpg',
         headers: [
           {
