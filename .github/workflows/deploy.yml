@@ -37,6 +37,14 @@ jobs:
         echo "NAVER_MAP_CLIENT_SECRET=${{ secrets.NAVER_MAP_CLIENT_SECRET }}" >> $GITHUB_ENV
         echo "NEXT_PUBLIC_KAKAO_JS_KEY=${{ secrets.NEXT_PUBLIC_KAKAO_JS_KEY }}" >> $GITHUB_ENV
 
+    - name: 🔍 SSH Key Debug (Lines & Head)
+      run: |
+        echo "▶ SSH_PRIVATE_KEY line count:"
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | wc -l
+        echo "▶ SSH_PRIVATE_KEY first lines:"
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -n 3
+      shell: bash
+
     - name: Clean and Install dependencies
       run: |
         rm -rf node_modules
@@ -104,7 +112,6 @@ jobs:
           HOST_PUBLIC_DIR="/home/ubuntu/wedding-website/public"
           mkdir -p $HOST_PUBLIC_DIR/uploads/images
           
-          # 권한 설정: docker 컨테이너 user 1001:1001 기준
           chmod 755 $HOST_PUBLIC_DIR
           chmod 755 $HOST_PUBLIC_DIR/uploads
           chmod 755 $HOST_PUBLIC_DIR/uploads/images
@@ -120,7 +127,6 @@ jobs:
           docker pull ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
           echo "📄 Copying static files from Docker image to host..."
-          # 임시 컨테이너를 생성하여 static 파일들을 호스트에 복사
           TEMP_CONTAINER_ID=$(docker create ${{ env.DOCKER_IMAGE }}:${{ github.sha }})
           docker cp $TEMP_CONTAINER_ID:/app/public/favicon.svg $HOST_PUBLIC_DIR/favicon.svg
           docker cp $TEMP_CONTAINER_ID:/app/public/next.svg $HOST_PUBLIC_DIR/next.svg || true
@@ -130,7 +136,6 @@ jobs:
           docker cp $TEMP_CONTAINER_ID:/app/public/file.svg $HOST_PUBLIC_DIR/file.svg || true
           docker rm $TEMP_CONTAINER_ID
           
-          # 복사된 파일들의 권한 설정
           sudo chown -R 1001:1001 $HOST_PUBLIC_DIR
           chmod -R 644 $HOST_PUBLIC_DIR/*.svg
 
