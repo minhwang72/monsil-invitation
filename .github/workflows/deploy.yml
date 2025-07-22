@@ -130,7 +130,6 @@ jobs:
           echo "📄 Copying static files from Docker image to host..."
           TEMP_CONTAINER_ID=$(docker create ${{ env.DOCKER_IMAGE }}:${{ github.sha }})
           docker cp $TEMP_CONTAINER_ID:/app/public/favicon.svg $HOST_PUBLIC_DIR/favicon.svg
-          docker cp $TEMP_CONTAINER_ID:/app/public/favicon.ico $HOST_PUBLIC_DIR/favicon.ico
           docker cp $TEMP_CONTAINER_ID:/app/public/next.svg $HOST_PUBLIC_DIR/next.svg || true
           docker cp $TEMP_CONTAINER_ID:/app/public/vercel.svg $HOST_PUBLIC_DIR/vercel.svg || true
           docker cp $TEMP_CONTAINER_ID:/app/public/window.svg $HOST_PUBLIC_DIR/window.svg || true
@@ -140,7 +139,6 @@ jobs:
           
           chown -R 1001:1001 $HOST_PUBLIC_DIR
           chmod -R 644 $HOST_PUBLIC_DIR/*.svg
-          chmod -R 644 $HOST_PUBLIC_DIR/*.ico
 
           echo "🔍 Checking copied files..."
           ls -la $HOST_PUBLIC_DIR/favicon.* || echo "❌ Favicon files not found"
