@@ -66,7 +66,7 @@ export default function Home() {
       {/* ⏱️ 카운트다운 영역 */}
       <div className="text-center mb-[100px]">
         <div className="flex items-center justify-center gap-2 mb-12">
-          <span className="text-gray-700 text-lg font-light">민</span>
+          <span className="text-gray-700 text-lg font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>민</span>
           <svg 
             className="w-5 h-5 text-pink-300"
             viewBox="0 0 24 24"
@@ -74,8 +74,8 @@ export default function Home() {
           >
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </svg>
-          <span className="text-gray-700 text-lg font-light">은솔</span>
-          <span className="text-gray-600 text-lg font-light">의 결혼까지...</span>
+          <span className="text-gray-700 text-lg font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>은솔</span>
+          <span className="text-gray-600 text-lg font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>의 결혼까지...</span>
         </div>
 
         <div className="grid grid-cols-4 gap-8 max-w-2xl mx-auto">
@@ -108,7 +108,7 @@ export default function Home() {
               showGuide ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
             }`}
           >
-            <p className="text-gray-500 text-sm font-light mb-2">
+            <p className="text-gray-500 text-sm font-extralight tracking-wide mb-2" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
               청첩장을 클릭해주세요
             </p>
             <svg 
@@ -149,7 +149,7 @@ export default function Home() {
               {/* 이름 좌우 정렬 */}
               <div className="flex justify-center items-center mt-8 mb-6">
                 <div className="w-full max-w-sm flex justify-between items-center px-8">
-                  <span className="text-base md:text-lg font-sans font-normal text-black">
+                  <span className="text-base md:text-lg font-extralight tracking-wide text-black" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
                     황민
                   </span>
                   
@@ -181,7 +181,7 @@ export default function Home() {
                     </svg>
                   </div>
                   
-                  <span className="text-base md:text-lg font-sans font-normal text-black">
+                  <span className="text-base md:text-lg font-extralight tracking-wide text-black" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
                     이은솔
                   </span>
                 </div>
@@ -200,14 +200,14 @@ export default function Home() {
 
                 {/* 날짜와 시간 */}
               <div className="text-center mb-3">
-                <p className="text-base md:text-lg font-sans font-normal text-gray-900">
+                <p className="text-base md:text-lg font-extralight tracking-wide text-gray-900" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
                   2025. 11. 08. 12:30 PM
                 </p>
               </div>
 
               {/* 장소 */}
               <div className="text-center">
-                <p className="text-base md:text-lg font-sans font-normal text-gray-900">
+                <p className="text-base md:text-lg font-extralight tracking-wide text-gray-900" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
                   정동제일교회 본당
                 </p>
               </div>
@@ -222,7 +222,7 @@ export default function Home() {
               zIndex: 3
             }}
           >
-            <div className="absolute bottom-4 right-4 text-white text-sm">
+            <div className="absolute bottom-4 right-4 text-white text-sm font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
               당신을 초대합니다
             </div>
           </div>
