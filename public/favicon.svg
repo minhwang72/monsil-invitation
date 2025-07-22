@@ -1,1 +1,23 @@
- 
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <style>
+    @media (prefers-color-scheme: light) {
+      .background { fill: #000000; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .background { fill: #ffffff; }
+    }
+  </style>
+  <defs>
+    <mask id="cloudMask">
+      <rect width="256" height="256" fill="white"/>
+      <!-- 더 자연스럽고 큰 구름 모양 -->
+      <path d="M80 120c0-30 25-55 55-55 12-25 35-40 60-40 35 0 65 30 65 65h8c20 0 35 15 35 35s-15 35-35 35H120c-25 0-45-20-45-45z" fill="black"/>
+      <!-- 구름의 추가 볼륨감을 위한 작은 구름들 -->
+      <ellipse cx="100" cy="130" rx="15" ry="12" fill="black"/>
+      <ellipse cx="180" cy="125" rx="12" ry="10" fill="black"/>
+      <ellipse cx="140" cy="110" rx="10" ry="8" fill="black"/>
+    </mask>
+  </defs>
+  <circle class="background" cx="128" cy="128" r="128" mask="url(#cloudMask)"/>
+</svg> 
