@@ -16,8 +16,11 @@ export const metadata: Metadata = {
   description: '2025년 11월 8일, 정동제일교회 본당에서 열리는 황민 ♥ 이은솔의 결혼식에 초대합니다.',
   keywords: ["결혼식", "청첩장", "wedding", "invitation", "황민", "이은솔", "정동제일교회"],
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: '/favicon.ico',
     apple: '/favicon.svg',
   }
 }
