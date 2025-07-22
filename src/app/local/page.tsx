@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     // 서버 사이드에서는 내부 API 호출 사용 (SSL 인증서 문제 회피)
     const baseUrl = process.env.INTERNAL_API_URL || 
       (process.env.NODE_ENV === 'production' 
-        ? 'http://localhost:1108'  // Docker 내부에서는 HTTP 사용
+        ? 'http://127.0.0.1:1108'  // Docker 내부에서는 HTTP 사용 (IPv4)
         : 'http://localhost:3000')  // 개발 환경
       
     console.log(`[DEBUG] Fetching gallery data from: ${baseUrl}/api/gallery`)
