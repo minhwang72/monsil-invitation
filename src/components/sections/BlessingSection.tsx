@@ -17,13 +17,13 @@ export default function BlessingSection() {
             ref={firstParagraphAnimation.ref}
             className={`space-y-3 md:space-y-4 transition-all duration-800 ${firstParagraphAnimation.animationClass}`}
           >
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
+            <p className="text-sm md:text-base font-semibold text-gray-600 leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
               하나님께서 인도하신 만남 속에서
             </p>
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
+            <p className="text-sm md:text-base font-semibold text-gray-600 leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
               서로의 존재에 감사하며
             </p>
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
+            <p className="text-sm md:text-base font-semibold text-gray-600 leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
               가장 진실한 사랑으로 하나 되고자 합니다.
             </p>
           </div>
@@ -33,13 +33,13 @@ export default function BlessingSection() {
             ref={secondParagraphAnimation.ref}
             className={`space-y-3 md:space-y-4 transition-all duration-800 ${secondParagraphAnimation.animationClass}`}
           >
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
+            <p className="text-sm md:text-base font-semibold text-gray-600 leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
               소중한 분들을 모시고
             </p>
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
+            <p className="text-sm md:text-base font-semibold text-gray-600 leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
               그 첫걸음을 함께 나누고 싶습니다.
             </p>
-            <p className="text-sm md:text-base font-normal text-gray-600 leading-relaxed">
+            <p className="text-sm md:text-base font-semibold text-gray-600 leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
               축복으로 함께해 주시면 감사하겠습니다.
             </p>
           </div>

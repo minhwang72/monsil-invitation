@@ -239,8 +239,8 @@ export default function LocalPage() {
                 <div className="absolute bottom-2 right-2 w-3 h-3 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full"></div>
                 
                 {/* 제목 */}
-                <h1 className="text-3xl md:text-4xl font-light mb-8 md:mb-10 tracking-wider text-gray-700 font-english english-text">
-                  피로연 안내
+                <h1 className="text-2xl md:text-3xl font-semibold mb-12 md:mb-16 tracking-wider text-black" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+                  신랑측 피로연 안내
                 </h1>
 
                 {/* 소개 문구 */}
@@ -248,12 +248,12 @@ export default function LocalPage() {
                   ref={introAnimation.ref}
                   className={`mb-8 md:mb-10 transition-all duration-800 ${introAnimation.animationClass}`}
                 >
-                  <p className="text-lg md:text-xl font-extralight tracking-wide text-gray-600 leading-relaxed" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
+                  <p className="text-lg md:text-xl font-extralight tracking-wide text-gray-600 leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                     거리가 멀어 예식에 참석하시기<br />
                     어려운 분들을 위해 혼례에 앞서<br />
                     피로연 자리를 마련하였습니다.
                   </p>
-                  <p className="text-lg md:text-xl font-extralight tracking-wide text-gray-600 leading-relaxed mt-4" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
+                  <p className="text-lg md:text-xl font-extralight tracking-wide text-gray-600 leading-relaxed mt-4" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                     귀한 발걸음으로<br />
                     두사람의 앞날을 축복하여 주시면<br />
                     더 큰 기쁨과 격려가 되겠습니다.
@@ -266,7 +266,7 @@ export default function LocalPage() {
                   className={`transition-all duration-800 ${namesAnimation.animationClass}`}
                 >
                   <div className="flex items-center justify-center gap-2 mb-4">
-                    <span className="text-gray-700 text-lg font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>신랑</span>
+                    <span className="text-gray-700 text-lg font-extralight tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>신랑</span>
                     <svg 
                       className="w-5 h-5 text-pink-300"
                       viewBox="0 0 24 24"
@@ -274,20 +274,20 @@ export default function LocalPage() {
                     >
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                     </svg>
-                    <span className="text-gray-700 text-lg font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>신부</span>
+                    <span className="text-gray-700 text-lg font-extralight tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>신부</span>
                   </div>
                   
                   <div className="text-center">
                     <div className="flex justify-center items-center gap-4 mb-2">
-                      <span className="text-2xl md:text-3xl font-extralight tracking-wide text-gray-800" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
+                      <span className="text-2xl md:text-3xl font-extralight tracking-wide text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                         황민
                       </span>
                       <span className="text-lg text-gray-500">·</span>
-                      <span className="text-2xl md:text-3xl font-extralight tracking-wide text-gray-800" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
+                      <span className="text-2xl md:text-3xl font-extralight tracking-wide text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                         이은솔
                       </span>
                     </div>
-                    <p className="text-base text-gray-600 font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
+                    <p className="text-base text-gray-600 font-extralight tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                       황현기 · 박인숙 배상
                     </p>
                   </div>
@@ -301,9 +301,9 @@ export default function LocalPage() {
                 <div className="w-6 h-10 border-2 border-purple-300 rounded-full flex justify-center">
                   <div className="w-1 h-3 bg-purple-300 rounded-full mt-2 animate-bounce"></div>
                 </div>
-                <p className="text-xs text-purple-500 font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
-                  아래로 스크롤
-                </p>
+                                            <p className="text-xs text-purple-500 font-extralight tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+                              아래로 스크롤
+                            </p>
               </div>
             </div>
           </div>
@@ -317,9 +317,10 @@ export default function LocalPage() {
               {/* 제목 */}
               <h2 
                 ref={detailsAnimation.ref}
-                className={`text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text px-4 md:px-8 transition-all duration-800 ${detailsAnimation.animationClass}`}
+                className={`text-3xl md:text-4xl font-semibold mb-12 md:mb-16 tracking-wider text-black px-4 md:px-8 transition-all duration-800 ${detailsAnimation.animationClass}`}
+                style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
               >
-                DETAILS
+                오시는길
               </h2>
 
               {/* 지도 - 그랜드컨벤션 지도 */}
@@ -341,8 +342,8 @@ export default function LocalPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       <div className="text-left">
-                        <div className="text-sm text-gray-600">주소</div>
-                        <div className="text-base font-medium text-gray-800">충청북도 제천시 청전동 450-10</div>
+                        <div className="text-sm text-gray-600" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>주소</div>
+                        <div className="text-base font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>충청북도 제천시 청전동 450-10</div>
                       </div>
                     </div>
                     <button
@@ -363,8 +364,8 @@ export default function LocalPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <div className="text-left">
-                        <div className="text-sm text-gray-600">일시</div>
-                        <div className="text-base font-medium text-gray-800">2025년 11월 1일 (토) 오후 6시</div>
+                        <div className="text-sm text-gray-600" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>일시</div>
+                        <div className="text-base font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>2025년 11월 1일 (토) 오후 6시</div>
                       </div>
                     </div>
                   </div>
@@ -376,8 +377,8 @@ export default function LocalPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                       <div className="text-left">
-                        <div className="text-sm text-gray-600">장소</div>
-                        <div className="text-base font-medium text-gray-800">더 그랜드컨벤션 연회장</div>
+                        <div className="text-sm text-gray-600" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>장소</div>
+                        <div className="text-base font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>더 그랜드컨벤션 연회장</div>
                       </div>
                     </div>
                   </div>
@@ -392,7 +393,8 @@ export default function LocalPage() {
               {/* 제목 */}
               <h2 
                 ref={heartMoneyAnimation.ref}
-                className={`text-xl md:text-2xl font-light mb-8 tracking-wider text-gray-700 text-center transition-all duration-800 ${heartMoneyAnimation.animationClass}`}
+                className={`text-xl md:text-2xl font-semibold mb-8 tracking-wider text-black text-center transition-all duration-800 ${heartMoneyAnimation.animationClass}`}
+                style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
               >
                 마음 전하실 곳
               </h2>
@@ -412,11 +414,11 @@ export default function LocalPage() {
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                           <div className="text-left mb-4 md:mb-0">
                             {getRelationshipLabel(contact.relationship) && (
-                              <div className="text-xs text-purple-600 mb-1 font-medium">
+                              <div className="text-xs text-purple-600 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                                 {getRelationshipLabel(contact.relationship)}
                               </div>
                             )}
-                            <div className="text-base md:text-lg font-medium text-gray-800">
+                            <div className="text-base md:text-lg font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                               {contact.name}
                             </div>
                           </div>
@@ -431,7 +433,7 @@ export default function LocalPage() {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.129-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
-                                전화
+                                <span style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>전화</span>
                               </button>
                               <button
                                 onClick={() => contact.phone && handleSMS(contact.phone)}
@@ -440,7 +442,7 @@ export default function LocalPage() {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
-                                문자
+                                <span style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>문자</span>
                               </button>
                             </div>
                           )}
@@ -451,8 +453,8 @@ export default function LocalPage() {
                           <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-blue-100/50">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                               <div className="text-left flex-1 mb-3 md:mb-0">
-                                <div className="text-sm text-gray-800 mb-1 font-medium">{contact.bank_name}</div>
-                                <div className="text-sm font-mono text-gray-800">{contact.account_number}</div>
+                                <div className="text-sm text-gray-800 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>{contact.bank_name}</div>
+                                <div className="text-sm font-mono text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>{contact.account_number}</div>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
@@ -486,7 +488,7 @@ export default function LocalPage() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-500 text-sm md:text-base">
+                    <p className="text-gray-500 text-sm md:text-base" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                       등록된 연락처가 없습니다
                     </p>
                   </div>

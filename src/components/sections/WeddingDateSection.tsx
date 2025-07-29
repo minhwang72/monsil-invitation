@@ -65,7 +65,8 @@ export default function WeddingDateSection() {
         {/* 제목 */}
         <h2 
           ref={titleAnimation.ref}
-          className={`text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text transition-all duration-800 ${titleAnimation.animationClass}`}
+          className={`text-3xl md:text-4xl font-semibold mb-12 md:mb-16 tracking-wider text-black transition-all duration-800 ${titleAnimation.animationClass}`}
+          style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
         >
           WEDDING DATE
         </h2>
@@ -81,9 +82,9 @@ export default function WeddingDateSection() {
           {/* 요일 헤더 */}
           <div className="grid grid-cols-7 gap-2 md:gap-3 mb-4 md:mb-6">
             {weekDays.map((day) => (
-              <div key={day} className="text-xs md:text-sm font-medium text-gray-500 text-center py-2 md:py-3 font-english english-text">
-                {day}
-              </div>
+                          <div key={day} className="text-xs md:text-sm font-semibold text-black text-center py-2 md:py-3" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+              {day}
+            </div>
             ))}
           </div>
 
@@ -118,12 +119,12 @@ export default function WeddingDateSection() {
           ref={dateInfoAnimation.ref}
           className={`space-y-3 md:space-y-4 transition-all duration-800 ${dateInfoAnimation.animationClass}`}
         >
-          <div className="text-lg md:text-xl font-light text-gray-800 tracking-wide">
-            2025년 11월 8일 토요일 | 오후 12시 30분
+          <div className="text-base md:text-lg font-semibold text-black tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+            2025년 11월 8일 토요일&nbsp;&nbsp;|&nbsp;&nbsp;오후 12시 30분
           </div>
           
-          <div className="text-sm md:text-base text-gray-500 tracking-wide">
-            Saturday, November 8, 2025 | PM 12:30
+          <div className="text-base md:text-lg font-semibold text-black tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+            Saturday, November 8, 2025&nbsp;&nbsp;|&nbsp;&nbsp;PM 12:30
           </div>
         </div>
       </div>

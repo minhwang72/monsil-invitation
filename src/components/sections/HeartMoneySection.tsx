@@ -116,7 +116,8 @@ export default function HeartMoneySection() {
           {/* 제목 */}
           <h2 
             ref={titleAnimation.ref}
-            className={`text-xl md:text-2xl font-light mb-8 tracking-wider text-gray-700 transition-all duration-800 ${titleAnimation.animationClass}`}
+            className={`text-xl md:text-2xl font-semibold mb-8 tracking-wider text-black transition-all duration-800 ${titleAnimation.animationClass}`}
+            style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
           >
             마음 전하실 곳
           </h2>
@@ -132,7 +133,7 @@ export default function HeartMoneySection() {
                 className="w-full px-4 py-3 bg-white transition-colors text-left flex justify-between items-center border-b border-gray-100"
               >
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm md:text-base font-medium text-gray-800">
+                  <span className="text-sm md:text-base font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                     {groomSide.length > 0 ? getSideLabel('groom') : '신랑측'}
                   </span>
                 </div>
@@ -155,16 +156,16 @@ export default function HeartMoneySection() {
                       <div className="flex justify-between items-start mb-2">
                         <div className="text-left">
                           {contact.relationship === 'person' && (
-                            <div className="text-xs text-blue-600 mb-1 font-medium">
+                            <div className="text-xs text-blue-600 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                               {getSideLabel(contact.side)}
                             </div>
                           )}
                           {getRelationshipLabel(contact.relationship) && (
-                            <div className="text-xs text-purple-600 mb-1 font-medium">
+                            <div className="text-xs text-purple-600 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                               {getRelationshipLabel(contact.relationship)}
                             </div>
                           )}
-                          <div className="text-sm font-medium text-gray-800">
+                          <div className="text-sm font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                             {contact.name}
                           </div>
                         </div>
@@ -220,7 +221,7 @@ export default function HeartMoneySection() {
                 className="w-full px-4 py-3 bg-white transition-colors text-left flex justify-between items-center border-b border-gray-100"
               >
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm md:text-base font-medium text-gray-800">
+                  <span className="text-sm md:text-base font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                     {brideSide.length > 0 ? getSideLabel('bride') : '신부측'}
                   </span>
                 </div>
@@ -243,16 +244,16 @@ export default function HeartMoneySection() {
                       <div className="flex justify-between items-start mb-2">
                         <div className="text-left">
                           {contact.relationship === 'person' && (
-                            <div className="text-xs text-pink-600 mb-1 font-medium">
+                            <div className="text-xs text-pink-600 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                               {getSideLabel(contact.side)}
                             </div>
                           )}
                           {getRelationshipLabel(contact.relationship) && (
-                            <div className="text-xs text-purple-600 mb-1 font-medium">
+                            <div className="text-xs text-purple-600 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                               {getRelationshipLabel(contact.relationship)}
                             </div>
                           )}
-                          <div className="text-sm font-medium text-gray-800">
+                          <div className="text-sm font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                             {contact.name}
                           </div>
                         </div>

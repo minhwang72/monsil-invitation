@@ -117,8 +117,9 @@ export default function CoverSection() {
           className={`flex justify-center mb-4 md:mb-4 transition-all duration-800 ${nameRowAnimation.animationClass}`}
         >
           <div className="w-full max-w-sm flex justify-between items-center">
-            <span className="text-base md:text-lg font-sans font-normal text-black cursor-pointer select-none transition-colors"
+            <span className="text-base md:text-lg font-sans font-semibold text-black cursor-pointer select-none transition-colors"
               onClick={handleMinClick}
+              style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
             >
               황민
             </span>
@@ -156,8 +157,9 @@ export default function CoverSection() {
             </div>
             
             <span 
-              className="text-base md:text-lg font-sans font-normal text-black cursor-pointer select-none transition-colors"
+              className="text-base md:text-lg font-sans font-semibold text-black cursor-pointer select-none transition-colors"
               onClick={handleSolClick}
+              style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
             >
               이은솔
             </span>
@@ -219,7 +221,7 @@ export default function CoverSection() {
           ref={dateAnimation.ref}
           className={`text-center mb-3 md:mb-4 transition-all duration-800 ${dateAnimation.animationClass}`}
         >
-          <p className="text-base md:text-lg font-sans font-normal text-gray-900">
+          <p className="text-base md:text-lg font-sans font-semibold text-gray-900" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
             2025. 11. 08. 12:30 PM
           </p>
         </div>
@@ -229,7 +231,7 @@ export default function CoverSection() {
           ref={venueAnimation.ref}
           className={`text-center transition-all duration-800 ${venueAnimation.animationClass}`}
         >
-          <p className="text-base md:text-lg font-sans font-normal text-gray-900">
+          <p className="text-base md:text-lg font-sans font-semibold text-gray-900" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
             정동제일교회 본당
           </p>
         </div>

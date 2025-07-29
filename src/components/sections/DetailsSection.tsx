@@ -61,7 +61,8 @@ export default function LocationSection() {
           {/* 제목 */}
           <h2 
             ref={titleAnimation.ref}
-            className={`text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text px-4 md:px-8 transition-all duration-800 ${titleAnimation.animationClass}`}
+            className={`text-3xl md:text-4xl font-semibold mb-12 md:mb-16 tracking-wider text-black px-4 md:px-8 transition-all duration-800 ${titleAnimation.animationClass}`}
+            style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
           >
             LOCATION
           </h2>
@@ -141,11 +142,11 @@ export default function LocationSection() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <h3 className="text-base md:text-lg font-medium text-gray-800">주 소</h3>
+                <h3 className="text-base md:text-lg font-bold text-black" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>주 소</h3>
               </div>
               <div className="ml-7">
                 <div className="flex items-start justify-between mb-2">
-                  <p className="text-gray-600 leading-relaxed text-sm md:text-base pr-2">
+                  <p className="text-black leading-relaxed text-sm md:text-base pr-2" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                     서울 중구 정동길 46 (정동 34-3)
                   </p>
                   <button
@@ -159,7 +160,7 @@ export default function LocationSection() {
                   </button>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-gray-700 font-medium text-sm md:text-base">정동제일교회</p>
+                  <p className="text-black font-bold text-sm md:text-base" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>정동제일교회 2층 본당</p>
                   <button
                     onClick={handleCallChurch}
                     className="text-blue-700 transition-colors p-1 flex-shrink-0"
@@ -188,10 +189,10 @@ export default function LocationSection() {
                 <svg className="w-5 h-5 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
-                <h3 className="text-base md:text-lg font-medium text-gray-800">지하철</h3>
+                <h3 className="text-base md:text-lg font-bold text-black" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>지하철</h3>
               </div>
-              <p className="text-gray-600 leading-relaxed ml-7 text-sm md:text-base">
-                1, 2호선 시청역 하차, 덕수궁 쪽 출구로 나오셔서<br />
+              <p className="text-black leading-relaxed ml-7 text-sm md:text-base" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+                <span className="font-bold">지하철 1,2호선 시청역</span> 하차, 덕수궁 쪽 출구로 나오셔서<br />
                 덕수궁 돌담길을 따라 도보 5분
               </p>
             </div>
@@ -206,11 +207,11 @@ export default function LocationSection() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 6H5a2 2 0 00-2 2v6a2 2 0 002 2h2m4 0h4a2 2 0 002-2V8a2 2 0 00-2-2h-2m0 0V4a2 2 0 00-2-2H9a2 2 0 00-2 2v2m6 0V4" />
                 </svg>
-                <h3 className="text-base md:text-lg font-medium text-gray-800">자가</h3>
+                <h3 className="text-base md:text-lg font-bold text-black" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>자가</h3>
               </div>
-              <p className="text-gray-600 leading-relaxed ml-7 text-sm md:text-base">
+              <p className="text-black leading-relaxed ml-7 text-sm md:text-base" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                 서대문역 사거리 → 정동사거리 우회전 500m 직진<br />
-                <span className="text-xs md:text-sm">*주차는 인근 배재빌딩 지하주차장을 이용해 주시길 바랍니다.</span>
+                <span className="text-xs md:text-sm font-bold">*주차는 인근 배재빌딩 지하주차장을 이용해 주시길 바랍니다.</span>
               </p>
             </div>
 
@@ -218,13 +219,12 @@ export default function LocationSection() {
             <div className="w-full h-px bg-blue-400"></div>
 
             {/* 안내사항 */}
-            <div className="space-y-3">
-              <p className="text-gray-600 text-xs md:text-sm leading-relaxed">
+            <div className="space-y-1">
+              <p className="text-black text-xs leading-relaxed font-bold" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                 ※ 교회 방침에 의하여 축하 화환은 정중히 사양합니다.
               </p>
-              <p className="text-gray-600 text-xs md:text-sm leading-relaxed">
-                ※ 주차공간이 협소하니, 가급적 대중교통을 이용해 주시고<br />
-                &nbsp;&nbsp;&nbsp;덕수궁 돌담길의 정취를 느끼며 오시길 바랍니다.
+              <p className="text-black text-xs leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+                ※ 주차공간이 협소하니, 가급적 대중교통을 이용해 주시고 덕수궁 돌담길의 정취를 느끼며 오시길 바랍니다.
               </p>
             </div>
           </div>

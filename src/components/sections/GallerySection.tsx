@@ -146,7 +146,8 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
           {/* 제목 */}
           <h2 
             ref={titleAnimation.ref}
-            className={`text-3xl md:text-4xl font-light mb-12 md:mb-16 tracking-wider text-gray-700 font-english english-text transition-all duration-800 ${titleAnimation.animationClass}`}
+            className={`text-3xl md:text-4xl font-semibold mb-12 md:mb-16 tracking-wider text-black transition-all duration-800 ${titleAnimation.animationClass}`}
+            style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
           >
             GALLERY
           </h2>
@@ -202,9 +203,9 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
             >
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="flex flex-col items-center gap-2 text-gray-800 transition-colors font-sans"
+                className="flex flex-col items-center gap-2 text-gray-800 transition-colors"
               >
-                <span className="text-sm font-light">
+                <span className="text-sm font-light" style={{ fontFamily: 'SeoulNamsanL, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                   {showAll ? '접기' : '더보기'}
                 </span>
                 <svg
