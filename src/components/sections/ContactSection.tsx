@@ -286,7 +286,7 @@ export default function ContactSection() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleCall(contact.phone)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-black font-semibold shadow-sm bg-blue-300 text-sm"
+                          className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-black font-semibold shadow-sm bg-blue-100 text-sm"
                           style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,7 +296,7 @@ export default function ContactSection() {
                         </button>
                         <button
                           onClick={() => handleSMS(contact.phone)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-black font-semibold shadow-sm bg-pink-300 text-sm"
+                          className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-black font-semibold shadow-sm bg-pink-100 text-sm"
                           style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
