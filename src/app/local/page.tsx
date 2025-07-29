@@ -215,7 +215,7 @@ export default function LocalPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#E0F7FF] via-[#F5E6FF] to-[#F0F8FF] py-0 md:py-8">
-      <div className="w-full max-w-[500px] mx-auto bg-white md:rounded-2xl md:shadow-lg overflow-hidden">
+                        <div className="w-full max-w-[500px] mx-auto bg-gradient-to-b from-white via-blue-50/30 to-purple-50/30 md:rounded-2xl md:shadow-lg overflow-hidden">
         {/* 헤더 섹션 */}
         <section className="w-full min-h-screen flex flex-col justify-center py-16 md:py-20 px-4 relative">
           <div className="max-w-xl mx-auto text-center w-full">
@@ -316,7 +316,7 @@ export default function LocalPage() {
         </section>
 
                             {/* 상세 정보 섹션 - 원래 청첩장 스타일 */}
-                    <section className="w-full py-16 md:py-20 px-0 font-sans bg-white">
+                    <section className="w-full py-16 md:py-20 px-0 font-sans bg-gradient-to-br from-purple-50/70 via-blue-50/70 to-pink-50/70">
           <div className="max-w-xl mx-auto text-center w-full px-0">
             {/* 제목 */}
             <h2 
@@ -394,7 +394,7 @@ export default function LocalPage() {
         </section>
 
                             {/* 마음전하실 곳 섹션 - HeartMoneySection과 ContactSection 참고한 하이브리드 */}
-                    <section className="w-full py-16 md:py-20 px-4 font-sans bg-blue-50/50">
+                    <section className="w-full py-16 md:py-20 px-4 font-sans bg-gradient-to-br from-blue-50/70 via-pink-50/70 to-purple-50/70">
           <div className="max-w-xl mx-auto">
             {/* 제목 */}
             <h2 
@@ -503,7 +503,7 @@ export default function LocalPage() {
         </section>
 
                             {/* 푸터 */}
-                    <footer className="w-full py-8 md:py-12 px-4 bg-white">
+                    <footer className="w-full py-8 md:py-12 px-4 bg-gradient-to-br from-pink-50/70 via-purple-50/70 to-blue-50/70">
           <div className="max-w-md mx-auto">
             <div className="flex flex-col items-center space-y-3">
               {/* 장식용 하트 아이콘 */}
