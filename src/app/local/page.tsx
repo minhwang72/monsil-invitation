@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useScrollAnimation } from '@/hooks/useScrollAnimation'
+import { useRouter } from 'next/navigation'
 
 export default function LocalPage() {
+  const router = useRouter()
+  
   // 스크롤 애니메이션 훅들
   const titleAnimation = useScrollAnimation({ threshold: 0.4, animationDelay: 200 })
   const introAnimation = useScrollAnimation({ threshold: 0.3, animationDelay: 400 })
@@ -61,11 +64,39 @@ export default function LocalPage() {
     }
   }
 
+  const handleGoToMain = () => {
+    router.push('/')
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#E0F7FF] to-[#F5E6FF]">
       {/* 헤더 섹션 */}
       <section className="w-full min-h-screen flex flex-col justify-center py-16 md:py-20 px-4">
         <div className="max-w-xl mx-auto text-center w-full">
+          {/* 메인 페이지로 가는 버튼 */}
+          <div className="mb-8 md:mb-12">
+            <button
+              onClick={handleGoToMain}
+              className="bg-white/80 backdrop-blur-sm text-gray-700 border border-gray-200 py-3 px-6 rounded-full transition-all duration-300 text-sm font-medium flex items-center justify-center gap-2 hover:bg-white hover:shadow-lg mx-auto group"
+              style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}
+            >
+              <svg 
+                className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+                />
+              </svg>
+              <span className="font-extralight tracking-wide">모바일 청첩장 보러가기</span>
+            </button>
+          </div>
+
           {/* 제목 */}
           <h1 
             ref={titleAnimation.ref}
