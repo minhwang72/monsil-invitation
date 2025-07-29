@@ -12,7 +12,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Min ♥ EunSol’s Wedding',
+  title: 'Min ♥ EunSol\'s Wedding',
   description: '2025년 11월 8일 토요일, 정동제일교회에서 황민과 이은솔의 결혼식이 있습니다. 두 사람의 새로운 시작을 축복해주시면 감사하겠습니다.',
   keywords: ["황민", "이은솔", "결혼식", "청첩장", "웨딩", "wedding", "invitation", "정동제일교회"],
   icons: {

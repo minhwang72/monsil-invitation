@@ -125,7 +125,7 @@ export default function Home() {
               />
             </svg>
           </div>
-
+          
           {/* 뒷면 */}
           <div
             className="absolute bottom-0 left-0 right-0 h-full bg-[#2C3E50] rounded-lg shadow-inner"
