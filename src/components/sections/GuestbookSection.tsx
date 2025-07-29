@@ -232,7 +232,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
           >
             <button
               onClick={handleWrite}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-300 hover:bg-blue-400 text-white rounded-lg transition-colors font-sans font-medium text-sm md:text-base"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-300 hover:bg-blue-400 text-black rounded-lg transition-colors font-sans font-medium text-sm md:text-base"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -356,6 +356,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                   placeholder="이름을 입력해주세요 (최대 10글자)"
+                  style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
                 />
               </div>
 
@@ -368,6 +369,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent resize-none text-sm md:text-base placeholder-gray-400"
                   placeholder="축하 메시지를 입력해주세요 (최대 200글자)"
+                  style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
                 />
                 <div className="text-xs text-gray-500 mt-1 text-right">
                   {formData.content.length}/200
@@ -383,6 +385,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                   placeholder="비밀번호를 입력해주세요 (4~12자리)"
+                  style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
                 />
               </div>
 
@@ -397,7 +400,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2 px-4 text-sm md:text-base bg-blue-300 disabled:bg-blue-200 text-white rounded-md transition-colors"
+                  className="flex-1 py-2 px-4 text-sm md:text-base bg-blue-300 disabled:bg-blue-200 text-black rounded-md transition-colors"
                 >
                   <span style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                     {isSubmitting ? '작성 중...' : '작성하기'}
@@ -429,6 +432,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                 onChange={(e) => setDeletePassword(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                 placeholder="비밀번호 입력"
+                style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
               />
             </div>
 
@@ -442,7 +446,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
               <button
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="flex-1 py-2 px-4 text-sm md:text-base bg-pink-400 disabled:bg-pink-200 text-white rounded-md transition-colors"
+                className="flex-1 py-2 px-4 text-sm md:text-base bg-pink-400 disabled:bg-pink-200 text-black rounded-md transition-colors"
               >
                                   <span style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                     {isDeleting ? '삭제 중...' : '삭제'}
