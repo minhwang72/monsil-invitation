@@ -2,6 +2,102 @@
 
 import { useScrollAnimation } from '@/hooks/useScrollAnimation'
 import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+
+// 네이버 지도 API 타입 정의
+interface NaverMapOptions {
+  center: NaverLatLng;
+  zoom: number;
+}
+
+interface NaverLatLng {
+  lat: number;
+  lng: number;
+}
+
+interface NaverMap {
+  setCenter: (center: NaverLatLng) => void;
+  setZoom: (zoom: number) => void;
+}
+
+declare global {
+  interface Window {
+    naver: {
+      maps: {
+        Map: new (element: HTMLElement, options: NaverMapOptions) => NaverMap;
+        LatLng: new (lat: number, lng: number) => NaverLatLng;
+        Marker: new (options: { position: NaverLatLng; map: NaverMap }) => unknown;
+      };
+    };
+  }
+}
+
+function GrandConventionMap() {
+  const mapRef = useRef<HTMLDivElement>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+
+  useEffect(() => {
+    const initMap = () => {
+      try {
+        if (typeof window !== 'undefined' && window.naver && mapRef.current) {
+          const naver = window.naver
+          const grandConventionPosition = new naver.maps.LatLng(37.147120, 128.204168) // 더 그랜드컨벤션 좌표
+          
+          const map = new naver.maps.Map(mapRef.current, {
+            center: grandConventionPosition,
+            zoom: 16, // 피로연용 적절한 줌 레벨
+          })
+
+          // 더 그랜드컨벤션 마커 추가
+          new naver.maps.Marker({
+            position: grandConventionPosition,
+            map: map
+          })
+          
+          setIsLoading(false)
+        } else {
+          // 네이버 지도가 로드되지 않은 경우 재시도
+          setTimeout(initMap, 1000)
+        }
+      } catch (error) {
+        console.error('네이버 지도 로드 오류:', error)
+        setHasError(true)
+        setIsLoading(false)
+      }
+    }
+
+    // 지도 초기화 시작
+    const timer = setTimeout(initMap, 100)
+    
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (hasError) {
+    return (
+      <div style={{ width: '100%', height: 280, borderRadius: 0, overflow: 'hidden' }} className="bg-gray-100 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <p className="text-sm">지도를 불러올 수 없습니다</p>
+          <p className="text-xs mt-1">더 그랜드컨벤션</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ width: '100%', height: 280, borderRadius: 0, overflow: 'hidden' }} className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+          <div className="text-center text-gray-500">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-300 mx-auto mb-2"></div>
+            <p className="text-sm">지도 로딩 중...</p>
+          </div>
+        </div>
+      )}
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  )
+}
 
 export default function LocalPage() {
   const router = useRouter()
@@ -12,10 +108,6 @@ export default function LocalPage() {
   const namesAnimation = useScrollAnimation({ threshold: 0.2, animationDelay: 600 })
   const detailsAnimation = useScrollAnimation({ threshold: 0.1, animationDelay: 800 })
   const mapAnimation = useScrollAnimation({ threshold: 0.1, animationDelay: 1000 })
-
-  const handleNaverMap = () => {
-    window.open('https://map.naver.com/p/search/더그랜드컨벤션', '_blank')
-  }
 
   const handleCopyAddress = async () => {
     try {
@@ -46,11 +138,11 @@ export default function LocalPage() {
           <div className="mb-8 md:mb-12 text-left">
             <button
               onClick={handleGoToMain}
-              className="bg-[#E6E6FA]/80 backdrop-blur-sm text-gray-700 border border-[#E6E6FA] py-2 px-4 rounded-full transition-all duration-300 text-xs font-medium flex items-center gap-2 hover:bg-[#E6E6FA] hover:shadow-sm group"
+              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors group"
               style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}
             >
               <svg 
-                className="w-3 h-3 text-gray-500 group-hover:text-gray-700 transition-colors" 
+                className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -62,7 +154,7 @@ export default function LocalPage() {
                   d="M10 19l-7-7m0 0l7-7m-7 7h18" 
                 />
               </svg>
-              <span className="font-extralight tracking-wide text-xs">모바일 청첩장 보러가기</span>
+              <span className="text-sm font-extralight tracking-wide">청첩장 보기</span>
             </button>
           </div>
 
@@ -123,6 +215,18 @@ export default function LocalPage() {
               </p>
             </div>
           </div>
+
+          {/* 스크롤 안내 - 다음 섹션이 있다는 것을 알려주는 미묘한 힌트 */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 opacity-30">
+            <div className="flex flex-col items-center">
+              <div className="w-6 h-10 border-2 border-gray-400 rounded-full flex justify-center">
+                <div className="w-1 h-3 bg-gray-400 rounded-full mt-2 animate-bounce"></div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 font-extralight tracking-wide" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif' }}>
+                아래로 스크롤
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -137,37 +241,12 @@ export default function LocalPage() {
             DETAILS
           </h2>
 
-          {/* 지도 - 좌우 패딩 제거 */}
+          {/* 지도 - 그랜드컨벤션 지도 */}
           <div 
             ref={mapAnimation.ref}
             className={`mb-6 md:mb-8 px-0 transition-all duration-800 ${mapAnimation.animationClass}`}
           >
-            <div className="w-full h-64 md:h-80 bg-gray-200 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <p className="text-gray-500 text-sm">더 그랜드컨벤션</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 지도 앱 연동 버튼들 */}
-          <div className="flex justify-center gap-2 md:gap-4 mb-6 md:mb-8 px-4 md:px-8">
-            <button
-              onClick={handleNaverMap}
-              className="flex-1 bg-white text-black border border-gray-200 py-3 px-2 md:px-4 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1 md:gap-2 min-h-[48px] hover:bg-gray-50"
-            >
-              <svg width="18" height="14" viewBox="0 0 21 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="md:w-[21px] md:h-[16px] flex-shrink-0">
-                <path d="M6.09879 0C2.86879 0 0.258789 2.61 0.258789 5.84C0.258789 6.18 0.298789 6.53 0.368789 6.89C0.558789 7.83 0.948789 8.71 1.49879 9.49L6.08879 16L8.73879 12.24L10.6788 9.49C11.2288 8.71 11.6188 7.83 11.8088 6.89C11.8788 6.53 11.9188 6.18 11.9188 5.84C11.9188 2.62 9.30879 0 6.07879 0L6.09879 0ZM5.35879 5.73V7.9H4.02879V3.78H5.35879L6.83879 5.95V3.78H8.16879V7.89H6.83879L5.35879 5.72V5.73Z" fill="#04C75A"/>
-                <path d="M8.16832 3.77979V7.88978H6.83832L5.35832 5.72979V7.88978H4.02832V3.77979H5.35832L6.83832 5.94978V3.77979H8.16832Z" fill="#04C75A"/>
-                <path d="M8.16832 3.77979V7.88978H6.83832L5.35832 5.72979V7.88978H4.02832V3.77979H5.35832L6.83832 5.94978V3.77979H8.16832Z" fill="white"/>
-                <path d="M20.4086 12.2402V16.0002H6.09863L8.74863 12.2402H20.4086Z" fill="#256BFA"/>
-              </svg>
-              <span className="hidden sm:inline">네이버지도</span>
-              <span className="sm:hidden">네이버</span>
-            </button>
+            <GrandConventionMap />
           </div>
 
           {/* 주소 정보 */}
