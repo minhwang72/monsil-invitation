@@ -69,12 +69,12 @@ function GrandConventionMap() {
     }
   }, [])
 
-      return (
-      <div 
-        ref={mapRef} 
-        className="w-full h-64 md:h-80 overflow-hidden border border-gray-200"
-      />
-    )
+  return (
+    <div 
+      ref={mapRef} 
+      className="w-full h-64 md:h-80 overflow-hidden border border-gray-200"
+    />
+  )
 }
 
 export default function LocalPage() {
@@ -95,12 +95,19 @@ export default function LocalPage() {
       const response = await fetch('/api/contacts')
       if (response.ok) {
         const data = await response.json()
-        setContacts(data)
+        if (data.success && data.data) {
+          setContacts(data.data)
+        } else {
+          console.error('연락처 정보를 불러오는데 실패했습니다')
+          setContacts([])
+        }
       } else {
         console.error('연락처 정보를 불러오는데 실패했습니다')
+        setContacts([])
       }
     } catch (error) {
       console.error('연락처 정보를 불러오는데 실패했습니다:', error)
+      setContacts([])
     } finally {
       setLoading(false)
     }
