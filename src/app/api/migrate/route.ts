@@ -144,6 +144,48 @@ export async function POST() {
       }
     }
 
+    // 4-5. gallery 테이블에 order_index 컬럼 추가
+    try {
+      await pool.query(`
+        ALTER TABLE gallery 
+        ADD COLUMN order_index INT NULL DEFAULT NULL
+      `)
+      migrations.push('gallery: order_index column added')
+    } catch (error: unknown) {
+      const mysqlError = error as MySQLError
+      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
+        migrations.push('gallery: order_index column already exists')
+      } else {
+        console.log('Gallery order_index column migration skipped:', mysqlError.message)
+      }
+    }
+
+    // 4-6. 기존 gallery 이미지들에 order_index 설정
+    try {
+      const [rows] = await pool.query(`
+        SELECT id FROM gallery 
+        WHERE image_type = 'gallery' AND order_index IS NULL AND deleted_at IS NULL 
+        ORDER BY created_at ASC
+      `)
+      
+      const galleryItems = rows as { id: number }[]
+      for (let i = 0; i < galleryItems.length; i++) {
+        await pool.query(
+          'UPDATE gallery SET order_index = ? WHERE id = ?',
+          [i + 1, galleryItems[i].id]
+        )
+      }
+      
+      if (galleryItems.length > 0) {
+        migrations.push(`gallery: order_index set for ${galleryItems.length} existing items`)
+      } else {
+        migrations.push('gallery: no existing items need order_index update')
+      }
+    } catch (error) {
+      console.error('Gallery order_index update error:', error)
+      migrations.push('gallery: order_index update failed (non-critical)')
+    }
+
     // 5. 메인 이미지 트리거 제거 (문제 발생으로 인해)
     try {
       await pool.query(`DROP TRIGGER IF EXISTS enforce_single_main_image`)

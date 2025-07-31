@@ -118,10 +118,26 @@ export async function POST(request: Request) {
     const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
     const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
 
-    await pool.query(
-      'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
-      [filename, image_type, formattedTime]
-    )
+    // gallery 타입인 경우 order_index 설정
+    if (image_type === 'gallery') {
+      // 현재 최대 order_index 조회
+      const [maxOrderRows] = await pool.query(
+        'SELECT COALESCE(MAX(order_index), 0) as max_order FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
+      )
+      const maxOrder = (maxOrderRows as { max_order: number }[])[0]?.max_order || 0
+      const newOrderIndex = maxOrder + 1
+
+      await pool.query(
+        'INSERT INTO gallery (filename, image_type, created_at, order_index) VALUES (?, ?, ?, ?)',
+        [filename, image_type, formattedTime, newOrderIndex]
+      )
+    } else {
+      // main 타입인 경우 order_index는 NULL
+      await pool.query(
+        'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
+        [filename, image_type, formattedTime]
+      )
+    }
 
     return NextResponse.json<ApiResponse<null>>({
       success: true,

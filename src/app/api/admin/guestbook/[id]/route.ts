@@ -25,8 +25,10 @@ export async function DELETE(request: NextRequest) {
 
     const id = getIdFromRequest(request)
 
-    // Delete entry without password verification
-    await pool.query('DELETE FROM guestbook WHERE id = ?', [id])
+    // Soft delete - set deleted_at timestamp
+    const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000)) // UTC + 9시간
+    const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
+    await pool.query('UPDATE guestbook SET deleted_at = ? WHERE id = ?', [formattedTime, id])
 
     return NextResponse.json<ApiResponse<null>>({
       success: true,
