@@ -22,7 +22,7 @@ export async function GET() {
           ELSE 1
         END,
         CASE 
-          WHEN image_type = 'gallery' THEN order_index
+          WHEN image_type = 'gallery' AND order_index IS NOT NULL THEN order_index
           ELSE created_at
         END ASC
     `)

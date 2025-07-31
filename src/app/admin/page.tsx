@@ -1174,6 +1174,8 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     const sourceId = id
     const targetId = galleryItems[targetIndex].id
 
+    console.log('🔍 [DEBUG] Moving gallery item:', { sourceId, targetId, direction })
+
     try {
       const res = await fetch('/api/admin/gallery', {
         method: 'PUT',
@@ -1182,13 +1184,18 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       })
       const data = await res.json()
 
+      console.log('🔍 [DEBUG] Gallery reorder response:', data)
+
       if (data.success) {
+        console.log('✅ [DEBUG] Gallery reorder successful, calling onUpdate')
         onUpdate() // 갤러리 목록 새로고침
+        showToast('순서 변경 완료', 'success')
       } else {
+        console.log('❌ [DEBUG] Gallery reorder failed:', data.error)
         showToast('순서 변경 실패', 'error')
       }
     } catch (error) {
-      console.error('[DEBUG] Error reordering gallery:', error)
+      console.error('❌ [DEBUG] Error reordering gallery:', error)
       showToast('순서 변경 중 오류 발생', 'error')
     }
   }
