@@ -25,6 +25,7 @@ export interface Guestbook {
   password: string;
   content: string;
   created_at: Date;
+  deleted_at?: Date | string | null;
 }
 
 export interface ApiResponse<T> {

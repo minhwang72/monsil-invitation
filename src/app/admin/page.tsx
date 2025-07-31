@@ -1576,25 +1576,37 @@ const GuestbookSection = ({ guestbook, onUpdate, loading, setGlobalLoading }: { 
         </div>
       ) : (
         <div className="space-y-4">
-          {localGuestbook.map((item) => (
-            <div key={item.id} className="border rounded-lg p-4">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 space-y-2 sm:space-y-0">
-                <div className="flex-1">
-                  <h3 className="font-medium text-lg">{item.name}</h3>
-                  <p className="text-sm text-gray-800">
-                    {formatDate(item.created_at)}
-                  </p>
+          {localGuestbook.map((item) => {
+            const isDeleted = item.deleted_at !== null && item.deleted_at !== undefined
+            return (
+              <div 
+                key={item.id} 
+                className={`border rounded-lg p-4 ${isDeleted ? 'bg-gray-50 opacity-75' : ''}`}
+              >
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 space-y-2 sm:space-y-0">
+                  <div className="flex-1">
+                    <h3 className={`font-medium text-lg ${isDeleted ? 'text-gray-500' : ''}`}>
+                      {item.name}
+                    </h3>
+                    <p className={`text-sm ${isDeleted ? 'text-gray-400' : 'text-gray-800'}`}>
+                      {formatDate(item.created_at)}
+                    </p>
+                  </div>
+                  {!isDeleted && (
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm min-h-[44px] w-full sm:w-auto"
+                    >
+                      삭제
+                    </button>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm min-h-[44px] w-full sm:w-auto"
-                >
-                  삭제
-                </button>
+                <p className={`whitespace-pre-wrap break-words ${isDeleted ? 'text-gray-500' : 'text-gray-700'}`}>
+                  {item.content}
+                </p>
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap break-words">{item.content}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
       
@@ -1730,7 +1742,7 @@ function AdminPageContent() {
 
       const [galleryRes, guestbookRes, contactsRes] = await Promise.all([
         fetch('/api/gallery'),
-        fetch('/api/guestbook'),
+        fetch('/api/admin/guestbook'),
         fetch('/api/contacts'),
       ])
 
@@ -1769,7 +1781,7 @@ function AdminPageContent() {
   const updateGuestbook = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, guestbook: true }))
-      const res = await fetch(`/api/guestbook?t=${Date.now()}`)
+      const res = await fetch(`/api/admin/guestbook?t=${Date.now()}`)
       const data = await res.json()
       if (data.success) {
         setGuestbook(data.data)
