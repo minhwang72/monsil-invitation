@@ -224,7 +224,7 @@ export default function LocationSection() {
                 ※ 교회 방침에 의하여 축하 화환은 정중히 사양합니다.
               </p>
               <div className="text-black text-xs leading-relaxed" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-                <p className="whitespace-normal break-words parking-notice">
+                <p className="whitespace-normal break-normal parking-notice">
                   ※ 주차공간이 협소하니, 가급적 대중교통을 이용해 주시고 덕수궁 돌담길의 정취를 느끼며 오시길 바랍니다.
                 </p>
               </div>
