@@ -160,7 +160,8 @@ export default function LocalPage() {
       'groom_father': '신랑 아버지',
       'groom_mother': '신랑 어머니',
       'bride_father': '신부 아버지',
-      'bride_mother': '신부 어머니'
+      'bride_mother': '신부 어머니',
+      'person': '신랑'  // person도 신랑으로 표시
     }
     return labels[relationship] || relationship
   }
