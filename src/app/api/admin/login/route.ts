@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
-import { decryptPassword } from '@/lib/crypto'
+import { verifyPassword } from '@/lib/encryption'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,21 +30,11 @@ export async function POST(request: NextRequest) {
 
     const admin = adminRows[0]
     
-    // 저장된 암호화된 비밀번호를 복호화해서 비교
-    try {
-      const decryptedPassword = decryptPassword(admin.password)
-      
-      if (password !== decryptedPassword) {
-        return NextResponse.json(
-          { success: false, message: '잘못된 사용자명 또는 비밀번호입니다.' },
-          { status: 401 }
-        )
-      }
-    } catch (error) {
-      console.error('Password decryption error:', error)
+    // 저장된 해시된 비밀번호를 검증
+    if (!verifyPassword(password, admin.password)) {
       return NextResponse.json(
-        { success: false, message: '로그인 처리 중 오류가 발생했습니다.' },
-        { status: 500 }
+        { success: false, message: '잘못된 사용자명 또는 비밀번호입니다.' },
+        { status: 401 }
       )
     }
 
