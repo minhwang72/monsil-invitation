@@ -16,6 +16,7 @@ export interface Gallery {
   description?: string;
   image_type: 'main' | 'gallery';
   created_at: Date | string;
+  order_index?: number | null;
   deleted_at?: Date | string | null;
 }
 

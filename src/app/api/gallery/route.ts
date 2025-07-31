@@ -32,7 +32,8 @@ export async function GET() {
       url: `/uploads/${row.filename}`, // 파일 경로를 URL로 변환
       filename: row.filename,
       image_type: row.image_type,
-      created_at: row.created_at
+      created_at: row.created_at,
+      order_index: row.order_index
     }))
 
     return NextResponse.json<ApiResponse<Gallery[]>>({
