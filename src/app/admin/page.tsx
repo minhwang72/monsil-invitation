@@ -981,8 +981,79 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
   const [editingItem, setEditingItem] = useState<Gallery | null>(null)
   const [showCropper, setShowCropper] = useState(false)
+  
+  // 드래그 앤 드롭 상태
+  const [draggedItem, setDraggedItem] = useState<Gallery | null>(null)
+  const [dragOverItem, setDragOverItem] = useState<number | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
+
+  // 드래그 시작
+  const handleDragStart = (e: React.DragEvent, item: Gallery) => {
+    setDraggedItem(item)
+    setIsDragging(true)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', item.id.toString())
+  }
+
+  // 드래그 오버
+  const handleDragOver = (e: React.DragEvent, itemId: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverItem(itemId)
+  }
+
+  // 드래그 리브
+  const handleDragLeave = () => {
+    setDragOverItem(null)
+  }
+
+  // 드롭
+  const handleDrop = async (e: React.DragEvent, targetItem: Gallery) => {
+    e.preventDefault()
+    
+    if (!draggedItem || draggedItem.id === targetItem.id) {
+      setDraggedItem(null)
+      setDragOverItem(null)
+      setIsDragging(false)
+      return
+    }
+
+    setGlobalLoading(true, '순서 변경 중...')
+
+    try {
+      const res = await fetch('/api/admin/gallery', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sourceId: draggedItem.id, 
+          targetId: targetItem.id 
+        }),
+      })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
+      
+      const data = await res.json()
+
+      if (data.success) {
+        await onUpdate()
+        showToast('순서 변경 완료', 'success')
+      } else {
+        showToast(data.error || '순서 변경 실패', 'error')
+      }
+    } catch (error) {
+      console.error('Error reordering gallery:', error)
+      showToast('순서 변경 중 오류 발생', 'error')
+    } finally {
+      setDraggedItem(null)
+      setDragOverItem(null)
+      setIsDragging(false)
+      setGlobalLoading(false)
+    }
+  }
 
   // 다중 파일 업로드
   const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1271,6 +1342,51 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     setEditingItem(null)
   }
 
+  // 번호 직접 입력으로 이동
+  const moveToPosition = async (itemId: number, targetPosition: number) => {
+    if (targetPosition < 1 || targetPosition > galleryItems.length) {
+      showToast('유효하지 않은 위치입니다', 'error')
+      return
+    }
+
+    const currentIndex = galleryItems.findIndex(item => item.id === itemId)
+    if (currentIndex === -1) return
+
+    const targetIndex = targetPosition - 1
+    if (currentIndex === targetIndex) return
+
+    setGlobalLoading(true, `${targetPosition}번 위치로 이동 중...`)
+
+    try {
+      const sourceId = itemId
+      const targetId = galleryItems[targetIndex].id
+
+      const res = await fetch('/api/admin/gallery', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceId, targetId }),
+      })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
+      
+      const data = await res.json()
+
+      if (data.success) {
+        await onUpdate()
+        showToast(`${targetPosition}번 위치로 이동 완료`, 'success')
+      } else {
+        showToast(data.error || '이동 실패', 'error')
+      }
+    } catch (error) {
+      console.error('Error moving to position:', error)
+      showToast('이동 중 오류 발생', 'error')
+    } finally {
+      setGlobalLoading(false)
+    }
+  }
+
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">갤러리 관리</h2>
@@ -1341,11 +1457,38 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
         </div>
       ) : (
         <div className="space-y-3 sm:space-y-4">
+          {/* 드래그 앤 드롭 안내 */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <div className="text-blue-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-blue-900">드래그 앤 드롭으로 순서 변경</h3>
+                <p className="text-xs text-blue-700 mt-1">
+                  이미지를 드래그해서 원하는 위치로 이동하세요. 버튼을 사용한 수동 이동도 가능합니다.
+                </p>
+              </div>
+            </div>
+          </div>
           {galleryItems.map((item, index) => (
             <div
               key={item.id}
-              className={`border rounded-lg transition-colors ${
+              draggable
+              onDragStart={(e) => handleDragStart(e, item)}
+              onDragOver={(e) => handleDragOver(e, item.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, item)}
+              className={`border rounded-lg transition-all duration-200 ${
                 selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+              } ${
+                draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
+              } ${
+                dragOverItem === item.id ? 'border-blue-500 bg-blue-50 scale-105' : ''
+              } ${
+                isDragging ? 'cursor-grabbing' : 'cursor-grab'
               }`}
             >
               {/* 모바일 레이아웃 */}
@@ -1530,6 +1673,42 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                           title={index >= galleryItems.length - 5 ? "5칸 아래로 이동할 수 없습니다" : "5칸 아래로 이동"}
                         >
                           +5칸
+                        </button>
+                      </div>
+                      
+                      {/* 번호 직접 입력 */}
+                      <div className="flex space-x-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max={galleryItems.length}
+                          placeholder={`${index + 1}`}
+                          className="flex-1 h-10 px-2 text-center text-sm border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              const targetPosition = parseInt((e.target as HTMLInputElement).value)
+                              if (targetPosition && targetPosition !== index + 1) {
+                                moveToPosition(item.id, targetPosition)
+                                ;(e.target as HTMLInputElement).value = ''
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const input = document.querySelector(`input[placeholder="${index + 1}"]`) as HTMLInputElement
+                            if (input) {
+                              const targetPosition = parseInt(input.value)
+                              if (targetPosition && targetPosition !== index + 1) {
+                                moveToPosition(item.id, targetPosition)
+                                input.value = ''
+                              }
+                            }
+                          }}
+                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded"
+                          title="입력한 번호로 이동"
+                        >
+                          이동
                         </button>
                       </div>
                     </div>
