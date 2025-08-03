@@ -1386,26 +1386,6 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                       {/* 빠른 이동 버튼들 */}
                       <div className="flex space-x-1">
                         <button
-                          onClick={() => moveItem(item.id, 'up')}
-                          disabled={index === 0}
-                          className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                          title={index === 0 ? "이미 맨 위입니다" : "위로 이동"}
-                        >
-                          ↑ 위로
-                        </button>
-                        <button
-                          onClick={() => moveItem(item.id, 'down')}
-                          disabled={index === galleryItems.length - 1}
-                          className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                          title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "아래로 이동"}
-                        >
-                          ↓ 아래로
-                        </button>
-                      </div>
-                      
-                      {/* 빠른 이동 버튼들 */}
-                      <div className="flex space-x-1">
-                        <button
                           onClick={() => {
                             // 맨 위로 이동 (첫 번째 아이템과 교환)
                             if (index > 0) {
@@ -1474,6 +1454,82 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                           title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "맨 아래로 이동"}
                         >
                           맨 아래
+                        </button>
+                      </div>
+                      
+                      {/* 단계별 빠른 이동 버튼들 */}
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => {
+                            // 5칸 위로 이동
+                            const targetIndex = Math.max(0, index - 5)
+                            if (targetIndex !== index) {
+                              const sourceId = item.id
+                              const targetId = galleryItems[targetIndex].id
+                              setGlobalLoading(true, '5칸 위로 이동 중...')
+                              
+                              fetch('/api/admin/gallery', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sourceId, targetId }),
+                              })
+                              .then(res => res.json())
+                              .then(data => {
+                                if (data.success) {
+                                  onUpdate()
+                                  showToast('5칸 위로 이동 완료', 'success')
+                                } else {
+                                  showToast('이동 실패', 'error')
+                                }
+                              })
+                              .catch(error => {
+                                console.error('Error moving up by 5:', error)
+                                showToast('이동 중 오류 발생', 'error')
+                              })
+                              .finally(() => setGlobalLoading(false))
+                            }
+                          }}
+                          disabled={index < 5}
+                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                          title={index < 5 ? "5칸 위로 이동할 수 없습니다" : "5칸 위로 이동"}
+                        >
+                          -5칸
+                        </button>
+                        <button
+                          onClick={() => {
+                            // 5칸 아래로 이동
+                            const targetIndex = Math.min(galleryItems.length - 1, index + 5)
+                            if (targetIndex !== index) {
+                              const sourceId = item.id
+                              const targetId = galleryItems[targetIndex].id
+                              setGlobalLoading(true, '5칸 아래로 이동 중...')
+                              
+                              fetch('/api/admin/gallery', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sourceId, targetId }),
+                              })
+                              .then(res => res.json())
+                              .then(data => {
+                                if (data.success) {
+                                  onUpdate()
+                                  showToast('5칸 아래로 이동 완료', 'success')
+                                } else {
+                                  showToast('이동 실패', 'error')
+                                }
+                              })
+                              .catch(error => {
+                                console.error('Error moving down by 5:', error)
+                                showToast('이동 중 오류 발생', 'error')
+                              })
+                              .finally(() => setGlobalLoading(false))
+                            }
+                          }}
+                          disabled={index >= galleryItems.length - 5}
+                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                          title={index >= galleryItems.length - 5 ? "5칸 아래로 이동할 수 없습니다" : "5칸 아래로 이동"}
+                        >
+                          +5칸
                         </button>
                       </div>
                     </div>
@@ -1635,6 +1691,82 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                     title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "맨 아래로 이동"}
                   >
                     BOT
+                  </button>
+                </div>
+
+                {/* 단계별 이동 버튼들 */}
+                <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => {
+                      // 5칸 위로 이동
+                      const targetIndex = Math.max(0, index - 5)
+                      if (targetIndex !== index) {
+                        const sourceId = item.id
+                        const targetId = galleryItems[targetIndex].id
+                        setGlobalLoading(true, '5칸 위로 이동 중...')
+                        
+                        fetch('/api/admin/gallery', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ sourceId, targetId }),
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            onUpdate()
+                            showToast('5칸 위로 이동 완료', 'success')
+                          } else {
+                            showToast('이동 실패', 'error')
+                          }
+                        })
+                        .catch(error => {
+                          console.error('Error moving up by 5:', error)
+                          showToast('이동 중 오류 발생', 'error')
+                        })
+                        .finally(() => setGlobalLoading(false))
+                      }
+                    }}
+                    disabled={index < 5}
+                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                    title={index < 5 ? "5칸 위로 이동할 수 없습니다" : "5칸 위로 이동"}
+                  >
+                    -5
+                  </button>
+                  <button
+                    onClick={() => {
+                      // 5칸 아래로 이동
+                      const targetIndex = Math.min(galleryItems.length - 1, index + 5)
+                      if (targetIndex !== index) {
+                        const sourceId = item.id
+                        const targetId = galleryItems[targetIndex].id
+                        setGlobalLoading(true, '5칸 아래로 이동 중...')
+                        
+                        fetch('/api/admin/gallery', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ sourceId, targetId }),
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            onUpdate()
+                            showToast('5칸 아래로 이동 완료', 'success')
+                          } else {
+                            showToast('이동 실패', 'error')
+                          }
+                        })
+                        .catch(error => {
+                          console.error('Error moving down by 5:', error)
+                          showToast('이동 중 오류 발생', 'error')
+                        })
+                        .finally(() => setGlobalLoading(false))
+                      }
+                    }}
+                    disabled={index >= galleryItems.length - 5}
+                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                    title={index >= galleryItems.length - 5 ? "5칸 아래로 이동할 수 없습니다" : "5칸 아래로 이동"}
+                  >
+                    +5
                   </button>
                 </div>
               </div>
