@@ -40,7 +40,8 @@ export async function GET() {
       totalItems: gallery.length,
       galleryItems: gallery.filter(item => item.image_type === 'gallery').length,
       mainItems: gallery.filter(item => item.image_type === 'main').length,
-      itemsWithOrderIndex: gallery.filter(item => item.order_index !== null).length
+      itemsWithOrderIndex: gallery.filter(item => item.order_index !== null).length,
+      orderIndexes: gallery.filter(item => item.image_type === 'gallery').map(item => item.order_index)
     })
 
     return NextResponse.json<ApiResponse<Gallery[]>>({

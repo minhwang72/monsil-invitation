@@ -120,9 +120,27 @@ export async function PUT(request: NextRequest) {
         )
       }
 
+      // 전체 order_index 재정렬
+      console.log('🔍 [DEBUG] Reordering all gallery items...')
+      const [allGalleryRows] = await connection.query(`
+        SELECT id FROM gallery 
+        WHERE image_type = 'gallery' AND deleted_at IS NULL 
+        ORDER BY order_index ASC, created_at ASC
+      `)
+      const allGalleryImages = allGalleryRows as { id: number }[]
+      
+      // 각 이미지에 순서대로 order_index 재설정 (1부터 시작)
+      for (let i = 0; i < allGalleryImages.length; i++) {
+        await connection.query(
+          'UPDATE gallery SET order_index = ? WHERE id = ?',
+          [i + 1, allGalleryImages[i].id]
+        )
+        console.log(`✅ [DEBUG] Updated order_index for image ID ${allGalleryImages[i].id} to ${i + 1}`)
+      }
+
       // 트랜잭션 커밋
       await connection.commit()
-      console.log('✅ [DEBUG] Gallery order swap completed')
+      console.log('✅ [DEBUG] Gallery order swap and reorder completed')
 
       return NextResponse.json<ApiResponse<null>>({
         success: true,
