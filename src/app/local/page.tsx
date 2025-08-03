@@ -124,18 +124,22 @@ export default function LocalPage() {
   }
 
   const copyAccountNumber = async (accountNumber: string, name: string) => {
+    // 숫자만 추출
+    const numbersOnly = accountNumber.replace(/[^0-9]/g, '')
+    
     try {
-      await navigator.clipboard.writeText(accountNumber)
-      showToast(`${name}의 계좌번호가 복사되었습니다`)
+      await navigator.clipboard.writeText(numbersOnly)
+      showToast(`${name}님 계좌번호가 복사되었습니다`)
     } catch (err) {
       console.error('계좌번호 복사 실패:', err)
+      // 폴백: 직접 선택하여 복사
       const textArea = document.createElement('textarea')
-      textArea.value = accountNumber
+      textArea.value = numbersOnly
       document.body.appendChild(textArea)
       textArea.select()
       document.execCommand('copy')
       document.body.removeChild(textArea)
-      showToast(`${name}의 계좌번호가 복사되었습니다`)
+      showToast(`${name}님 계좌번호가 복사되었습니다`)
     }
   }
 
@@ -187,6 +191,7 @@ export default function LocalPage() {
   }
 
   const groomSide = contacts.filter(contact => contact.side === 'groom')
+  const brideSide = contacts.filter(contact => contact.side === 'bride')
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#F8F0FF] py-0 md:py-8">
@@ -503,6 +508,88 @@ export default function LocalPage() {
                   </div>
                 )}
               </div>
+
+              {/* 신부측 연락처 및 계좌정보 */}
+              {!loading && brideSide.length > 0 && (
+                <div className="space-y-6 mt-8">
+                  {brideSide.map((contact) => (
+                    <div key={contact.id} className="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-xl p-6 md:p-8 shadow-lg border border-gray-100">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                        <div className="text-left mb-4 md:mb-0">
+                          {getRelationshipLabel(contact.relationship) && (
+                            <div className="text-xs text-purple-600 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+                              {getRelationshipLabel(contact.relationship)}
+                            </div>
+                          )}
+                          <div className="text-base md:text-lg font-medium text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+                            {contact.name}
+                          </div>
+                        </div>
+                        
+                        {/* 연락처 버튼들 */}
+                        {contact.phone && contact.phone.trim() && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => contact.phone && handleCall(contact.phone)}
+                              className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-black font-medium shadow-sm bg-blue-300 text-sm hover:bg-blue-400 transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.129-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              </svg>
+                              <span style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>전화</span>
+                            </button>
+                            <button
+                              onClick={() => contact.phone && handleSMS(contact.phone)}
+                              className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-black font-medium shadow-sm bg-pink-300 text-sm hover:bg-pink-400 transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                              <span style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>문자</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 계좌정보 */}
+                      {contact.bank_name && contact.account_number && (
+                        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-pink-100/50">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div className="text-left flex-1 mb-3 md:mb-0">
+                              <div className="text-sm text-gray-800 mb-1 font-medium" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>{contact.bank_name}</div>
+                              <div className="text-sm font-mono text-gray-800" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>{contact.account_number}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => contact.account_number && copyAccountNumber(contact.account_number, contact.name)}
+                                className="text-purple-500 hover:text-purple-600 transition-colors p-2 rounded-lg hover:bg-purple-50"
+                                aria-label={`${contact.name} 계좌번호 복사`}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </button>
+                              {contact.kakaopay_link && (
+                                <button
+                                  onClick={() => contact.kakaopay_link && openKakaoPay(contact.kakaopay_link)}
+                                  className="text-pink-500 hover:text-pink-600 transition-colors p-2 rounded-lg hover:bg-pink-50"
+                                  aria-label={`${contact.name} 카카오페이로 송금`}
+                                >
+                                  <div className="w-5 h-5 bg-yellow-400 rounded flex items-center justify-center">
+                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="black">
+                                      <path d="M12 3C6.48 3 2 6.58 2 11.25C2 14.17 4.09 16.68 7.25 18.03C6.94 19.1 6.44 20.75 6.44 20.75C6.44 20.75 6.84 20.97 7.25 20.75C8.31 20.19 9.81 19.31 10.75 18.75C11.15 18.81 11.56 18.84 12 18.84C17.52 18.84 22 15.26 22 10.59C22 5.92 17.52 2.34 12 2.34" />
+                                    </svg>
+                                  </div>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 

@@ -498,6 +498,47 @@ export async function POST() {
       migrations.push('gallery: order_index force update failed (non-critical)')
     }
 
+    // 21. 갤러리 순서 변경 기능을 위한 추가 마이그레이션
+    try {
+      console.log('🔍 [DEBUG] Additional gallery order_index migration...')
+      
+      // order_index가 NULL인 갤러리 이미지들 찾기
+      const [nullOrderRows] = await pool.query(`
+        SELECT id FROM gallery 
+        WHERE image_type = 'gallery' AND deleted_at IS NULL AND order_index IS NULL
+        ORDER BY created_at ASC
+      `)
+      const nullOrderImages = nullOrderRows as { id: number }[]
+      
+      console.log(`🔍 [DEBUG] Found ${nullOrderImages.length} images with NULL order_index`)
+      
+      if (nullOrderImages.length > 0) {
+        // 현재 최대 order_index 조회
+        const [maxOrderRows] = await pool.query(`
+          SELECT COALESCE(MAX(order_index), 0) as max_order FROM gallery 
+          WHERE image_type = 'gallery' AND deleted_at IS NULL AND order_index IS NOT NULL
+        `)
+        const maxOrder = (maxOrderRows as { max_order: number }[])[0]?.max_order || 0
+        
+        // NULL인 이미지들에 순서대로 order_index 설정
+        for (let i = 0; i < nullOrderImages.length; i++) {
+          const newOrderIndex = maxOrder + i + 1
+          await pool.query(
+            'UPDATE gallery SET order_index = ? WHERE id = ?',
+            [newOrderIndex, nullOrderImages[i].id]
+          )
+          console.log(`✅ [DEBUG] Set order_index ${newOrderIndex} for image ID ${nullOrderImages[i].id}`)
+        }
+        
+        migrations.push(`gallery: order_index set for ${nullOrderImages.length} NULL images`)
+      } else {
+        migrations.push('gallery: no NULL order_index images found')
+      }
+    } catch (error) {
+      console.error('Gallery additional order_index migration error:', error)
+      migrations.push('gallery: additional order_index migration failed (non-critical)')
+    }
+
     // 5. 기존 방명록 비밀번호 해시화 (평문 비밀번호가 있는 경우만)
     try {
       console.log('🔍 [DEBUG] Checking for unhashed guestbook passwords...')

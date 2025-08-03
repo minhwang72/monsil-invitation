@@ -36,6 +36,13 @@ export async function GET() {
       order_index: row.order_index
     }))
 
+    console.log('🔍 [DEBUG] Gallery API response:', {
+      totalItems: gallery.length,
+      galleryItems: gallery.filter(item => item.image_type === 'gallery').length,
+      mainItems: gallery.filter(item => item.image_type === 'main').length,
+      itemsWithOrderIndex: gallery.filter(item => item.order_index !== null).length
+    })
+
     return NextResponse.json<ApiResponse<Gallery[]>>({
       success: true,
       data: gallery,
