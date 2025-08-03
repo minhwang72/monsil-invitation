@@ -8,7 +8,10 @@ interface ImageCropperProps {
   imageSrc: string
   onCropComplete: (croppedImageBlob: Blob) => void
   onCancel: () => void
-  aspectRatio?: number
+  aspectRatio?: number | null // null이면 자유 비율
+  title?: string
+  description?: string
+  showAspectOptions?: boolean // 비율 옵션 표시 여부
 }
 
 // Canvas에서 크롭된 이미지 생성하는 헬퍼 함수
@@ -72,7 +75,10 @@ export default function ImageCropper({
   imageSrc,
   onCropComplete,
   onCancel,
-  aspectRatio = 3 / 4 // 3:4 비율 (세로가 더 긴 비율)
+  aspectRatio = 3 / 4, // 3:4 비율 (세로가 더 긴 비율)
+  title = '이미지 크롭',
+  description = '드래그로 위치 조정, 마우스 휠로 줌 조정 가능합니다. 메인 이미지에 최적화된 3:4 비율로 크롭됩니다.',
+  showAspectOptions = true
 }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
@@ -105,7 +111,7 @@ export default function ImageCropper({
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">이미지 크롭</h3>
+          <h3 className="text-lg font-medium text-gray-900">{title}</h3>
           <button
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600"
@@ -148,8 +154,7 @@ export default function ImageCropper({
           
           {/* 안내 텍스트 */}
           <p className="text-sm text-gray-600 text-center">
-            드래그로 위치 조정, 마우스 휠로 줌 조정 가능합니다. 
-            메인 이미지에 최적화된 3:4 비율로 크롭됩니다.
+            {description}
           </p>
           
           {/* 버튼들 */}

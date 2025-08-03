@@ -977,22 +977,27 @@ const GalleryImageCropper = ({
 
 // 갤러리 관리 섹션 컴포넌트
 const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoading }: { gallery: Gallery[], onUpdate: () => void, loading: boolean, showToast: (message: string, type: 'success' | 'error') => void, setGlobalLoading: (loading: boolean, message?: string) => void }) => {
-  const [uploading, setUploading] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
-  const [editingItem, setEditingItem] = useState<Gallery | null>(null)
-  const [showCropper, setShowCropper] = useState(false)
-  
-  // 드래그 앤 드롭 상태
-  const [draggedItem, setDraggedItem] = useState<Gallery | null>(null)
-  const [dragOverItem, setDragOverItem] = useState<number | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
+  // 통합된 상태 관리
+  const [galleryState, setGalleryState] = useState({
+    uploading: false,
+    editingItem: null as Gallery | null,
+    showCropper: false,
+    selectedItems: new Set<number>(),
+    draggedItem: null as Gallery | null,
+    dragOverItem: null as number | null,
+    isDragging: false
+  })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
 
+  // 상태 업데이트 헬퍼 함수
+  const updateGalleryState = (updates: Partial<typeof galleryState>) => {
+    setGalleryState(prev => ({ ...prev, ...updates }))
+  }
+
   // 드래그 시작
   const handleDragStart = (e: React.DragEvent, item: Gallery) => {
-    setDraggedItem(item)
-    setIsDragging(true)
+    updateGalleryState({ draggedItem: item, isDragging: true })
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/html', item.id.toString())
   }
@@ -1001,22 +1006,20 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
   const handleDragOver = (e: React.DragEvent, itemId: number) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-    setDragOverItem(itemId)
+    updateGalleryState({ dragOverItem: itemId })
   }
 
   // 드래그 리브
   const handleDragLeave = () => {
-    setDragOverItem(null)
+    updateGalleryState({ dragOverItem: null })
   }
 
   // 드롭
   const handleDrop = async (e: React.DragEvent, targetItem: Gallery) => {
     e.preventDefault()
     
-    if (!draggedItem || draggedItem.id === targetItem.id) {
-      setDraggedItem(null)
-      setDragOverItem(null)
-      setIsDragging(false)
+    if (!galleryState.draggedItem || galleryState.draggedItem.id === targetItem.id) {
+      updateGalleryState({ draggedItem: null, isDragging: false })
       return
     }
 
@@ -1027,7 +1030,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          sourceId: draggedItem.id, 
+          sourceId: galleryState.draggedItem.id, 
           targetId: targetItem.id 
         }),
       })
@@ -1048,9 +1051,8 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       console.error('Error reordering gallery:', error)
       showToast('순서 변경 중 오류 발생', 'error')
     } finally {
-      setDraggedItem(null)
-      setDragOverItem(null)
-      setIsDragging(false)
+      updateGalleryState({ draggedItem: null, isDragging: false })
+      updateGalleryState({ dragOverItem: null })
       setGlobalLoading(false)
     }
   }
@@ -1060,7 +1062,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
-    setUploading(true)
+    updateGalleryState({ uploading: true })
     setGlobalLoading(true, `${files.length}개 이미지 업로드 중...`)
     console.log('[DEBUG] Validating and preparing', files.length, 'files')
     
@@ -1144,21 +1146,21 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       console.error('[DEBUG] Error uploading images:', error)
       showToast('업로드 중 오류 발생', 'error')
     } finally {
-      setUploading(false)
+      updateGalleryState({ uploading: false })
       setGlobalLoading(false)
     }
   }
 
   // 선택된 아이템들 삭제
   const handleDeleteSelected = async () => {
-    if (selectedItems.size === 0) return
-    if (!confirm(`선택된 ${selectedItems.size}개 이미지를 삭제하시겠습니까?`)) return
+    if (galleryState.selectedItems.size === 0) return
+    if (!confirm(`선택된 ${galleryState.selectedItems.size}개 이미지를 삭제하시겠습니까?`)) return
 
-    setGlobalLoading(true, `${selectedItems.size}개 이미지 삭제 중...`)
+    setGlobalLoading(true, `${galleryState.selectedItems.size}개 이미지 삭제 중...`)
 
     try {
-      console.log('[DEBUG] Deleting selected items:', Array.from(selectedItems))
-      const deletePromises = Array.from(selectedItems).map(async (id) => {
+      console.log('[DEBUG] Deleting selected items:', Array.from(galleryState.selectedItems))
+      const deletePromises = Array.from(galleryState.selectedItems).map(async (id) => {
         const res = await fetch(`/api/admin/gallery/${id}`, {
           method: 'DELETE',
         })
@@ -1169,7 +1171,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       const successCount = results.filter(result => result.success).length
       const failCount = results.length - successCount
 
-      setSelectedItems(new Set())
+      updateGalleryState({ selectedItems: new Set() })
       onUpdate()
       
       if (successCount > 0) {
@@ -1216,21 +1218,21 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
 
   // 아이템 선택/해제
   const toggleSelection = (id: number) => {
-    const newSelected = new Set(selectedItems)
+    const newSelected = new Set(galleryState.selectedItems)
     if (newSelected.has(id)) {
       newSelected.delete(id)
     } else {
       newSelected.add(id)
     }
-    setSelectedItems(newSelected)
+    updateGalleryState({ selectedItems: newSelected })
   }
 
   // 전체 선택/해제
   const toggleSelectAll = () => {
-    if (selectedItems.size === galleryItems.length) {
-      setSelectedItems(new Set())
+    if (galleryState.selectedItems.size === galleryItems.length) {
+      updateGalleryState({ selectedItems: new Set() })
     } else {
-      setSelectedItems(new Set(galleryItems.map(item => item.id)))
+      updateGalleryState({ selectedItems: new Set(galleryItems.map(item => item.id)))
     }
   }
 
@@ -1278,68 +1280,73 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
 
   // 수정 버튼 클릭
   const handleEditClick = (item: Gallery) => {
-    setEditingItem(item)
-    setShowCropper(true)
+    updateGalleryState({ editingItem: item, showCropper: true })
   }
 
   // 크롭 완료 후 업데이트
   const handleCropComplete = async (croppedImageBlob: Blob) => {
-    if (!editingItem) return
+    if (!galleryState.editingItem) return
 
-    setShowCropper(false)
-    setUploading(true)
+    updateGalleryState({ showCropper: false })
+    updateGalleryState({ uploading: true })
     setGlobalLoading(true, '이미지 수정 중...')
 
     try {
       // 크롭된 이미지를 File 객체로 변환
       const croppedFile = new File(
         [croppedImageBlob], 
-        `edited_${editingItem.id}_${Date.now()}.jpg`,
+        `edited_${galleryState.editingItem.id}_${Date.now()}.jpg`,
         { type: 'image/jpeg' }
       )
 
       // FormData 생성
-              const formData = new FormData()
+      const formData = new FormData()
       formData.append('file', croppedFile)
-              formData.append('image_type', 'gallery')
+      formData.append('image_type', 'gallery')
               
       // 업로드 API 호출
       const response = await fetch('/api/admin/upload', {
-                method: 'POST',
-                body: formData,
-              })
+        method: 'POST',
+        body: formData,
+      })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
       }
 
       const result = await response.json()
       
       if (result.success) {
         // 기존 이미지 삭제
-        await fetch(`/api/admin/gallery/${editingItem.id}`, {
+        const deleteResponse = await fetch(`/api/admin/gallery/${galleryState.editingItem.id}`, {
           method: 'DELETE',
         })
         
-        onUpdate()
+        if (!deleteResponse.ok) {
+          console.warn('⚠️ [DEBUG] Failed to delete original image:', deleteResponse.status)
+        }
+        
+        await onUpdate()
         showToast('이미지 수정 완료', 'success')
       } else {
         throw new Error(result.error || 'Upload failed')
       }
-            } catch (error) {
+    } catch (error) {
       console.error('[DEBUG] Edit error:', error)
-      showToast('이미지 수정 실패', 'error')
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      showToast(`이미지 수정 실패: ${errorMessage}`, 'error')
     } finally {
-      setUploading(false)
-      setEditingItem(null)
+      updateGalleryState({ uploading: false })
+      updateGalleryState({ editingItem: null })
       setGlobalLoading(false)
     }
   }
 
   // 크롭 취소
   const handleCropCancel = () => {
-    setShowCropper(false)
-    setEditingItem(null)
+    updateGalleryState({ showCropper: false })
+    updateGalleryState({ editingItem: null })
   }
 
   // 번호 직접 입력으로 이동
@@ -1392,9 +1399,9 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       <h2 className="text-2xl font-bold text-gray-900 mb-6">갤러리 관리</h2>
       
       {/* 크롭 모달 */}
-      {showCropper && editingItem && (
+      {galleryState.showCropper && galleryState.editingItem && (
         <GalleryImageCropper
-          imageSrc={editingItem.url}
+          imageSrc={galleryState.editingItem.url}
           onCropComplete={handleCropComplete}
           onCancel={handleCropCancel}
         />
@@ -1411,10 +1418,10 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
             accept="image/*"
             multiple
             onChange={handleMultipleImageUpload}
-            disabled={uploading}
+            disabled={galleryState.uploading}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
           />
-          {uploading && (
+          {galleryState.uploading && (
             <p className="text-sm text-purple-600 mt-2">업로드 중...</p>
           )}
         </div>
@@ -1427,23 +1434,23 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                 onClick={toggleSelectAll}
                 className="text-sm text-purple-600 hover:text-purple-800 text-left sm:text-center min-h-[44px] flex items-center"
               >
-                {selectedItems.size === galleryItems.length ? '전체 해제' : '전체 선택'}
+                {galleryState.selectedItems.size === galleryItems.length ? '전체 해제' : '전체 선택'}
               </button>
               <span className="text-sm text-gray-600">
-                {selectedItems.size}개 선택됨
+                {galleryState.selectedItems.size}개 선택됨
               </span>
-              {selectedItems.size > 1 && (
+              {galleryState.selectedItems.size > 1 && (
                 <span className="text-xs text-amber-600">
                   수정은 1개씩만 가능합니다
                 </span>
               )}
             </div>
-            {selectedItems.size > 0 && (
+            {galleryState.selectedItems.size > 0 && (
               <button
                 onClick={handleDeleteSelected}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm sm:text-base min-h-[44px] w-full sm:w-auto"
               >
-                선택 삭제 ({selectedItems.size}개)
+                선택 삭제 ({galleryState.selectedItems.size}개)
               </button>
             )}
           </div>
@@ -1482,13 +1489,13 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, item)}
               className={`border rounded-lg transition-all duration-200 ${
-                selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                galleryState.selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               } ${
-                draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
+                galleryState.draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
               } ${
-                dragOverItem === item.id ? 'border-blue-500 bg-blue-50 scale-105' : ''
+                galleryState.dragOverItem === item.id ? 'border-blue-500 bg-blue-50 scale-105' : ''
               } ${
-                isDragging ? 'cursor-grabbing' : 'cursor-grab'
+                galleryState.isDragging ? 'cursor-grabbing' : 'cursor-grab'
               }`}
             >
               {/* 모바일 레이아웃 */}
@@ -1498,7 +1505,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                   <div className="flex items-center space-x-3 mb-4">
                     <input
                       type="checkbox"
-                      checked={selectedItems.has(item.id)}
+                      checked={galleryState.selectedItems.has(item.id)}
                       onChange={() => toggleSelection(item.id)}
                       className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
@@ -1720,9 +1727,9 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                           e.stopPropagation();
                           handleEditClick(item);
                         }}
-                        disabled={selectedItems.size > 1 || uploading}
+                        disabled={galleryState.selectedItems.size > 1 || galleryState.uploading}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                        title={selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
+                        title={galleryState.selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
                       >
                         수정
                       </button>
@@ -1749,7 +1756,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                 {/* 선택 체크박스 */}
                 <input
                   type="checkbox"
-                  checked={selectedItems.has(item.id)}
+                  checked={galleryState.selectedItems.has(item.id)}
                   onChange={() => toggleSelection(item.id)}
                   className="mr-4 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                   onClick={(e) => e.stopPropagation()}
