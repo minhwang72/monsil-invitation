@@ -1382,36 +1382,122 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                   {/* 하단: 버튼들 */}
                   <div className="grid grid-cols-2 gap-2">
                     {/* 순서 변경 버튼들 */}
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => moveItem(item.id, 'up')}
-                        disabled={index === 0}
-                        className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                      >
-                        ↑ 위로
-                      </button>
-                      <button
-                        onClick={() => moveItem(item.id, 'down')}
-                        disabled={index === galleryItems.length - 1}
-                        className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                      >
-                        ↓ 아래로
-                      </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* 빠른 이동 버튼들 */}
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => moveItem(item.id, 'up')}
+                          disabled={index === 0}
+                          className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                          title={index === 0 ? "이미 맨 위입니다" : "위로 이동"}
+                        >
+                          ↑ 위로
+                        </button>
+                        <button
+                          onClick={() => moveItem(item.id, 'down')}
+                          disabled={index === galleryItems.length - 1}
+                          className="flex-1 h-10 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                          title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "아래로 이동"}
+                        >
+                          ↓ 아래로
+                        </button>
+                      </div>
+                      
+                      {/* 빠른 이동 버튼들 */}
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => {
+                            // 맨 위로 이동 (첫 번째 아이템과 교환)
+                            if (index > 0) {
+                              const sourceId = item.id
+                              const targetId = galleryItems[0].id
+                              setGlobalLoading(true, '맨 위로 이동 중...')
+                              
+                              fetch('/api/admin/gallery', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sourceId, targetId }),
+                              })
+                              .then(res => res.json())
+                              .then(data => {
+                                if (data.success) {
+                                  onUpdate()
+                                  showToast('맨 위로 이동 완료', 'success')
+                                } else {
+                                  showToast('이동 실패', 'error')
+                                }
+                              })
+                              .catch(error => {
+                                console.error('Error moving to top:', error)
+                                showToast('이동 중 오류 발생', 'error')
+                              })
+                              .finally(() => setGlobalLoading(false))
+                            }
+                          }}
+                          disabled={index === 0}
+                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                          title={index === 0 ? "이미 맨 위입니다" : "맨 위로 이동"}
+                        >
+                          맨 위
+                        </button>
+                        <button
+                          onClick={() => {
+                            // 맨 아래로 이동 (마지막 아이템과 교환)
+                            if (index < galleryItems.length - 1) {
+                              const sourceId = item.id
+                              const targetId = galleryItems[galleryItems.length - 1].id
+                              setGlobalLoading(true, '맨 아래로 이동 중...')
+                              
+                              fetch('/api/admin/gallery', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sourceId, targetId }),
+                              })
+                              .then(res => res.json())
+                              .then(data => {
+                                if (data.success) {
+                                  onUpdate()
+                                  showToast('맨 아래로 이동 완료', 'success')
+                                } else {
+                                  showToast('이동 실패', 'error')
+                                }
+                              })
+                              .catch(error => {
+                                console.error('Error moving to bottom:', error)
+                                showToast('이동 중 오류 발생', 'error')
+                              })
+                              .finally(() => setGlobalLoading(false))
+                            }
+                          }}
+                          disabled={index === galleryItems.length - 1}
+                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                          title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "맨 아래로 이동"}
+                        >
+                          맨 아래
+                        </button>
+                      </div>
                     </div>
                     
                     {/* 수정/삭제 버튼들 */}
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-2">
                       <button
-                        onClick={() => handleEditClick(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(item);
+                        }}
                         disabled={selectedItems.size > 1 || uploading}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                         title={selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
                       >
                         수정
                       </button>
+
                       <button
-                        onClick={() => handleDeleteSingle(item.id)}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white h-10 rounded text-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSingle(item.id);
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm min-h-[44px]"
                       >
                         삭제
                       </button>
@@ -1464,6 +1550,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                     onClick={() => moveItem(item.id, 'up')}
                     disabled={index === 0}
                     className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                    title={index === 0 ? "이미 맨 위입니다" : "위로 이동"}
                   >
                     ↑
                   </button>
@@ -1471,34 +1558,85 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
                     onClick={() => moveItem(item.id, 'down')}
                     disabled={index === galleryItems.length - 1}
                     className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                    title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "아래로 이동"}
                   >
                     ↓
                   </button>
                 </div>
 
-                {/* 수정 버튼 */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditClick(item);
-                  }}
-                  disabled={selectedItems.size > 1 || uploading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm mr-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                  title={selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
-                >
-                  수정
-                </button>
-
-                {/* 개별 삭제 버튼 */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteSingle(item.id);
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm min-h-[44px]"
-                >
-                  삭제
-                </button>
+                {/* 빠른 이동 버튼들 */}
+                <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => {
+                      // 맨 위로 이동
+                      if (index > 0) {
+                        const sourceId = item.id
+                        const targetId = galleryItems[0].id
+                        setGlobalLoading(true, '맨 위로 이동 중...')
+                        
+                        fetch('/api/admin/gallery', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ sourceId, targetId }),
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            onUpdate()
+                            showToast('맨 위로 이동 완료', 'success')
+                          } else {
+                            showToast('이동 실패', 'error')
+                          }
+                        })
+                        .catch(error => {
+                          console.error('Error moving to top:', error)
+                          showToast('이동 중 오류 발생', 'error')
+                        })
+                        .finally(() => setGlobalLoading(false))
+                      }
+                    }}
+                    disabled={index === 0}
+                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                    title={index === 0 ? "이미 맨 위입니다" : "맨 위로 이동"}
+                  >
+                    TOP
+                  </button>
+                  <button
+                    onClick={() => {
+                      // 맨 아래로 이동
+                      if (index < galleryItems.length - 1) {
+                        const sourceId = item.id
+                        const targetId = galleryItems[galleryItems.length - 1].id
+                        setGlobalLoading(true, '맨 아래로 이동 중...')
+                        
+                        fetch('/api/admin/gallery', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ sourceId, targetId }),
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.success) {
+                            onUpdate()
+                            showToast('맨 아래로 이동 완료', 'success')
+                          } else {
+                            showToast('이동 실패', 'error')
+                          }
+                        })
+                        .catch(error => {
+                          console.error('Error moving to bottom:', error)
+                          showToast('이동 중 오류 발생', 'error')
+                        })
+                        .finally(() => setGlobalLoading(false))
+                      }
+                    }}
+                    disabled={index === galleryItems.length - 1}
+                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
+                    title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "맨 아래로 이동"}
+                  >
+                    BOT
+                  </button>
+                </div>
               </div>
             </div>
           ))}
