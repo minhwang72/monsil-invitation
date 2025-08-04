@@ -1445,17 +1445,14 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
               e.preventDefault()
               
               if (galleryState.isSelectionMode) {
-                // 선택 모드에서는 롱프레스로 다중 선택
-                const timer = setTimeout(() => {
-                  const newSelected = new Set(galleryState.selectedItems)
-                  if (newSelected.has(item.id)) {
-                    newSelected.delete(item.id)
-                  } else {
-                    newSelected.add(item.id)
-                  }
-                  updateGalleryState({ selectedItems: newSelected })
-                }, 500)
-                updateGalleryState({ longPressTimer: timer })
+                // 선택 모드에서는 기본 터치로 선택/해제
+                const newSelected = new Set(galleryState.selectedItems)
+                if (newSelected.has(item.id)) {
+                  newSelected.delete(item.id)
+                } else {
+                  newSelected.add(item.id)
+                }
+                updateGalleryState({ selectedItems: newSelected })
               } else {
                 // 일반 모드에서는 터치 드래그 시작
                 handleTouchStart(e, item)
@@ -1465,14 +1462,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
               // 기본 터치 동작 방지
               e.preventDefault()
               
-              if (galleryState.isSelectionMode) {
-                // 선택 모드에서는 롱프레스 타이머 취소
-                if (galleryState.longPressTimer) {
-                  clearTimeout(galleryState.longPressTimer)
-                  updateGalleryState({ longPressTimer: null })
-                }
-              } else {
-                // 일반 모드에서는 터치 드래그 처리
+              if (!galleryState.isSelectionMode) {
+                // 일반 모드에서만 터치 드래그 처리
                 handleTouchMove(e)
               }
             }}
@@ -1480,14 +1471,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
               // 기본 터치 동작 방지
               e.preventDefault()
               
-              if (galleryState.isSelectionMode) {
-                // 선택 모드에서는 롱프레스 타이머 취소
-                if (galleryState.longPressTimer) {
-                  clearTimeout(galleryState.longPressTimer)
-                  updateGalleryState({ longPressTimer: null })
-                }
-              } else {
-                // 일반 모드에서는 터치 드래그 종료
+              if (!galleryState.isSelectionMode) {
+                // 일반 모드에서만 터치 드래그 종료
                 handleTouchEnd(e, item)
               }
             }}
@@ -1594,7 +1579,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       {/* 안내 텍스트 */}
       <div className="text-sm text-gray-600 mt-4">
         <p>• 일반 모드: 사진을 드래그하여 순서 변경</p>
-        <p>• 선택 모드: 사진을 클릭하여 선택, 롱프레스로 다중 선택</p>
+        <p>• 선택 모드: 사진을 터치하여 선택/해제, 우상단 체크박스 클릭 가능</p>
         <p>• 선택 모드에서 수정/삭제 가능</p>
       </div>
     </div>
