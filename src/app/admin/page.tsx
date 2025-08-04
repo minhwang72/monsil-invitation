@@ -6,7 +6,7 @@ import type { Gallery, Guestbook, ContactPerson } from '@/types'
 
 import MainImageUploader from '@/components/MainImageUploader'
 import GlobalLoading from '@/components/GlobalLoading'
-import DraggableGallery from '@/components/DraggableGallery'
+import SelectableGallery from '@/components/SelectableGallery'
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop'
 
@@ -1275,9 +1275,9 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
         )}
       </div>
 
-      {/* DraggableGallery 컴포넌트 */}
+      {/* SelectableGallery 컴포넌트 */}
       <div className="mb-6">
-        <DraggableGallery
+        <SelectableGallery
           items={galleryItems}
           onReorder={handleReorder}
           isSelectionMode={galleryState.isSelectionMode}
