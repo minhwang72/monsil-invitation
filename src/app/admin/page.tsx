@@ -987,7 +987,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     dragOverItem: null as number | null,
     isDragging: false,
     isSelectionMode: false,
-    longPressTimer: null as NodeJS.Timeout | null
+    longPressTimer: null as NodeJS.Timeout | null,
+    touchStartPos: null as { x: number; y: number } | null
   })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
@@ -1047,6 +1048,12 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
   // 드래그 앤 드롭 (일반 클릭 시 순서 변경)
   const handleDragStart = (e: React.DragEvent, item: Gallery) => {
     if (galleryState.isSelectionMode) return // 선택 모드에서는 드래그 비활성화
+    
+    // 드래그 시작 시 롱프레스 타이머 취소
+    if (galleryState.longPressTimer) {
+      clearTimeout(galleryState.longPressTimer)
+      updateGalleryState({ longPressTimer: null })
+    }
     
     updateGalleryState({ draggedItem: item, isDragging: true })
     e.dataTransfer.effectAllowed = 'move'
@@ -1315,7 +1322,47 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             onDrop={(e) => handleDrop(e, item)}
             onClick={() => handleClick(item)}
             onMouseDown={() => handleLongPress(item)}
-            onTouchStart={() => handleLongPress(item)}
+            onTouchStart={(e) => {
+              // 터치 시작 위치 저장
+              const touch = e.touches[0]
+              updateGalleryState({ 
+                touchStartPos: { x: touch.clientX, y: touch.clientY }
+              })
+              
+              // 터치 시작 시 롱프레스 타이머 설정
+              const timer = setTimeout(() => {
+                updateGalleryState({ 
+                  isSelectionMode: true,
+                  selectedItems: new Set([item.id])
+                })
+              }, 500)
+              updateGalleryState({ longPressTimer: timer })
+            }}
+            onTouchMove={(e) => {
+              // 터치 이동 거리 계산
+              if (galleryState.touchStartPos) {
+                const touch = e.touches[0]
+                const deltaX = Math.abs(touch.clientX - galleryState.touchStartPos.x)
+                const deltaY = Math.abs(touch.clientY - galleryState.touchStartPos.y)
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+                
+                // 10px 이상 이동하면 드래그로 간주하여 롱프레스 취소
+                if (distance > 10) {
+                  if (galleryState.longPressTimer) {
+                    clearTimeout(galleryState.longPressTimer)
+                    updateGalleryState({ longPressTimer: null })
+                  }
+                }
+              }
+            }}
+            onTouchEnd={() => {
+              // 터치 종료 시 롱프레스 타이머 취소
+              if (galleryState.longPressTimer) {
+                clearTimeout(galleryState.longPressTimer)
+                updateGalleryState({ longPressTimer: null })
+              }
+              updateGalleryState({ touchStartPos: null })
+            }}
             className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden ${
               galleryState.selectedItems.has(item.id) 
                 ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
