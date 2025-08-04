@@ -987,8 +987,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     dragOverItem: null as number | null,
     isDragging: false,
     isSelectionMode: false,
-    longPressTimer: null as NodeJS.Timeout | null,
-    touchStartPos: null as { x: number; y: number } | null
+    longPressTimer: null as NodeJS.Timeout | null
   })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
@@ -998,29 +997,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     setGalleryState(prev => ({ ...prev, ...updates }))
   }
 
-  // 롱클릭 핸들러
-  const handleLongPress = (item: Gallery) => {
-    if (galleryState.longPressTimer) {
-      clearTimeout(galleryState.longPressTimer)
-    }
-    
-    const timer = setTimeout(() => {
-      updateGalleryState({ 
-        isSelectionMode: true,
-        selectedItems: new Set([item.id])
-      })
-    }, 500) // 500ms 롱클릭
-
-    updateGalleryState({ longPressTimer: timer })
-  }
-
-  // 일반 클릭 핸들러
+  // 일반 클릭 핸들러 (드래그 앤 드롭)
   const handleClick = (item: Gallery) => {
-    if (galleryState.longPressTimer) {
-      clearTimeout(galleryState.longPressTimer)
-      updateGalleryState({ longPressTimer: null })
-    }
-
     if (galleryState.isSelectionMode) {
       // 선택 모드에서는 아이템 선택/해제
       const newSelected = new Set(galleryState.selectedItems)
@@ -1030,10 +1008,29 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
         newSelected.add(item.id)
       }
       updateGalleryState({ selectedItems: newSelected })
-    } else {
-      // 일반 모드에서는 드래그 앤 드롭으로 순서 변경
-      // (드래그 앤 드롭 로직은 아래에 구현)
     }
+    // 일반 모드에서는 드래그 앤 드롭으로 순서 변경 (별도 핸들러에서 처리)
+  }
+
+  // 롱프레스 핸들러 (선택 모드에서만 작동)
+  const handleLongPress = (item: Gallery) => {
+    if (!galleryState.isSelectionMode) return // 선택 모드가 아닐 때는 롱프레스 비활성화
+    
+    if (galleryState.longPressTimer) {
+      clearTimeout(galleryState.longPressTimer)
+    }
+    
+    const timer = setTimeout(() => {
+      const newSelected = new Set(galleryState.selectedItems)
+      if (newSelected.has(item.id)) {
+        newSelected.delete(item.id)
+      } else {
+        newSelected.add(item.id)
+      }
+      updateGalleryState({ selectedItems: newSelected })
+    }, 500) // 500ms 롱클릭
+
+    updateGalleryState({ longPressTimer: timer })
   }
 
   // 선택 모드 종료
@@ -1045,7 +1042,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     })
   }
 
-  // 드래그 앤 드롭 (일반 클릭 시 순서 변경)
+  // 드래그 앤 드롭 (항상 활성화, 선택 모드에서만 비활성화)
   const handleDragStart = (e: React.DragEvent, item: Gallery) => {
     if (galleryState.isSelectionMode) return // 선택 모드에서는 드래그 비활성화
     
@@ -1283,7 +1280,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
 
       {/* 상단 컨트롤 */}
       <div className="mb-6 space-y-4">
-        {/* 업로드 버튼 */}
+        {/* 업로드 및 선택 모드 버튼 */}
         <div className="flex items-center space-x-4">
           <label className="flex-1">
             <input
@@ -1298,6 +1295,27 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
               <p className="text-sm text-purple-600 mt-2">업로드 중...</p>
             )}
           </label>
+          
+          {/* 선택 모드 토글 버튼 */}
+          <button
+            onClick={() => {
+              if (galleryState.isSelectionMode) {
+                exitSelectionMode()
+              } else {
+                updateGalleryState({ 
+                  isSelectionMode: true,
+                  selectedItems: new Set()
+                })
+              }
+            }}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              galleryState.isSelectionMode
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {galleryState.isSelectionMode ? '선택 완료' : '선택 모드'}
+          </button>
         </div>
 
         {/* 선택 모드 안내 */}
@@ -1322,48 +1340,36 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             onDrop={(e) => handleDrop(e, item)}
             onClick={() => handleClick(item)}
             onMouseDown={() => handleLongPress(item)}
-            onTouchStart={(e) => {
-              // 터치 시작 위치 저장
-              const touch = e.touches[0]
-              updateGalleryState({ 
-                touchStartPos: { x: touch.clientX, y: touch.clientY }
-              })
-              
-              // 터치 시작 시 롱프레스 타이머 설정
-              const timer = setTimeout(() => {
-                updateGalleryState({ 
-                  isSelectionMode: true,
-                  selectedItems: new Set([item.id])
-                })
-              }, 500)
-              updateGalleryState({ longPressTimer: timer })
-            }}
-            onTouchMove={(e) => {
-              // 터치 이동 거리 계산
-              if (galleryState.touchStartPos) {
-                const touch = e.touches[0]
-                const deltaX = Math.abs(touch.clientX - galleryState.touchStartPos.x)
-                const deltaY = Math.abs(touch.clientY - galleryState.touchStartPos.y)
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-                
-                // 10px 이상 이동하면 드래그로 간주하여 롱프레스 취소
-                if (distance > 10) {
-                  if (galleryState.longPressTimer) {
-                    clearTimeout(galleryState.longPressTimer)
-                    updateGalleryState({ longPressTimer: null })
+            onTouchStart={() => {
+              // 선택 모드에서만 롱프레스 활성화
+              if (galleryState.isSelectionMode) {
+                const timer = setTimeout(() => {
+                  const newSelected = new Set(galleryState.selectedItems)
+                  if (newSelected.has(item.id)) {
+                    newSelected.delete(item.id)
+                  } else {
+                    newSelected.add(item.id)
                   }
-                }
+                  updateGalleryState({ selectedItems: newSelected })
+                }, 500)
+                updateGalleryState({ longPressTimer: timer })
               }
             }}
-            onTouchEnd={() => {
-              // 터치 종료 시 롱프레스 타이머 취소
-              if (galleryState.longPressTimer) {
+            onTouchMove={() => {
+              // 선택 모드에서만 터치 이동 처리
+              if (galleryState.isSelectionMode && galleryState.longPressTimer) {
                 clearTimeout(galleryState.longPressTimer)
                 updateGalleryState({ longPressTimer: null })
               }
-              updateGalleryState({ touchStartPos: null })
             }}
-            className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden ${
+            onTouchEnd={() => {
+              // 선택 모드에서만 터치 종료 처리
+              if (galleryState.isSelectionMode && galleryState.longPressTimer) {
+                clearTimeout(galleryState.longPressTimer)
+                updateGalleryState({ longPressTimer: null })
+              }
+            }}
+            className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden touch-manipulation ${
               galleryState.selectedItems.has(item.id) 
                 ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
                 : 'hover:scale-105'
@@ -1444,8 +1450,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
 
       {/* 안내 텍스트 */}
       <div className="text-sm text-gray-600 mt-4">
-        <p>• 일반 클릭: 사진을 드래그하여 순서 변경</p>
-        <p>• 롱클릭: 선택 모드 진입</p>
+        <p>• 일반 모드: 사진을 드래그하여 순서 변경</p>
+        <p>• 선택 모드: 사진을 클릭하여 선택, 롱프레스로 다중 선택</p>
         <p>• 선택 모드에서 수정/삭제 가능</p>
       </div>
     </div>
