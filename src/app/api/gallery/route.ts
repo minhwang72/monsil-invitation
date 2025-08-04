@@ -15,7 +15,6 @@ export async function GET() {
     const [rows] = await pool.query(`
       SELECT id, filename, image_type, created_at, order_index
       FROM gallery 
-      WHERE deleted_at IS NULL 
       ORDER BY 
         CASE 
           WHEN image_type = 'main' THEN 0

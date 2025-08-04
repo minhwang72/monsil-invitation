@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest) {
         const newOrderIndex = i + 1
         
         await connection.query(
-          'UPDATE gallery SET order_index = ? WHERE id = ? AND image_type = "gallery" AND deleted_at IS NULL',
+          'UPDATE gallery SET order_index = ? WHERE id = ? AND image_type = "gallery"',
           [newOrderIndex, imageId]
         )
         console.log(`✅ [DEBUG] Updated order_index for image ID ${imageId} to ${newOrderIndex}`)

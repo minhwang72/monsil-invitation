@@ -147,23 +147,20 @@ export async function POST(request: NextRequest) {
       image_type
     })
 
-    // Handle main image type - soft delete existing main image and remove physical files
+    // Handle main image type - delete existing main image and remove physical files
     if (image_type === 'main') {
       console.log('🔍 [DEBUG] Processing main image upload - deleting existing')
-      const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
-      const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
       
       // Get existing main images to delete physical files
       const [existingRows] = await pool.query(
-        'SELECT filename FROM gallery WHERE image_type = "main" AND deleted_at IS NULL'
+        'SELECT filename FROM gallery WHERE image_type = "main"'
       )
       const existingImages = existingRows as { filename: string }[]
       console.log('🔍 [DEBUG] Existing main images to delete:', existingImages)
       
-      // Soft delete existing main images
+      // Delete existing main images from database
       await pool.query(
-        'UPDATE gallery SET deleted_at = ? WHERE image_type = "main" AND deleted_at IS NULL',
-        [formattedTime]
+        'DELETE FROM gallery WHERE image_type = "main"'
       )
       
       // Delete physical files
@@ -255,7 +252,7 @@ export async function POST(request: NextRequest) {
     if (image_type === 'gallery') {
       // 현재 최대 order_index 조회
       const [maxOrderResult] = await pool.query(
-        'SELECT MAX(order_index) as max_order FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
+        'SELECT MAX(order_index) as max_order FROM gallery WHERE image_type = "gallery"'
       )
       const maxOrder = (maxOrderResult as { max_order: number | null }[])[0]?.max_order || 0
       const nextOrderIndex = maxOrder + 1

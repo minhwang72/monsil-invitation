@@ -29,7 +29,7 @@ export async function DELETE(request: NextRequest) {
     try {
       // 삭제할 항목의 정보 조회
       const [rows] = await connection.query(
-        'SELECT filename, image_type, order_index FROM gallery WHERE id = ? AND deleted_at IS NULL',
+        'SELECT filename, image_type, order_index FROM gallery WHERE id = ?',
         [id]
       )
       const items = rows as { filename: string; image_type: string; order_index: number }[]
@@ -39,31 +39,29 @@ export async function DELETE(request: NextRequest) {
       }
 
       const item = items[0]
-      const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
-      const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
 
-      // 항목 삭제 처리
-      await connection.query(
-        'UPDATE gallery SET deleted_at = ? WHERE id = ?',
-        [formattedTime, id]
-      )
-
-      // 갤러리 이미지인 경우 order_index 재정렬
+      // 갤러리 이미지인 경우 order_index 재정렬 (삭제 전에 수행)
       if (item.image_type === 'gallery' && item.order_index !== null) {
-        // 삭제된 항목보다 큰 order_index를 가진 항목들의 순서를 한 칸씩 앞으로 당김
+        // 삭제될 항목보다 큰 order_index를 가진 항목들의 순서를 한 칸씩 앞으로 당김
         await connection.query(
-          'UPDATE gallery SET order_index = order_index - 1 WHERE image_type = "gallery" AND order_index > ? AND deleted_at IS NULL',
+          'UPDATE gallery SET order_index = order_index - 1 WHERE image_type = "gallery" AND order_index > ?',
           [item.order_index]
         )
         
-        console.log('🔍 [DEBUG] Reordered gallery items after deletion:', {
+        console.log('🔍 [DEBUG] Reordered gallery items before deletion:', {
           deletedOrderIndex: item.order_index,
           affectedRows: (await connection.query(
-            'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND order_index > ? AND deleted_at IS NULL',
+            'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND order_index > ?',
             [item.order_index]
           ))[0]
         })
       }
+
+      // 항목 실제 삭제 처리
+      await connection.query(
+        'DELETE FROM gallery WHERE id = ?',
+        [id]
+      )
 
       // 트랜잭션 커밋
       await connection.commit()
