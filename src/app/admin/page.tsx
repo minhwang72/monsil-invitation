@@ -1283,10 +1283,10 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
                 })
               }
             }}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-full font-semibold text-sm transition-colors ${
               galleryState.isSelectionMode
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
             }`}
           >
             {galleryState.isSelectionMode ? '선택 완료' : '선택 모드'}
@@ -1372,7 +1372,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       </div>
 
       {/* 선택 모드 하단 버튼 */}
-      {galleryState.isSelectionMode && (
+      {galleryState.isSelectionMode && galleryState.selectedItems.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
           <div className="flex items-center justify-between max-w-md mx-auto">
             <button
