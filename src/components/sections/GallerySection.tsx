@@ -34,8 +34,18 @@ export default function GallerySection({ gallery }: GallerySectionProps) {
     isPlaceholder: true,
   }))
 
-  // 갤러리 이미지만 필터링 (메인 이미지 제외)
-  const galleryImages = gallery ? gallery.filter(item => item.image_type === 'gallery') : []
+  // 갤러리 이미지만 필터링하고 order_index로 정렬 (메인 이미지 제외)
+  const galleryImages = gallery ? gallery
+    .filter(item => item.image_type === 'gallery')
+    .sort((a, b) => {
+      // order_index가 null이면 맨 뒤로
+      if (a.order_index === null && b.order_index === null) return 0
+      if (a.order_index === null) return 1
+      if (b.order_index === null) return -1
+      
+      // 숫자로 정렬
+      return Number(a.order_index) - Number(b.order_index)
+    }) : []
 
   const displayImages: DisplayImage[] = galleryImages && galleryImages.length > 0 
     ? galleryImages 
