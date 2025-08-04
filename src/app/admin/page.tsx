@@ -1081,7 +1081,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
   }
 
   // 터치 이동
-  const handleTouchMove = (e: React.TouchEvent, item: Gallery) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
     if (galleryState.isSelectionMode) return
     
     if (galleryState.touchStartPos && galleryState.isTouchDragging) {
@@ -1473,7 +1473,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
                 }
               } else {
                 // 일반 모드에서는 터치 드래그 처리
-                handleTouchMove(e, item)
+                handleTouchMove(e)
               }
             }}
             onTouchEnd={(e) => {
