@@ -250,12 +250,33 @@ export async function POST(request: NextRequest) {
       formattedTime
     })
 
-    const insertResult = await pool.query(
-      'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
-      [dbPath, image_type, formattedTime]
-    )
-    
-    console.log('✅ [DEBUG] Database insert result:', insertResult)
+    // 갤러리 이미지인 경우 order_index 설정
+    let insertResult: unknown
+    if (image_type === 'gallery') {
+      // 현재 최대 order_index 조회
+      const [maxOrderResult] = await pool.query(
+        'SELECT MAX(order_index) as max_order FROM gallery WHERE image_type = "gallery" AND deleted_at IS NULL'
+      )
+      const maxOrder = (maxOrderResult as { max_order: number | null }[])[0]?.max_order || 0
+      const nextOrderIndex = maxOrder + 1
+      
+      console.log('🔍 [DEBUG] Gallery order_index:', { maxOrder, nextOrderIndex })
+      
+      insertResult = await pool.query(
+        'INSERT INTO gallery (filename, image_type, order_index, created_at) VALUES (?, ?, ?, ?)',
+        [dbPath, image_type, nextOrderIndex, formattedTime]
+      )
+      
+      console.log('✅ [DEBUG] Database insert result:', insertResult)
+    } else {
+      // 메인 이미지인 경우 order_index 없이 저장
+      insertResult = await pool.query(
+        'INSERT INTO gallery (filename, image_type, created_at) VALUES (?, ?, ?)',
+        [dbPath, image_type, formattedTime]
+      )
+      
+      console.log('✅ [DEBUG] Database insert result:', insertResult)
+    }
 
     return NextResponse.json<ApiResponse<{ filename: string }>>({
       success: true,

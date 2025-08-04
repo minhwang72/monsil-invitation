@@ -49,12 +49,20 @@ export async function DELETE(request: NextRequest) {
       )
 
       // 갤러리 이미지인 경우 order_index 재정렬
-      if (item.image_type === 'gallery') {
+      if (item.image_type === 'gallery' && item.order_index !== null) {
         // 삭제된 항목보다 큰 order_index를 가진 항목들의 순서를 한 칸씩 앞으로 당김
         await connection.query(
           'UPDATE gallery SET order_index = order_index - 1 WHERE image_type = "gallery" AND order_index > ? AND deleted_at IS NULL',
           [item.order_index]
         )
+        
+        console.log('🔍 [DEBUG] Reordered gallery items after deletion:', {
+          deletedOrderIndex: item.order_index,
+          affectedRows: (await connection.query(
+            'SELECT COUNT(*) as count FROM gallery WHERE image_type = "gallery" AND order_index > ? AND deleted_at IS NULL',
+            [item.order_index]
+          ))[0]
+        })
       }
 
       // 트랜잭션 커밋
