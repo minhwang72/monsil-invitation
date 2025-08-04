@@ -989,6 +989,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
   const [draggedItem, setDraggedItem] = useState<Gallery | null>(null)
   const [dragOverItem, setDragOverItem] = useState<number | null>(null)
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
+  const [isTouchDragging, setIsTouchDragging] = useState(false)
 
   // 상태 업데이트 헬퍼 함수
   const updateGalleryState = (updates: Partial<typeof galleryState>) => {
@@ -1037,6 +1039,34 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     setDragOverItem(null)
   }
 
+  // 터치 드래그 핸들러
+  const handleTouchStart = (e: React.TouchEvent, item: Gallery) => {
+    if (galleryState.isSelectionMode) return
+    const touch = e.touches[0]
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY })
+    setIsTouchDragging(false)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (galleryState.isSelectionMode || !touchStartPos) return
+    e.preventDefault()
+    
+    const touch = e.touches[0]
+    const deltaX = Math.abs(touch.clientX - touchStartPos.x)
+    const deltaY = Math.abs(touch.clientY - touchStartPos.y)
+    
+    // 10px 이상 이동했을 때만 드래그로 간주
+    if (deltaX > 10 || deltaY > 10) {
+      setIsTouchDragging(true)
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (galleryState.isSelectionMode) return
+    setTouchStartPos(null)
+    setIsTouchDragging(false)
+  }
+
   const handleDrop = async (e: React.DragEvent, targetItem: Gallery) => {
     if (galleryState.isSelectionMode) return
     e.preventDefault()
@@ -1047,14 +1077,17 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       return
     }
 
-    // 새로운 순서 배열 생성
-    const newOrder = galleryItems.map(item => item.id)
+    // 새로운 순서 배열 생성 - 삽입 방식으로 변경
+    const newOrder = [...galleryItems.map(item => item.id)]
     const draggedIndex = newOrder.indexOf(draggedItem.id)
     const targetIndex = newOrder.indexOf(targetItem.id)
     
-    // 순서 변경
+    // 드래그한 아이템을 제거하고 타겟 위치에 삽입
     newOrder.splice(draggedIndex, 1)
-    newOrder.splice(targetIndex, 0, draggedItem.id)
+    
+    // 타겟 위치 계산 (드래그한 아이템이 타겟보다 앞에 있었으면 인덱스 조정)
+    const adjustedTargetIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex
+    newOrder.splice(adjustedTargetIndex, 0, draggedItem.id)
 
     setGlobalLoading(true, '순서 변경 중...')
     try {
@@ -1313,6 +1346,9 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             onDragOver={(e) => handleDragOver(e, item.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, item)}
+            onTouchStart={(e) => handleTouchStart(e, item)}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             onClick={() => handleClick(item)}
             onContextMenu={(e) => {
               // 우클릭 메뉴 방지
@@ -1324,9 +1360,11 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
                 ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
                 : 'hover:scale-105'
             } ${
-              draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
+              draggedItem?.id === item.id ? 'opacity-50 scale-95 z-10' : ''
             } ${
               dragOverItem === item.id ? 'ring-2 ring-purple-500 bg-purple-50 scale-105' : ''
+            } ${
+              isTouchDragging ? 'z-20' : ''
             }`}
           >
             {/* 이미지 */}
@@ -1370,6 +1408,15 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             {!galleryState.isSelectionMode && (
               <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
                 {index + 1}
+              </div>
+            )}
+
+            {/* 드래그 중 표시 */}
+            {draggedItem?.id === item.id && (
+              <div className="absolute inset-0 bg-blue-500 bg-opacity-20 border-2 border-blue-500 rounded-lg flex items-center justify-center">
+                <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  이동 중
+                </div>
               </div>
             )}
           </div>
