@@ -987,7 +987,9 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     dragOverItem: null as number | null,
     isDragging: false,
     isSelectionMode: false,
-    longPressTimer: null as NodeJS.Timeout | null
+    longPressTimer: null as NodeJS.Timeout | null,
+    touchStartPos: null as { x: number; y: number } | null,
+    isTouchDragging: false
   })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
@@ -1055,6 +1057,99 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     updateGalleryState({ draggedItem: item, isDragging: true })
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/html', item.id.toString())
+  }
+
+  // 터치 드래그 시작 (모바일용)
+  const handleTouchStart = (e: React.TouchEvent, item: Gallery) => {
+    if (galleryState.isSelectionMode) return // 선택 모드에서는 드래그 비활성화
+    
+    const touch = e.touches[0]
+    updateGalleryState({ 
+      touchStartPos: { x: touch.clientX, y: touch.clientY },
+      isTouchDragging: false
+    })
+    
+    // 롱프레스 타이머 설정 (드래그 시작을 위한)
+    const timer = setTimeout(() => {
+      updateGalleryState({ 
+        isTouchDragging: true,
+        draggedItem: item
+      })
+    }, 300) // 300ms 후 드래그 시작
+    
+    updateGalleryState({ longPressTimer: timer })
+  }
+
+  // 터치 이동
+  const handleTouchMove = (e: React.TouchEvent, item: Gallery) => {
+    if (galleryState.isSelectionMode) return
+    
+    if (galleryState.touchStartPos && galleryState.isTouchDragging) {
+      e.preventDefault() // 기본 스크롤 방지
+      
+      const touch = e.touches[0]
+      const deltaX = Math.abs(touch.clientX - galleryState.touchStartPos.x)
+      const deltaY = Math.abs(touch.clientY - galleryState.touchStartPos.y)
+      
+      // 10px 이상 이동했을 때만 드래그로 간주
+      if (deltaX > 10 || deltaY > 10) {
+        // 드래그 중인 아이템의 위치를 업데이트
+        // 실제 드롭 로직은 handleTouchEnd에서 처리
+      }
+    }
+  }
+
+  // 터치 종료
+  const handleTouchEnd = async (e: React.TouchEvent, targetItem: Gallery) => {
+    if (galleryState.isSelectionMode) return
+    
+    // 롱프레스 타이머 취소
+    if (galleryState.longPressTimer) {
+      clearTimeout(galleryState.longPressTimer)
+      updateGalleryState({ longPressTimer: null })
+    }
+    
+    // 터치 드래그가 완료된 경우 순서 변경
+    if (galleryState.isTouchDragging && galleryState.draggedItem && 
+        galleryState.draggedItem.id !== targetItem.id) {
+      
+      setGlobalLoading(true, '순서 변경 중...')
+      try {
+        const res = await fetch('/api/admin/gallery', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            sourceId: galleryState.draggedItem.id, 
+            targetId: targetItem.id 
+          }),
+        })
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+        }
+        
+        const data = await res.json()
+        if (data.success) {
+          await onUpdate()
+          showToast('순서 변경 완료', 'success')
+        } else {
+          showToast(data.error || '순서 변경 실패', 'error')
+        }
+      } catch (error) {
+        console.error('Error reordering gallery:', error)
+        showToast('순서 변경 중 오류 발생', 'error')
+      } finally {
+        setGlobalLoading(false)
+      }
+    }
+    
+    // 상태 초기화
+    updateGalleryState({ 
+      draggedItem: null, 
+      isDragging: false,
+      isTouchDragging: false,
+      touchStartPos: null
+    })
   }
 
   const handleDragOver = (e: React.DragEvent, itemId: number) => {
@@ -1349,8 +1444,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
               // 기본 터치 동작 방지
               e.preventDefault()
               
-              // 선택 모드에서만 롱프레스 활성화
               if (galleryState.isSelectionMode) {
+                // 선택 모드에서는 롱프레스로 다중 선택
                 const timer = setTimeout(() => {
                   const newSelected = new Set(galleryState.selectedItems)
                   if (newSelected.has(item.id)) {
@@ -1361,26 +1456,39 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
                   updateGalleryState({ selectedItems: newSelected })
                 }, 500)
                 updateGalleryState({ longPressTimer: timer })
+              } else {
+                // 일반 모드에서는 터치 드래그 시작
+                handleTouchStart(e, item)
               }
             }}
             onTouchMove={(e) => {
               // 기본 터치 동작 방지
               e.preventDefault()
               
-              // 선택 모드에서만 터치 이동 처리
-              if (galleryState.isSelectionMode && galleryState.longPressTimer) {
-                clearTimeout(galleryState.longPressTimer)
-                updateGalleryState({ longPressTimer: null })
+              if (galleryState.isSelectionMode) {
+                // 선택 모드에서는 롱프레스 타이머 취소
+                if (galleryState.longPressTimer) {
+                  clearTimeout(galleryState.longPressTimer)
+                  updateGalleryState({ longPressTimer: null })
+                }
+              } else {
+                // 일반 모드에서는 터치 드래그 처리
+                handleTouchMove(e, item)
               }
             }}
             onTouchEnd={(e) => {
               // 기본 터치 동작 방지
               e.preventDefault()
               
-              // 선택 모드에서만 터치 종료 처리
-              if (galleryState.isSelectionMode && galleryState.longPressTimer) {
-                clearTimeout(galleryState.longPressTimer)
-                updateGalleryState({ longPressTimer: null })
+              if (galleryState.isSelectionMode) {
+                // 선택 모드에서는 롱프레스 타이머 취소
+                if (galleryState.longPressTimer) {
+                  clearTimeout(galleryState.longPressTimer)
+                  updateGalleryState({ longPressTimer: null })
+                }
+              } else {
+                // 일반 모드에서는 터치 드래그 종료
+                handleTouchEnd(e, item)
               }
             }}
             className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden touch-manipulation select-none user-select-none ${
@@ -1404,11 +1512,31 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             />
             
             {/* 선택 표시 */}
-            {galleryState.selectedItems.has(item.id) && (
-              <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+            {galleryState.isSelectionMode && (
+              <div 
+                className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 ${
+                  galleryState.selectedItems.has(item.id)
+                    ? 'bg-blue-500 scale-110'
+                    : 'bg-white border-2 border-gray-300 hover:border-blue-400'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation() // 이벤트 버블링 방지
+                  const newSelected = new Set(galleryState.selectedItems)
+                  if (newSelected.has(item.id)) {
+                    newSelected.delete(item.id)
+                  } else {
+                    newSelected.add(item.id)
+                  }
+                  updateGalleryState({ selectedItems: newSelected })
+                }}
+              >
+                {galleryState.selectedItems.has(item.id) ? (
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <div className="w-2 h-2 bg-transparent" />
+                )}
               </div>
             )}
 
