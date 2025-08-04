@@ -8,7 +8,6 @@ import MainImageUploader from '@/components/MainImageUploader'
 import GlobalLoading from '@/components/GlobalLoading'
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop'
-import Sortable from 'sortablejs'
 
 // 토스트 타입 정의
 interface Toast {
@@ -989,7 +988,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
   const sortableRef = useRef<HTMLDivElement>(null)
-  const sortableInstance = useRef<Sortable | null>(null)
+  const sortableInstance = useRef<any>(null)
 
   // 상태 업데이트 헬퍼 함수
   const updateGalleryState = (updates: Partial<typeof galleryState>) => {
@@ -1020,63 +1019,70 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
 
   // SortableJS 초기화
   useEffect(() => {
-    if (sortableRef.current && !galleryState.isSelectionMode) {
-      // 기존 인스턴스 제거
-      if (sortableInstance.current) {
-        sortableInstance.current.destroy()
-      }
-
-      // 새로운 SortableJS 인스턴스 생성
-      sortableInstance.current = Sortable.create(sortableRef.current, {
-        animation: 150,
-        delay: 300, // 모바일에서 롱프레스 지연
-        delayOnTouchOnly: true, // 터치에서만 지연 적용
-        touchStartThreshold: 5, // 터치 시작 임계값
-        ghostClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
-        chosenClass: 'ring-2 ring-purple-500 bg-purple-50 scale-105', // 선택된 아이템 스타일
-        dragClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
-        onEnd: async (evt) => {
-          const { oldIndex, newIndex } = evt
-          if (oldIndex === newIndex) return
-
-          // 새로운 순서 배열 생성
-          const newOrder = Array.from(sortableRef.current!.children).map((child) => {
-            const itemId = parseInt(child.getAttribute('data-id') || '0')
-            return itemId
-          })
-
-          setGlobalLoading(true, '순서 변경 중...')
-          try {
-            const res = await fetch('/api/admin/gallery', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ sortedIds: newOrder }),
-            })
-            
-            if (!res.ok) {
-              throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-            }
-            
-            const data = await res.json()
-            if (data.success) {
-              await onUpdate()
-              showToast('순서 변경 완료', 'success')
-            } else {
-              showToast(data.error || '순서 변경 실패', 'error')
-            }
-          } catch (error) {
-            console.error('Error reordering gallery:', error)
-            showToast('순서 변경 중 오류 발생', 'error')
-          } finally {
-            setGlobalLoading(false)
-          }
+    const initSortable = async () => {
+      if (sortableRef.current && !galleryState.isSelectionMode) {
+        // 기존 인스턴스 제거
+        if (sortableInstance.current) {
+          sortableInstance.current.destroy()
         }
-      })
-    } else if (sortableInstance.current) {
-      // 선택 모드일 때는 SortableJS 비활성화
-      sortableInstance.current.destroy()
-      sortableInstance.current = null
+
+        // SortableJS 동적 import
+        const { default: Sortable } = await import('sortablejs')
+        
+        // 새로운 SortableJS 인스턴스 생성
+        sortableInstance.current = Sortable.create(sortableRef.current, {
+          animation: 150,
+          delay: 300, // 모바일에서 롱프레스 지연
+          delayOnTouchOnly: true, // 터치에서만 지연 적용
+          touchStartThreshold: 5, // 터치 시작 임계값
+          ghostClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
+          chosenClass: 'ring-2 ring-purple-500 bg-purple-50 scale-105', // 선택된 아이템 스타일
+          dragClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
+          onEnd: async (evt: any) => {
+            const { oldIndex, newIndex } = evt
+            if (oldIndex === newIndex) return
+
+            // 새로운 순서 배열 생성
+            const newOrder = Array.from(sortableRef.current!.children).map((child) => {
+              const itemId = parseInt(child.getAttribute('data-id') || '0')
+              return itemId
+            })
+
+            setGlobalLoading(true, '순서 변경 중...')
+            try {
+              const res = await fetch('/api/admin/gallery', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sortedIds: newOrder }),
+              })
+              
+              if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+              }
+              
+              const data = await res.json()
+              if (data.success) {
+                await onUpdate()
+                showToast('순서 변경 완료', 'success')
+              } else {
+                showToast(data.error || '순서 변경 실패', 'error')
+              }
+            } catch (error) {
+              console.error('Error reordering gallery:', error)
+              showToast('순서 변경 중 오류 발생', 'error')
+            } finally {
+              setGlobalLoading(false)
+            }
+          }
+        })
+      } else if (sortableInstance.current) {
+        // 선택 모드일 때는 SortableJS 비활성화
+        sortableInstance.current.destroy()
+        sortableInstance.current = null
+      }
     }
+
+    initSortable()
 
     return () => {
       if (sortableInstance.current) {
