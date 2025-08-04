@@ -10,6 +10,7 @@ import HeartMoneySection from '@/components/sections/HeartMoneySection'
 import LazyGallerySection from '@/components/sections/LazyGallerySection'
 import LazyGuestbookSection from '@/components/sections/LazyGuestbookSection'
 import Footer from '@/components/Footer'
+import DevToolsBlocker from '@/components/DevToolsBlocker'
 import type { Gallery } from '@/types'
 
 export default function HomePage() {
@@ -182,6 +183,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-sky/10 py-0 md:py-8">
+      <DevToolsBlocker />
       <div className="w-full max-w-[500px] mx-auto bg-white md:rounded-2xl md:shadow-lg overflow-hidden">
         <CoverSection />
         <BlessingSection />

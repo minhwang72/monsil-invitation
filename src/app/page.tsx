@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import DevToolsBlocker from '@/components/DevToolsBlocker'
 
 export default function Home() {
   const router = useRouter()
@@ -63,6 +64,7 @@ export default function Home() {
     <main className={`h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#E0F7FF] to-[#F5E6FF] px-4 relative overflow-hidden transition-opacity duration-1000 ${
       isFading ? 'opacity-0' : 'opacity-100'
     }`}>
+      <DevToolsBlocker />
       {/* ⏱️ 카운트다운 영역 */}
       <div className="text-center mb-8 md:mb-12">
         <div className="flex items-center justify-center gap-2 mb-6 md:mb-8">
