@@ -987,7 +987,17 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     isSelectionMode: false
   })
 
-  const galleryItems = gallery.filter(item => item.image_type === 'gallery')
+  const galleryItems = gallery
+    .filter(item => item.image_type === 'gallery')
+    .sort((a, b) => {
+      // order_index가 null이면 맨 뒤로
+      if (a.order_index === null && b.order_index === null) return 0
+      if (a.order_index === null) return 1
+      if (b.order_index === null) return -1
+      
+      // 숫자로 정렬
+      return Number(a.order_index) - Number(b.order_index)
+    })
 
   // 상태 업데이트 헬퍼 함수
   const updateGalleryState = (updates: Partial<typeof galleryState>) => {

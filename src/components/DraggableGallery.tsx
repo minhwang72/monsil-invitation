@@ -83,7 +83,7 @@ const SortableItem = ({ item, isSelectionMode, isSelected, onClick }: SortableIt
       {/* 내용 */}
       <div className="flex-1 min-w-0">
         <div className="text-sm text-gray-600 mb-1">
-          순서: {item.order_index || 'N/A'}
+          순서: {item.order_index !== null ? item.order_index : 'N/A'}
         </div>
         {item.description && (
           <div className="text-sm text-gray-800 truncate">
@@ -208,9 +208,9 @@ const DraggableGallery = ({
              />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-600 mb-1">
-                순서: {item.order_index || 'N/A'}
-              </div>
+                              <div className="text-sm text-gray-600 mb-1">
+                  순서: {item.order_index !== null ? item.order_index : 'N/A'}
+                </div>
               {item.description && (
                 <div className="text-sm text-gray-800 truncate">
                   {item.description}
