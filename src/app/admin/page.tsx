@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
 
@@ -8,6 +8,7 @@ import MainImageUploader from '@/components/MainImageUploader'
 import GlobalLoading from '@/components/GlobalLoading'
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop'
+import Sortable from 'sortablejs'
 
 // 토스트 타입 정의
 interface Toast {
@@ -983,23 +984,19 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     editingItem: null as Gallery | null,
     showCropper: false,
     selectedItems: new Set<number>(),
-    draggedItem: null as Gallery | null,
-    dragOverItem: null as number | null,
-    isDragging: false,
-    isSelectionMode: false,
-    longPressTimer: null as NodeJS.Timeout | null,
-    touchStartPos: null as { x: number; y: number } | null,
-    isTouchDragging: false
+    isSelectionMode: false
   })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
+  const sortableRef = useRef<HTMLDivElement>(null)
+  const sortableInstance = useRef<Sortable | null>(null)
 
   // 상태 업데이트 헬퍼 함수
   const updateGalleryState = (updates: Partial<typeof galleryState>) => {
     setGalleryState(prev => ({ ...prev, ...updates }))
   }
 
-  // 일반 클릭 핸들러 (드래그 앤 드롭)
+  // 클릭 핸들러 (선택 모드에서만)
   const handleClick = (item: Gallery) => {
     if (galleryState.isSelectionMode) {
       // 선택 모드에서는 아이템 선택/해제
@@ -1011,199 +1008,82 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       }
       updateGalleryState({ selectedItems: newSelected })
     }
-    // 일반 모드에서는 드래그 앤 드롭으로 순서 변경 (별도 핸들러에서 처리)
-  }
-
-  // 롱프레스 핸들러 (선택 모드에서만 작동)
-  const handleLongPress = (item: Gallery) => {
-    if (!galleryState.isSelectionMode) return // 선택 모드가 아닐 때는 롱프레스 비활성화
-    
-    if (galleryState.longPressTimer) {
-      clearTimeout(galleryState.longPressTimer)
-    }
-    
-    const timer = setTimeout(() => {
-      const newSelected = new Set(galleryState.selectedItems)
-      if (newSelected.has(item.id)) {
-        newSelected.delete(item.id)
-      } else {
-        newSelected.add(item.id)
-      }
-      updateGalleryState({ selectedItems: newSelected })
-    }, 500) // 500ms 롱클릭
-
-    updateGalleryState({ longPressTimer: timer })
   }
 
   // 선택 모드 종료
   const exitSelectionMode = () => {
     updateGalleryState({ 
       isSelectionMode: false, 
-      selectedItems: new Set(),
-      longPressTimer: null
+      selectedItems: new Set()
     })
   }
 
-  // 드래그 앤 드롭 (항상 활성화, 선택 모드에서만 비활성화)
-  const handleDragStart = (e: React.DragEvent, item: Gallery) => {
-    if (galleryState.isSelectionMode) return // 선택 모드에서는 드래그 비활성화
-    
-    // 드래그 시작 시 롱프레스 타이머 취소
-    if (galleryState.longPressTimer) {
-      clearTimeout(galleryState.longPressTimer)
-      updateGalleryState({ longPressTimer: null })
-    }
-    
-    updateGalleryState({ draggedItem: item, isDragging: true })
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/html', item.id.toString())
-  }
-
-  // 터치 드래그 시작 (모바일용)
-  const handleTouchStart = (e: React.TouchEvent, item: Gallery) => {
-    if (galleryState.isSelectionMode) return // 선택 모드에서는 드래그 비활성화
-    
-    const touch = e.touches[0]
-    updateGalleryState({ 
-      touchStartPos: { x: touch.clientX, y: touch.clientY },
-      isTouchDragging: false
-    })
-    
-    // 롱프레스 타이머 설정 (드래그 시작을 위한)
-    const timer = setTimeout(() => {
-      updateGalleryState({ 
-        isTouchDragging: true,
-        draggedItem: item
-      })
-    }, 300) // 300ms 후 드래그 시작
-    
-    updateGalleryState({ longPressTimer: timer })
-  }
-
-  // 터치 이동
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (galleryState.isSelectionMode) return
-    
-    if (galleryState.touchStartPos && galleryState.isTouchDragging) {
-      e.preventDefault() // 기본 스크롤 방지
-      
-      const touch = e.touches[0]
-      const deltaX = Math.abs(touch.clientX - galleryState.touchStartPos.x)
-      const deltaY = Math.abs(touch.clientY - galleryState.touchStartPos.y)
-      
-      // 10px 이상 이동했을 때만 드래그로 간주
-      if (deltaX > 10 || deltaY > 10) {
-        // 드래그 중인 아이템의 위치를 업데이트
-        // 실제 드롭 로직은 handleTouchEnd에서 처리
+  // SortableJS 초기화
+  useEffect(() => {
+    if (sortableRef.current && !galleryState.isSelectionMode) {
+      // 기존 인스턴스 제거
+      if (sortableInstance.current) {
+        sortableInstance.current.destroy()
       }
-    }
-  }
 
-  // 터치 종료
-  const handleTouchEnd = async (e: React.TouchEvent, targetItem: Gallery) => {
-    if (galleryState.isSelectionMode) return
-    
-    // 롱프레스 타이머 취소
-    if (galleryState.longPressTimer) {
-      clearTimeout(galleryState.longPressTimer)
-      updateGalleryState({ longPressTimer: null })
-    }
-    
-    // 터치 드래그가 완료된 경우 순서 변경
-    if (galleryState.isTouchDragging && galleryState.draggedItem && 
-        galleryState.draggedItem.id !== targetItem.id) {
-      
-      setGlobalLoading(true, '순서 변경 중...')
-      try {
-        const res = await fetch('/api/admin/gallery', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            sourceId: galleryState.draggedItem.id, 
-            targetId: targetItem.id 
-          }),
-        })
-        
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      // 새로운 SortableJS 인스턴스 생성
+      sortableInstance.current = Sortable.create(sortableRef.current, {
+        animation: 150,
+        delay: 300, // 모바일에서 롱프레스 지연
+        delayOnTouchOnly: true, // 터치에서만 지연 적용
+        touchStartThreshold: 5, // 터치 시작 임계값
+        ghostClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
+        chosenClass: 'ring-2 ring-purple-500 bg-purple-50 scale-105', // 선택된 아이템 스타일
+        dragClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
+        onEnd: async (evt) => {
+          const { oldIndex, newIndex } = evt
+          if (oldIndex === newIndex) return
+
+          // 새로운 순서 배열 생성
+          const newOrder = Array.from(sortableRef.current!.children).map((child) => {
+            const itemId = parseInt(child.getAttribute('data-id') || '0')
+            return itemId
+          })
+
+          setGlobalLoading(true, '순서 변경 중...')
+          try {
+            const res = await fetch('/api/admin/gallery', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sortedIds: newOrder }),
+            })
+            
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+            }
+            
+            const data = await res.json()
+            if (data.success) {
+              await onUpdate()
+              showToast('순서 변경 완료', 'success')
+            } else {
+              showToast(data.error || '순서 변경 실패', 'error')
+            }
+          } catch (error) {
+            console.error('Error reordering gallery:', error)
+            showToast('순서 변경 중 오류 발생', 'error')
+          } finally {
+            setGlobalLoading(false)
+          }
         }
-        
-        const data = await res.json()
-        if (data.success) {
-          await onUpdate()
-          showToast('순서 변경 완료', 'success')
-        } else {
-          showToast(data.error || '순서 변경 실패', 'error')
-        }
-      } catch (error) {
-        console.error('Error reordering gallery:', error)
-        showToast('순서 변경 중 오류 발생', 'error')
-      } finally {
-        setGlobalLoading(false)
-      }
-    }
-    
-    // 상태 초기화
-    updateGalleryState({ 
-      draggedItem: null, 
-      isDragging: false,
-      isTouchDragging: false,
-      touchStartPos: null
-    })
-  }
-
-  const handleDragOver = (e: React.DragEvent, itemId: number) => {
-    if (galleryState.isSelectionMode) return
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    updateGalleryState({ dragOverItem: itemId })
-  }
-
-  const handleDragLeave = () => {
-    if (galleryState.isSelectionMode) return
-    updateGalleryState({ dragOverItem: null })
-  }
-
-  const handleDrop = async (e: React.DragEvent, targetItem: Gallery) => {
-    if (galleryState.isSelectionMode) return
-    e.preventDefault()
-    
-    if (!galleryState.draggedItem || galleryState.draggedItem.id === targetItem.id) {
-      updateGalleryState({ draggedItem: null, isDragging: false })
-      return
-    }
-
-    setGlobalLoading(true, '순서 변경 중...')
-    try {
-      const res = await fetch('/api/admin/gallery', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          sourceId: galleryState.draggedItem.id, 
-          targetId: targetItem.id 
-        }),
       })
-      
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-      }
-      
-      const data = await res.json()
-      if (data.success) {
-        await onUpdate()
-        showToast('순서 변경 완료', 'success')
-      } else {
-        showToast(data.error || '순서 변경 실패', 'error')
-      }
-    } catch (error) {
-      console.error('Error reordering gallery:', error)
-      showToast('순서 변경 중 오류 발생', 'error')
-    } finally {
-      updateGalleryState({ draggedItem: null, isDragging: false })
-      updateGalleryState({ dragOverItem: null })
-      setGlobalLoading(false)
+    } else if (sortableInstance.current) {
+      // 선택 모드일 때는 SortableJS 비활성화
+      sortableInstance.current.destroy()
+      sortableInstance.current = null
     }
-  }
+
+    return () => {
+      if (sortableInstance.current) {
+        sortableInstance.current.destroy()
+      }
+    }
+  }, [galleryState.isSelectionMode, galleryItems.length, onUpdate, showToast, setGlobalLoading])
 
   // 다중 이미지 업로드
   const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1424,68 +1304,24 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       </div>
 
       {/* 갤러리 그리드 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+      <div 
+        ref={sortableRef}
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6"
+      >
         {galleryItems.map((item, index) => (
           <div
             key={item.id}
-            draggable={!galleryState.isSelectionMode}
-            onDragStart={(e) => handleDragStart(e, item)}
-            onDragOver={(e) => handleDragOver(e, item.id)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, item)}
+            data-id={item.id}
             onClick={() => handleClick(item)}
-            onMouseDown={() => handleLongPress(item)}
             onContextMenu={(e) => {
               // 우클릭 메뉴 방지
               e.preventDefault()
               return false
             }}
-            onTouchStart={(e) => {
-              // 기본 터치 동작 방지
-              e.preventDefault()
-              
-              if (galleryState.isSelectionMode) {
-                // 선택 모드에서는 기본 터치로 선택/해제
-                const newSelected = new Set(galleryState.selectedItems)
-                if (newSelected.has(item.id)) {
-                  newSelected.delete(item.id)
-                } else {
-                  newSelected.add(item.id)
-                }
-                updateGalleryState({ selectedItems: newSelected })
-              } else {
-                // 일반 모드에서는 터치 드래그 시작
-                handleTouchStart(e, item)
-              }
-            }}
-            onTouchMove={(e) => {
-              // 기본 터치 동작 방지
-              e.preventDefault()
-              
-              if (!galleryState.isSelectionMode) {
-                // 일반 모드에서만 터치 드래그 처리
-                handleTouchMove(e)
-              }
-            }}
-            onTouchEnd={(e) => {
-              // 기본 터치 동작 방지
-              e.preventDefault()
-              
-              if (!galleryState.isSelectionMode) {
-                // 일반 모드에서만 터치 드래그 종료
-                handleTouchEnd(e, item)
-              }
-            }}
             className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden touch-manipulation select-none user-select-none ${
               galleryState.selectedItems.has(item.id) 
                 ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
                 : 'hover:scale-105'
-            } ${
-              galleryState.draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
-            } ${
-              galleryState.dragOverItem === item.id ? 'ring-2 ring-purple-500 bg-purple-50 scale-105' : ''
-            } ${
-              galleryState.isDragging && !galleryState.isSelectionMode ? 'cursor-grabbing' : 'cursor-grab'
             }`}
           >
             {/* 이미지 */}
