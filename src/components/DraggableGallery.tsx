@@ -52,6 +52,13 @@ const SortableItem = ({ item, isSelectionMode, isSelected, onClick }: SortableIt
     transition,
   }
 
+  // 선택 모드에서 전체 아이템 클릭 핸들러
+  const handleItemClick = () => {
+    if (isSelectionMode) {
+      onClick?.(item)
+    }
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -60,7 +67,8 @@ const SortableItem = ({ item, isSelectionMode, isSelected, onClick }: SortableIt
         isDragging ? 'opacity-50 scale-95 shadow-lg' : 'hover:shadow-md'
       } ${
         isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-      }`}
+      } ${isSelectionMode ? 'cursor-pointer' : ''}`}
+      onClick={handleItemClick}
     >
       {/* 썸네일 */}
       <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden">
@@ -98,6 +106,7 @@ const SortableItem = ({ item, isSelectionMode, isSelected, onClick }: SortableIt
             }`}
             onClick={(e) => {
               e.stopPropagation()
+              e.preventDefault()
               onClick?.(item)
             }}
           >
@@ -115,7 +124,19 @@ const SortableItem = ({ item, isSelectionMode, isSelected, onClick }: SortableIt
         <div
           {...attributes}
           {...listeners}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing transition-colors"
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing transition-colors select-none"
+          onClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
+          onTouchMove={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
             <path d="M3 7a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 13a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
@@ -172,7 +193,7 @@ const DraggableGallery = ({
   // SSR 중에는 기본 리스트 렌더링
   if (!mounted) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 select-none">
         {items.map((item) => (
           <div
             key={item.id}
@@ -212,7 +233,7 @@ const DraggableGallery = ({
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={items.map(item => item.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-3">
+        <div className="space-y-3 select-none">
           {items.map((item) => (
             <SortableItem
               key={item.id}
