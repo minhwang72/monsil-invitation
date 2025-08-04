@@ -1340,7 +1340,15 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             onDrop={(e) => handleDrop(e, item)}
             onClick={() => handleClick(item)}
             onMouseDown={() => handleLongPress(item)}
-            onTouchStart={() => {
+            onContextMenu={(e) => {
+              // 우클릭 메뉴 방지
+              e.preventDefault()
+              return false
+            }}
+            onTouchStart={(e) => {
+              // 기본 터치 동작 방지
+              e.preventDefault()
+              
               // 선택 모드에서만 롱프레스 활성화
               if (galleryState.isSelectionMode) {
                 const timer = setTimeout(() => {
@@ -1355,21 +1363,27 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
                 updateGalleryState({ longPressTimer: timer })
               }
             }}
-            onTouchMove={() => {
+            onTouchMove={(e) => {
+              // 기본 터치 동작 방지
+              e.preventDefault()
+              
               // 선택 모드에서만 터치 이동 처리
               if (galleryState.isSelectionMode && galleryState.longPressTimer) {
                 clearTimeout(galleryState.longPressTimer)
                 updateGalleryState({ longPressTimer: null })
               }
             }}
-            onTouchEnd={() => {
+            onTouchEnd={(e) => {
+              // 기본 터치 동작 방지
+              e.preventDefault()
+              
               // 선택 모드에서만 터치 종료 처리
               if (galleryState.isSelectionMode && galleryState.longPressTimer) {
                 clearTimeout(galleryState.longPressTimer)
                 updateGalleryState({ longPressTimer: null })
               }
             }}
-            className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden touch-manipulation ${
+            className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden touch-manipulation select-none user-select-none ${
               galleryState.selectedItems.has(item.id) 
                 ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
                 : 'hover:scale-105'
@@ -1385,7 +1399,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             <img
               src={item.url}
               alt={`Gallery ${index + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover select-none pointer-events-none"
+              draggable={false}
             />
             
             {/* 선택 표시 */}
