@@ -988,7 +988,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
   const sortableRef = useRef<HTMLDivElement>(null)
-  const sortableInstance = useRef<any>(null)
+  const sortableInstance = useRef<{ destroy: () => void } | null>(null)
 
   // 상태 업데이트 헬퍼 함수
   const updateGalleryState = (updates: Partial<typeof galleryState>) => {
@@ -1038,9 +1038,9 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
           ghostClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
           chosenClass: 'ring-2 ring-purple-500 bg-purple-50 scale-105', // 선택된 아이템 스타일
           dragClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
-          onEnd: async (evt: any) => {
+          onEnd: async (evt: { oldIndex: number | undefined; newIndex: number | undefined }) => {
             const { oldIndex, newIndex } = evt
-            if (oldIndex === newIndex) return
+            if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
 
             // 새로운 순서 배열 생성
             const newOrder = Array.from(sortableRef.current!.children).map((child) => {
