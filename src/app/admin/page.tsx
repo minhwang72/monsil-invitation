@@ -1232,7 +1232,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     if (galleryState.selectedItems.size === galleryItems.length) {
       updateGalleryState({ selectedItems: new Set() })
     } else {
-      updateGalleryState({ selectedItems: new Set(galleryItems.map(item => item.id)))
+      updateGalleryState({ selectedItems: new Set(galleryItems.map(item => item.id)) })
     }
   }
 
