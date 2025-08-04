@@ -6,6 +6,7 @@ import type { Gallery, Guestbook, ContactPerson } from '@/types'
 
 import MainImageUploader from '@/components/MainImageUploader'
 import GlobalLoading from '@/components/GlobalLoading'
+import DraggableGallery from '@/components/DraggableGallery'
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop'
 
@@ -987,10 +988,6 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
   })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
-  const [draggedItem, setDraggedItem] = useState<Gallery | null>(null)
-  const [dragOverItem, setDragOverItem] = useState<number | null>(null)
-  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null)
-  const [isTouchDragging, setIsTouchDragging] = useState(false)
 
   // 상태 업데이트 헬퍼 함수
   const updateGalleryState = (updates: Partial<typeof galleryState>) => {
@@ -1019,82 +1016,16 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     })
   }
 
-  // 드래그 앤 드롭 핸들러
-  const handleDragStart = (e: React.DragEvent, item: Gallery) => {
-    if (galleryState.isSelectionMode) return
-    setDraggedItem(item)
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/html', item.id.toString())
-  }
 
-  const handleDragOver = (e: React.DragEvent, itemId: number) => {
-    if (galleryState.isSelectionMode) return
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    setDragOverItem(itemId)
-  }
 
-  const handleDragLeave = () => {
-    if (galleryState.isSelectionMode) return
-    setDragOverItem(null)
-  }
-
-  // 터치 드래그 핸들러
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (galleryState.isSelectionMode) return
-    const touch = e.touches[0]
-    setTouchStartPos({ x: touch.clientX, y: touch.clientY })
-    setIsTouchDragging(false)
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (galleryState.isSelectionMode || !touchStartPos) return
-    e.preventDefault()
-    
-    const touch = e.touches[0]
-    const deltaX = Math.abs(touch.clientX - touchStartPos.x)
-    const deltaY = Math.abs(touch.clientY - touchStartPos.y)
-    
-    // 10px 이상 이동했을 때만 드래그로 간주
-    if (deltaX > 10 || deltaY > 10) {
-      setIsTouchDragging(true)
-    }
-  }
-
-  const handleTouchEnd = () => {
-    if (galleryState.isSelectionMode) return
-    setTouchStartPos(null)
-    setIsTouchDragging(false)
-  }
-
-  const handleDrop = async (e: React.DragEvent, targetItem: Gallery) => {
-    if (galleryState.isSelectionMode) return
-    e.preventDefault()
-    
-    if (!draggedItem || draggedItem.id === targetItem.id) {
-      setDraggedItem(null)
-      setDragOverItem(null)
-      return
-    }
-
-    // 새로운 순서 배열 생성 - 삽입 방식으로 변경
-    const newOrder = [...galleryItems.map(item => item.id)]
-    const draggedIndex = newOrder.indexOf(draggedItem.id)
-    const targetIndex = newOrder.indexOf(targetItem.id)
-    
-    // 드래그한 아이템을 제거하고 타겟 위치에 삽입
-    newOrder.splice(draggedIndex, 1)
-    
-    // 타겟 위치 계산 (드래그한 아이템이 타겟보다 앞에 있었으면 인덱스 조정)
-    const adjustedTargetIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex
-    newOrder.splice(adjustedTargetIndex, 0, draggedItem.id)
-
+  // dnd-kit을 위한 순서 변경 핸들러
+  const handleReorder = async (sortedIds: number[]) => {
     setGlobalLoading(true, '순서 변경 중...')
     try {
       const res = await fetch('/api/admin/gallery', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sortedIds: newOrder }),
+        body: JSON.stringify({ sortedIds }),
       })
       
       if (!res.ok) {
@@ -1112,8 +1043,6 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       console.error('Error reordering gallery:', error)
       showToast('순서 변경 중 오류 발생', 'error')
     } finally {
-      setDraggedItem(null)
-      setDragOverItem(null)
       setGlobalLoading(false)
     }
   }
@@ -1336,91 +1265,15 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
         )}
       </div>
 
-      {/* 갤러리 그리드 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
-        {galleryItems.map((item, index) => (
-          <div
-            key={item.id}
-            draggable={!galleryState.isSelectionMode}
-            onDragStart={(e) => handleDragStart(e, item)}
-            onDragOver={(e) => handleDragOver(e, item.id)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, item)}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onClick={() => handleClick(item)}
-            onContextMenu={(e) => {
-              // 우클릭 메뉴 방지
-              e.preventDefault()
-              return false
-            }}
-            className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden touch-manipulation select-none user-select-none ${
-              galleryState.selectedItems.has(item.id) 
-                ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
-                : 'hover:scale-105'
-            } ${
-              draggedItem?.id === item.id ? 'opacity-50 scale-95 z-10' : ''
-            } ${
-              dragOverItem === item.id ? 'ring-2 ring-purple-500 bg-purple-50 scale-105' : ''
-            } ${
-              isTouchDragging ? 'z-20' : ''
-            }`}
-          >
-            {/* 이미지 */}
-            <img
-              src={item.url}
-              alt={`Gallery ${index + 1}`}
-              className="w-full h-full object-cover select-none pointer-events-none"
-              draggable={false}
-            />
-            
-            {/* 선택 표시 */}
-            {galleryState.isSelectionMode && (
-              <div 
-                className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 ${
-                  galleryState.selectedItems.has(item.id)
-                    ? 'bg-blue-500 scale-110'
-                    : 'bg-white border-2 border-gray-300 hover:border-blue-400'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation() // 이벤트 버블링 방지
-                  const newSelected = new Set(galleryState.selectedItems)
-                  if (newSelected.has(item.id)) {
-                    newSelected.delete(item.id)
-                  } else {
-                    newSelected.add(item.id)
-                  }
-                  updateGalleryState({ selectedItems: newSelected })
-                }}
-              >
-                {galleryState.selectedItems.has(item.id) ? (
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <div className="w-2 h-2 bg-transparent" />
-                )}
-              </div>
-            )}
-
-            {/* 순서 표시 */}
-            {!galleryState.isSelectionMode && (
-              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                {index + 1}
-              </div>
-            )}
-
-            {/* 드래그 중 표시 */}
-            {draggedItem?.id === item.id && (
-              <div className="absolute inset-0 bg-blue-500 bg-opacity-20 border-2 border-blue-500 rounded-lg flex items-center justify-center">
-                <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  이동 중
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+      {/* DraggableGallery 컴포넌트 */}
+      <div className="mb-6">
+        <DraggableGallery
+          items={galleryItems}
+          onReorder={handleReorder}
+          isSelectionMode={galleryState.isSelectionMode}
+          selectedItems={galleryState.selectedItems}
+          onItemClick={handleClick}
+        />
       </div>
 
       {/* 선택 모드 하단 버튼 */}
