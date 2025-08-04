@@ -987,8 +987,8 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
   })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
-  const sortableRef = useRef<HTMLDivElement>(null)
-  const sortableInstance = useRef<{ destroy: () => void } | null>(null)
+  const [draggedItem, setDraggedItem] = useState<Gallery | null>(null)
+  const [dragOverItem, setDragOverItem] = useState<number | null>(null)
 
   // 상태 업데이트 헬퍼 함수
   const updateGalleryState = (updates: Partial<typeof galleryState>) => {
@@ -1017,79 +1017,73 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
     })
   }
 
-  // SortableJS 초기화
-  useEffect(() => {
-    const initSortable = async () => {
-      if (sortableRef.current && !galleryState.isSelectionMode) {
-        // 기존 인스턴스 제거
-        if (sortableInstance.current) {
-          sortableInstance.current.destroy()
-        }
+  // 드래그 앤 드롭 핸들러
+  const handleDragStart = (e: React.DragEvent, item: Gallery) => {
+    if (galleryState.isSelectionMode) return
+    setDraggedItem(item)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', item.id.toString())
+  }
 
-        // SortableJS 동적 import
-        const { default: Sortable } = await import('sortablejs')
-        
-        // 새로운 SortableJS 인스턴스 생성
-        sortableInstance.current = Sortable.create(sortableRef.current, {
-          animation: 150,
-          delay: 300, // 모바일에서 롱프레스 지연
-          delayOnTouchOnly: true, // 터치에서만 지연 적용
-          touchStartThreshold: 5, // 터치 시작 임계값
-          ghostClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
-          chosenClass: 'ring-2 ring-purple-500 bg-purple-50 scale-105', // 선택된 아이템 스타일
-          dragClass: 'opacity-50 scale-95', // 드래그 중인 아이템 스타일
-          onEnd: async (evt: { oldIndex: number | undefined; newIndex: number | undefined }) => {
-            const { oldIndex, newIndex } = evt
-            if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
+  const handleDragOver = (e: React.DragEvent, itemId: number) => {
+    if (galleryState.isSelectionMode) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverItem(itemId)
+  }
 
-            // 새로운 순서 배열 생성
-            const newOrder = Array.from(sortableRef.current!.children).map((child) => {
-              const itemId = parseInt(child.getAttribute('data-id') || '0')
-              return itemId
-            })
+  const handleDragLeave = () => {
+    if (galleryState.isSelectionMode) return
+    setDragOverItem(null)
+  }
 
-            setGlobalLoading(true, '순서 변경 중...')
-            try {
-              const res = await fetch('/api/admin/gallery', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sortedIds: newOrder }),
-              })
-              
-              if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-              }
-              
-              const data = await res.json()
-              if (data.success) {
-                await onUpdate()
-                showToast('순서 변경 완료', 'success')
-              } else {
-                showToast(data.error || '순서 변경 실패', 'error')
-              }
-            } catch (error) {
-              console.error('Error reordering gallery:', error)
-              showToast('순서 변경 중 오류 발생', 'error')
-            } finally {
-              setGlobalLoading(false)
-            }
-          }
-        })
-      } else if (sortableInstance.current) {
-        // 선택 모드일 때는 SortableJS 비활성화
-        sortableInstance.current.destroy()
-        sortableInstance.current = null
-      }
+  const handleDrop = async (e: React.DragEvent, targetItem: Gallery) => {
+    if (galleryState.isSelectionMode) return
+    e.preventDefault()
+    
+    if (!draggedItem || draggedItem.id === targetItem.id) {
+      setDraggedItem(null)
+      setDragOverItem(null)
+      return
     }
 
-    initSortable()
+    // 새로운 순서 배열 생성
+    const newOrder = galleryItems.map(item => item.id)
+    const draggedIndex = newOrder.indexOf(draggedItem.id)
+    const targetIndex = newOrder.indexOf(targetItem.id)
+    
+    // 순서 변경
+    newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, draggedItem.id)
 
-    return () => {
-      if (sortableInstance.current) {
-        sortableInstance.current.destroy()
+    setGlobalLoading(true, '순서 변경 중...')
+    try {
+      const res = await fetch('/api/admin/gallery', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sortedIds: newOrder }),
+      })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
       }
+      
+      const data = await res.json()
+      if (data.success) {
+        await onUpdate()
+        showToast('순서 변경 완료', 'success')
+      } else {
+        showToast(data.error || '순서 변경 실패', 'error')
+      }
+    } catch (error) {
+      console.error('Error reordering gallery:', error)
+      showToast('순서 변경 중 오류 발생', 'error')
+    } finally {
+      setDraggedItem(null)
+      setDragOverItem(null)
+      setGlobalLoading(false)
     }
-  }, [galleryState.isSelectionMode, galleryItems.length, onUpdate, showToast, setGlobalLoading])
+  }
 
   // 다중 이미지 업로드
   const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1310,14 +1304,15 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       </div>
 
       {/* 갤러리 그리드 */}
-      <div 
-        ref={sortableRef}
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6"
-      >
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
         {galleryItems.map((item, index) => (
           <div
             key={item.id}
-            data-id={item.id}
+            draggable={!galleryState.isSelectionMode}
+            onDragStart={(e) => handleDragStart(e, item)}
+            onDragOver={(e) => handleDragOver(e, item.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, item)}
             onClick={() => handleClick(item)}
             onContextMenu={(e) => {
               // 우클릭 메뉴 방지
@@ -1328,6 +1323,10 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
               galleryState.selectedItems.has(item.id) 
                 ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
                 : 'hover:scale-105'
+            } ${
+              draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
+            } ${
+              dragOverItem === item.id ? 'ring-2 ring-purple-500 bg-purple-50 scale-105' : ''
             }`}
           >
             {/* 이미지 */}
