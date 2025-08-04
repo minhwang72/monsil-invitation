@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Gallery, Guestbook, ContactPerson } from '@/types'
-import { validateAndPrepareFile } from '@/lib/clientImageUtils'
+
 import MainImageUploader from '@/components/MainImageUploader'
 import GlobalLoading from '@/components/GlobalLoading'
 import Cropper from 'react-easy-crop'
@@ -976,7 +976,7 @@ const GalleryImageCropper = ({
 }
 
 // 갤러리 관리 섹션 컴포넌트
-const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoading }: { gallery: Gallery[], onUpdate: () => void, loading: boolean, showToast: (message: string, type: 'success' | 'error') => void, setGlobalLoading: (loading: boolean, message?: string) => void }) => {
+const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { gallery: Gallery[], onUpdate: () => void, showToast: (message: string, type: 'success' | 'error') => void, setGlobalLoading: (loading: boolean, message?: string) => void }) => {
   // 통합된 상태 관리
   const [galleryState, setGalleryState] = useState({
     uploading: false,
@@ -985,7 +985,9 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     selectedItems: new Set<number>(),
     draggedItem: null as Gallery | null,
     dragOverItem: null as number | null,
-    isDragging: false
+    isDragging: false,
+    isSelectionMode: false,
+    longPressTimer: null as NodeJS.Timeout | null
   })
 
   const galleryItems = gallery.filter(item => item.image_type === 'gallery')
@@ -995,27 +997,76 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     setGalleryState(prev => ({ ...prev, ...updates }))
   }
 
-  // 드래그 시작
+  // 롱클릭 핸들러
+  const handleLongPress = (item: Gallery) => {
+    if (galleryState.longPressTimer) {
+      clearTimeout(galleryState.longPressTimer)
+    }
+    
+    const timer = setTimeout(() => {
+      updateGalleryState({ 
+        isSelectionMode: true,
+        selectedItems: new Set([item.id])
+      })
+    }, 500) // 500ms 롱클릭
+
+    updateGalleryState({ longPressTimer: timer })
+  }
+
+  // 일반 클릭 핸들러
+  const handleClick = (item: Gallery) => {
+    if (galleryState.longPressTimer) {
+      clearTimeout(galleryState.longPressTimer)
+      updateGalleryState({ longPressTimer: null })
+    }
+
+    if (galleryState.isSelectionMode) {
+      // 선택 모드에서는 아이템 선택/해제
+      const newSelected = new Set(galleryState.selectedItems)
+      if (newSelected.has(item.id)) {
+        newSelected.delete(item.id)
+      } else {
+        newSelected.add(item.id)
+      }
+      updateGalleryState({ selectedItems: newSelected })
+    } else {
+      // 일반 모드에서는 드래그 앤 드롭으로 순서 변경
+      // (드래그 앤 드롭 로직은 아래에 구현)
+    }
+  }
+
+  // 선택 모드 종료
+  const exitSelectionMode = () => {
+    updateGalleryState({ 
+      isSelectionMode: false, 
+      selectedItems: new Set(),
+      longPressTimer: null
+    })
+  }
+
+  // 드래그 앤 드롭 (일반 클릭 시 순서 변경)
   const handleDragStart = (e: React.DragEvent, item: Gallery) => {
+    if (galleryState.isSelectionMode) return // 선택 모드에서는 드래그 비활성화
+    
     updateGalleryState({ draggedItem: item, isDragging: true })
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/html', item.id.toString())
   }
 
-  // 드래그 오버
   const handleDragOver = (e: React.DragEvent, itemId: number) => {
+    if (galleryState.isSelectionMode) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     updateGalleryState({ dragOverItem: itemId })
   }
 
-  // 드래그 리브
   const handleDragLeave = () => {
+    if (galleryState.isSelectionMode) return
     updateGalleryState({ dragOverItem: null })
   }
 
-  // 드롭
   const handleDrop = async (e: React.DragEvent, targetItem: Gallery) => {
+    if (galleryState.isSelectionMode) return
     e.preventDefault()
     
     if (!galleryState.draggedItem || galleryState.draggedItem.id === targetItem.id) {
@@ -1024,7 +1075,6 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     }
 
     setGlobalLoading(true, '순서 변경 중...')
-
     try {
       const res = await fetch('/api/admin/gallery', {
         method: 'PUT',
@@ -1040,7 +1090,6 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       }
       
       const data = await res.json()
-
       if (data.success) {
         await onUpdate()
         showToast('순서 변경 완료', 'success')
@@ -1057,7 +1106,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     }
   }
 
-  // 다중 파일 업로드
+  // 다중 이미지 업로드
   const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
@@ -1065,85 +1114,37 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     updateGalleryState({ uploading: true })
     setGlobalLoading(true, `${files.length}개 이미지 업로드 중...`)
     console.log('[DEBUG] Validating and preparing', files.length, 'files')
-    
-    try {
-      const results = []
-      
-      // 파일을 순차적으로 업로드하여 중복 방지
-      for (const file of files) {
-        try {
-          // 클라이언트 사이드에서 각 파일 유효성 검사
-            const validation = await validateAndPrepareFile(file)
-          
-          if (!validation.isValid) {
-            results.push({ success: false, error: validation.error || '파일 검증 실패' })
-            continue
-          }
-          
-          let fileToUpload = file
-          let conversionAttempted = false
-          
-          // HEIC 파일인 경우 클라이언트에서 JPEG로 변환 시도 (실패시 서버에서 처리)
-          if (file.name.toLowerCase().includes('.heic') || file.type === 'image/heic') {
-            try {
-              console.log('[DEBUG] Attempting HEIC to JPEG conversion for file:', file.name)
-              conversionAttempted = true
-              
-              const heic2any = await import('heic2any')
-              const convertedBlob = await heic2any.default({
-                blob: file,
-                toType: 'image/jpeg',
-                quality: 0.9
-              }) as Blob
-              
-              fileToUpload = new File([convertedBlob], file.name.replace(/\.heic$/i, '.jpg'), {
-                type: 'image/jpeg'
-              })
-              console.log('[DEBUG] HEIC converted to JPEG for file:', file.name)
-            } catch (heicError) {
-              console.error('[DEBUG] Client HEIC conversion failed for file:', file.name, heicError)
-              results.push({ success: false, error: `${file.name}: HEIC 파일 변환에 실패했습니다` })
-              continue
-            }
-          }
-          
-          // FormData로 파일 전송
-          const formData = new FormData()
-          formData.append('file', fileToUpload)
-          formData.append('image_type', 'gallery')
-          
-          const res = await fetch('/api/admin/upload', {
-            method: 'POST',
-            body: formData,
-          })
-          const result = await res.json()
-          
-          // 결과에 변환 정보 추가
-          if (result.success && conversionAttempted && fileToUpload === file) {
-            result.serverConverted = true
-          }
-          
-          results.push(result)
-          } catch (error) {
-          console.error('Error validating/uploading file:', file.name, error)
-          results.push({ success: false, error: `${file.name} 처리 실패` })
-        }
-      }
 
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('image_type', 'gallery')
+
+        const response = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+
+        return response.json()
+      })
+
+      const results = await Promise.all(uploadPromises)
       const successCount = results.filter(result => result.success).length
       const failCount = results.length - successCount
 
       if (successCount > 0) {
-        onUpdate()
-        const message = failCount > 0 
-          ? `${successCount}개 업로드 완료, ${failCount}개 실패`
-          : `${successCount}개 이미지 업로드 완료`
-        showToast(message, 'success')
+        await onUpdate()
+        showToast(`${successCount}개 업로드 완료${failCount > 0 ? `, ${failCount}개 실패` : ''}`, 'success')
       } else {
-        showToast('모든 이미지 업로드 실패', 'error')
+        showToast('업로드 실패', 'error')
       }
     } catch (error) {
-      console.error('[DEBUG] Error uploading images:', error)
+      console.error('[DEBUG] Upload error:', error)
       showToast('업로드 중 오류 발생', 'error')
     } finally {
       updateGalleryState({ uploading: false })
@@ -1164,7 +1165,7 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
         const res = await fetch(`/api/admin/gallery/${id}`, {
           method: 'DELETE',
         })
-        return res.json()
+        return { id, success: res.ok }
       })
 
       const results = await Promise.all(deletePromises)
@@ -1172,111 +1173,22 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
       const failCount = results.length - successCount
 
       updateGalleryState({ selectedItems: new Set() })
-      onUpdate()
+      await onUpdate()
       
       if (successCount > 0) {
-        const message = failCount > 0 
-          ? `${successCount}개 삭제 완료, ${failCount}개 실패`
-          : `${successCount}개 이미지 삭제 완료`
-        showToast(message, 'success')
-      } else {
-        showToast('이미지 삭제 실패', 'error')
-      }
-    } catch (error) {
-      console.error('[DEBUG] Error deleting images:', error)
-      showToast('삭제 중 오류 발생', 'error')
-    } finally {
-      setGlobalLoading(false)
-    }
-  }
-
-  // 단일 아이템 삭제
-  const handleDeleteSingle = async (id: number) => {
-    if (!confirm('이 이미지를 삭제하시겠습니까?')) return
-
-    setGlobalLoading(true, '이미지 삭제 중...')
-
-    try {
-      const res = await fetch(`/api/admin/gallery/${id}`, {
-        method: 'DELETE',
-      })
-      const data = await res.json()
-
-      if (data.success) {
-        onUpdate()
-        showToast('이미지 삭제 완료', 'success')
+        showToast(`${successCount}개 삭제 완료${failCount > 0 ? `, ${failCount}개 실패` : ''}`, 'success')
       } else {
         showToast('삭제 실패', 'error')
       }
     } catch (error) {
-      console.error('[DEBUG] Error deleting image:', error)
+      console.error('[DEBUG] Delete error:', error)
       showToast('삭제 중 오류 발생', 'error')
     } finally {
       setGlobalLoading(false)
     }
   }
 
-  // 아이템 선택/해제
-  const toggleSelection = (id: number) => {
-    const newSelected = new Set(galleryState.selectedItems)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
-    updateGalleryState({ selectedItems: newSelected })
-  }
 
-  // 전체 선택/해제
-  const toggleSelectAll = () => {
-    if (galleryState.selectedItems.size === galleryItems.length) {
-      updateGalleryState({ selectedItems: new Set() })
-    } else {
-      updateGalleryState({ selectedItems: new Set(galleryItems.map(item => item.id)) })
-    }
-  }
-
-  // 순서 변경 (위로/아래로)
-  const moveItem = async (id: number, direction: 'up' | 'down') => {
-    const currentIndex = galleryItems.findIndex(item => item.id === id)
-    if (currentIndex === -1) return
-    
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    if (targetIndex < 0 || targetIndex >= galleryItems.length) return
-
-    const sourceId = id
-    const targetId = galleryItems[targetIndex].id
-
-    console.log('🔍 [DEBUG] Moving gallery item:', { sourceId, targetId, direction })
-
-    try {
-      const res = await fetch('/api/admin/gallery', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId, targetId }),
-      })
-      const data = await res.json()
-
-      console.log('🔍 [DEBUG] Gallery reorder response:', data)
-
-      if (data.success) {
-        console.log('✅ [DEBUG] Gallery reorder successful, calling onUpdate')
-        onUpdate() // 갤러리 목록 새로고침
-        showToast('순서 변경 완료', 'success')
-      } else {
-        console.log('❌ [DEBUG] Gallery reorder failed:', data.error)
-        showToast('순서 변경 실패', 'error')
-      }
-    } catch (error) {
-      console.error('❌ [DEBUG] Error reordering gallery:', error)
-      showToast('순서 변경 중 오류 발생', 'error')
-    }
-  }
-
-  // 파일명 추출
-  const getFileName = (url: string) => {
-    return url.split('/').pop()?.split('.')[0] || 'Unknown'
-  }
 
   // 수정 버튼 클릭
   const handleEditClick = (item: Gallery) => {
@@ -1349,51 +1261,6 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
     updateGalleryState({ editingItem: null })
   }
 
-  // 번호 직접 입력으로 이동
-  const moveToPosition = async (itemId: number, targetPosition: number) => {
-    if (targetPosition < 1 || targetPosition > galleryItems.length) {
-      showToast('유효하지 않은 위치입니다', 'error')
-      return
-    }
-
-    const currentIndex = galleryItems.findIndex(item => item.id === itemId)
-    if (currentIndex === -1) return
-
-    const targetIndex = targetPosition - 1
-    if (currentIndex === targetIndex) return
-
-    setGlobalLoading(true, `${targetPosition}번 위치로 이동 중...`)
-
-    try {
-      const sourceId = itemId
-      const targetId = galleryItems[targetIndex].id
-
-      const res = await fetch('/api/admin/gallery', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId, targetId }),
-      })
-      
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-      }
-      
-      const data = await res.json()
-
-      if (data.success) {
-        await onUpdate()
-        showToast(`${targetPosition}번 위치로 이동 완료`, 'success')
-      } else {
-        showToast(data.error || '이동 실패', 'error')
-      }
-    } catch (error) {
-      console.error('Error moving to position:', error)
-      showToast('이동 중 오류 발생', 'error')
-    } finally {
-      setGlobalLoading(false)
-    }
-  }
-
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">갤러리 관리</h2>
@@ -1407,565 +1274,133 @@ const GallerySection = ({ gallery, onUpdate, loading, showToast, setGlobalLoadin
         />
       )}
 
-      {/* 업로드 및 컨트롤 섹션 */}
+      {/* 상단 컨트롤 */}
       <div className="mb-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            이미지 업로드 (다중 선택 가능)
+        {/* 업로드 버튼 */}
+        <div className="flex items-center space-x-4">
+          <label className="flex-1">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleMultipleImageUpload}
+              disabled={galleryState.uploading}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+            />
+            {galleryState.uploading && (
+              <p className="text-sm text-purple-600 mt-2">업로드 중...</p>
+            )}
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleMultipleImageUpload}
-            disabled={galleryState.uploading}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-          />
-          {galleryState.uploading && (
-            <p className="text-sm text-purple-600 mt-2">업로드 중...</p>
-          )}
         </div>
 
-        {/* 선택 컨트롤 */}
-        {galleryItems.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 p-3 sm:p-4 rounded space-y-3 sm:space-y-0">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <button
-                onClick={toggleSelectAll}
-                className="text-sm text-purple-600 hover:text-purple-800 text-left sm:text-center min-h-[44px] flex items-center"
-              >
-                {galleryState.selectedItems.size === galleryItems.length ? '전체 해제' : '전체 선택'}
-              </button>
-              <span className="text-sm text-gray-600">
-                {galleryState.selectedItems.size}개 선택됨
-              </span>
-              {galleryState.selectedItems.size > 1 && (
-                <span className="text-xs text-amber-600">
-                  수정은 1개씩만 가능합니다
-                </span>
-              )}
-            </div>
-            {galleryState.selectedItems.size > 0 && (
-              <button
-                onClick={handleDeleteSelected}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm sm:text-base min-h-[44px] w-full sm:w-auto"
-              >
-                선택 삭제 ({galleryState.selectedItems.size}개)
-              </button>
-            )}
+        {/* 선택 모드 안내 */}
+        {galleryState.isSelectionMode && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              선택 모드: {galleryState.selectedItems.size}개 선택됨
+            </p>
           </div>
         )}
       </div>
 
-      {/* 갤러리 목록 */}
-      {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-300 mx-auto"></div>
-        </div>
-      ) : (
-        <div className="space-y-3 sm:space-y-4">
-          {/* 드래그 앤 드롭 안내 */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <div className="text-blue-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      {/* 갤러리 그리드 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+        {galleryItems.map((item, index) => (
+          <div
+            key={item.id}
+            draggable={!galleryState.isSelectionMode}
+            onDragStart={(e) => handleDragStart(e, item)}
+            onDragOver={(e) => handleDragOver(e, item.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, item)}
+            onClick={() => handleClick(item)}
+            onMouseDown={() => handleLongPress(item)}
+            onTouchStart={() => handleLongPress(item)}
+            className={`relative aspect-square cursor-pointer transition-all duration-200 rounded-lg overflow-hidden ${
+              galleryState.selectedItems.has(item.id) 
+                ? 'ring-2 ring-blue-500 bg-blue-50 scale-95' 
+                : 'hover:scale-105'
+            } ${
+              galleryState.draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
+            } ${
+              galleryState.dragOverItem === item.id ? 'ring-2 ring-purple-500 bg-purple-50 scale-105' : ''
+            } ${
+              galleryState.isDragging && !galleryState.isSelectionMode ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+          >
+            {/* 이미지 */}
+            <img
+              src={item.url}
+              alt={`Gallery ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+            
+            {/* 선택 표시 */}
+            {galleryState.selectedItems.has(item.id) && (
+              <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-sm font-medium text-blue-900">드래그 앤 드롭으로 순서 변경</h3>
-                <p className="text-xs text-blue-700 mt-1">
-                  이미지를 드래그해서 원하는 위치로 이동하세요. 버튼을 사용한 수동 이동도 가능합니다.
-                </p>
+            )}
+
+            {/* 순서 표시 */}
+            {!galleryState.isSelectionMode && (
+              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                {index + 1}
               </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* 선택 모드 하단 버튼 */}
+      {galleryState.isSelectionMode && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
+          <div className="flex items-center justify-between max-w-md mx-auto">
+            <button
+              onClick={exitSelectionMode}
+              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              취소
+            </button>
+            
+            <div className="flex items-center space-x-2">
+              {galleryState.selectedItems.size === 1 && (
+                <button
+                  onClick={() => {
+                    const selectedItem = galleryItems.find(item => item.id === Array.from(galleryState.selectedItems)[0])
+                    if (selectedItem) {
+                      handleEditClick(selectedItem)
+                      exitSelectionMode()
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  수정
+                </button>
+              )}
+              
+              <button
+                onClick={handleDeleteSelected}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                {galleryState.selectedItems.size > 1 
+                  ? `${galleryState.selectedItems.size}개 삭제` 
+                  : '삭제'
+                }
+              </button>
             </div>
           </div>
-          {galleryItems.map((item, index) => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, item)}
-              onDragOver={(e) => handleDragOver(e, item.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, item)}
-              className={`border rounded-lg transition-all duration-200 ${
-                galleryState.selectedItems.has(item.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              } ${
-                galleryState.draggedItem?.id === item.id ? 'opacity-50 scale-95' : ''
-              } ${
-                galleryState.dragOverItem === item.id ? 'border-blue-500 bg-blue-50 scale-105' : ''
-              } ${
-                galleryState.isDragging ? 'cursor-grabbing' : 'cursor-grab'
-              }`}
-            >
-              {/* 모바일 레이아웃 */}
-              <div className="block sm:hidden">
-                <div className="p-4">
-                  {/* 상단: 체크박스, 이미지, 정보 */}
-                  <div className="flex items-center space-x-3 mb-4">
-                    <input
-                      type="checkbox"
-                      checked={galleryState.selectedItems.has(item.id)}
-                      onChange={() => toggleSelection(item.id)}
-                      className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                    />
-                    <div className="w-16 h-16 relative">
-                      <img
-                        src={item.url}
-                        alt="Gallery"
-                        className="w-full h-full object-cover rounded"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {getFileName(item.url)}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        업로드: {new Date(item.created_at).toLocaleDateString('ko-KR')}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        순서: #{index + 1}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* 하단: 버튼들 */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* 순서 변경 버튼들 */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {/* 빠른 이동 버튼들 */}
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => {
-                            // 맨 위로 이동 (첫 번째 아이템과 교환)
-                            if (index > 0) {
-                              const sourceId = item.id
-                              const targetId = galleryItems[0].id
-                              setGlobalLoading(true, '맨 위로 이동 중...')
-                              
-                              fetch('/api/admin/gallery', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ sourceId, targetId }),
-                              })
-                              .then(res => res.json())
-                              .then(data => {
-                                if (data.success) {
-                                  onUpdate()
-                                  showToast('맨 위로 이동 완료', 'success')
-                                } else {
-                                  showToast('이동 실패', 'error')
-                                }
-                              })
-                              .catch(error => {
-                                console.error('Error moving to top:', error)
-                                showToast('이동 중 오류 발생', 'error')
-                              })
-                              .finally(() => setGlobalLoading(false))
-                            }
-                          }}
-                          disabled={index === 0}
-                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                          title={index === 0 ? "이미 맨 위입니다" : "맨 위로 이동"}
-                        >
-                          맨 위
-                        </button>
-                        <button
-                          onClick={() => {
-                            // 맨 아래로 이동 (마지막 아이템과 교환)
-                            if (index < galleryItems.length - 1) {
-                              const sourceId = item.id
-                              const targetId = galleryItems[galleryItems.length - 1].id
-                              setGlobalLoading(true, '맨 아래로 이동 중...')
-                              
-                              fetch('/api/admin/gallery', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ sourceId, targetId }),
-                              })
-                              .then(res => res.json())
-                              .then(data => {
-                                if (data.success) {
-                                  onUpdate()
-                                  showToast('맨 아래로 이동 완료', 'success')
-                                } else {
-                                  showToast('이동 실패', 'error')
-                                }
-                              })
-                              .catch(error => {
-                                console.error('Error moving to bottom:', error)
-                                showToast('이동 중 오류 발생', 'error')
-                              })
-                              .finally(() => setGlobalLoading(false))
-                            }
-                          }}
-                          disabled={index === galleryItems.length - 1}
-                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                          title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "맨 아래로 이동"}
-                        >
-                          맨 아래
-                        </button>
-                      </div>
-                      
-                      {/* 단계별 빠른 이동 버튼들 */}
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => {
-                            // 5칸 위로 이동
-                            const targetIndex = Math.max(0, index - 5)
-                            if (targetIndex !== index) {
-                              const sourceId = item.id
-                              const targetId = galleryItems[targetIndex].id
-                              setGlobalLoading(true, '5칸 위로 이동 중...')
-                              
-                              fetch('/api/admin/gallery', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ sourceId, targetId }),
-                              })
-                              .then(res => res.json())
-                              .then(data => {
-                                if (data.success) {
-                                  onUpdate()
-                                  showToast('5칸 위로 이동 완료', 'success')
-                                } else {
-                                  showToast('이동 실패', 'error')
-                                }
-                              })
-                              .catch(error => {
-                                console.error('Error moving up by 5:', error)
-                                showToast('이동 중 오류 발생', 'error')
-                              })
-                              .finally(() => setGlobalLoading(false))
-                            }
-                          }}
-                          disabled={index < 5}
-                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                          title={index < 5 ? "5칸 위로 이동할 수 없습니다" : "5칸 위로 이동"}
-                        >
-                          -5칸
-                        </button>
-                        <button
-                          onClick={() => {
-                            // 5칸 아래로 이동
-                            const targetIndex = Math.min(galleryItems.length - 1, index + 5)
-                            if (targetIndex !== index) {
-                              const sourceId = item.id
-                              const targetId = galleryItems[targetIndex].id
-                              setGlobalLoading(true, '5칸 아래로 이동 중...')
-                              
-                              fetch('/api/admin/gallery', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ sourceId, targetId }),
-                              })
-                              .then(res => res.json())
-                              .then(data => {
-                                if (data.success) {
-                                  onUpdate()
-                                  showToast('5칸 아래로 이동 완료', 'success')
-                                } else {
-                                  showToast('이동 실패', 'error')
-                                }
-                              })
-                              .catch(error => {
-                                console.error('Error moving down by 5:', error)
-                                showToast('이동 중 오류 발생', 'error')
-                              })
-                              .finally(() => setGlobalLoading(false))
-                            }
-                          }}
-                          disabled={index >= galleryItems.length - 5}
-                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                          title={index >= galleryItems.length - 5 ? "5칸 아래로 이동할 수 없습니다" : "5칸 아래로 이동"}
-                        >
-                          +5칸
-                        </button>
-                      </div>
-                      
-                      {/* 번호 직접 입력 */}
-                      <div className="flex space-x-1">
-                        <input
-                          type="number"
-                          min="1"
-                          max={galleryItems.length}
-                          placeholder={`${index + 1}`}
-                          className="flex-1 h-10 px-2 text-center text-sm border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              const targetPosition = parseInt((e.target as HTMLInputElement).value)
-                              if (targetPosition && targetPosition !== index + 1) {
-                                moveToPosition(item.id, targetPosition)
-                                ;(e.target as HTMLInputElement).value = ''
-                              }
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => {
-                            const input = document.querySelector(`input[placeholder="${index + 1}"]`) as HTMLInputElement
-                            if (input) {
-                              const targetPosition = parseInt(input.value)
-                              if (targetPosition && targetPosition !== index + 1) {
-                                moveToPosition(item.id, targetPosition)
-                                input.value = ''
-                              }
-                            }
-                          }}
-                          className="flex-1 h-10 flex items-center justify-center text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded"
-                          title="입력한 번호로 이동"
-                        >
-                          이동
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* 수정/삭제 버튼들 */}
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditClick(item);
-                        }}
-                        disabled={galleryState.selectedItems.size > 1 || galleryState.uploading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                        title={galleryState.selectedItems.size > 1 ? "수정은 1개씩만 가능합니다" : "이미지 수정"}
-                      >
-                        수정
-                      </button>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSingle(item.id);
-                        }}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm min-h-[44px]"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 데스크톱 레이아웃 */}
-              <div
-                className="hidden sm:flex items-center p-4 cursor-pointer"
-                onClick={() => toggleSelection(item.id)}
-              >
-                {/* 선택 체크박스 */}
-                <input
-                  type="checkbox"
-                  checked={galleryState.selectedItems.has(item.id)}
-                  onChange={() => toggleSelection(item.id)}
-                  className="mr-4 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-
-                {/* 이미지 미리보기 */}
-                <div className="w-16 h-16 relative mr-4">
-                  <img
-                    src={item.url}
-                    alt="Gallery"
-                    className="w-full h-full object-cover rounded"
-                  />
-                </div>
-
-                {/* 파일 정보 */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">
-                    {getFileName(item.url)}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    업로드: {new Date(item.created_at).toLocaleDateString('ko-KR')}
-                  </p>
-                </div>
-
-                {/* 순서 번호 */}
-                <div className="text-sm text-gray-600 mr-4">
-                  #{index + 1}
-                </div>
-
-                {/* 순서 변경 버튼 */}
-                <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => moveItem(item.id, 'up')}
-                    disabled={index === 0}
-                    className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                    title={index === 0 ? "이미 맨 위입니다" : "위로 이동"}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    onClick={() => moveItem(item.id, 'down')}
-                    disabled={index === galleryItems.length - 1}
-                    className="w-8 h-6 flex items-center justify-center text-sm font-bold text-black bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                    title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "아래로 이동"}
-                  >
-                    ↓
-                  </button>
-                </div>
-
-                {/* 빠른 이동 버튼들 */}
-                <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => {
-                      // 맨 위로 이동
-                      if (index > 0) {
-                        const sourceId = item.id
-                        const targetId = galleryItems[0].id
-                        setGlobalLoading(true, '맨 위로 이동 중...')
-                        
-                        fetch('/api/admin/gallery', {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ sourceId, targetId }),
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                          if (data.success) {
-                            onUpdate()
-                            showToast('맨 위로 이동 완료', 'success')
-                          } else {
-                            showToast('이동 실패', 'error')
-                          }
-                        })
-                        .catch(error => {
-                          console.error('Error moving to top:', error)
-                          showToast('이동 중 오류 발생', 'error')
-                        })
-                        .finally(() => setGlobalLoading(false))
-                      }
-                    }}
-                    disabled={index === 0}
-                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                    title={index === 0 ? "이미 맨 위입니다" : "맨 위로 이동"}
-                  >
-                    TOP
-                  </button>
-                  <button
-                    onClick={() => {
-                      // 맨 아래로 이동
-                      if (index < galleryItems.length - 1) {
-                        const sourceId = item.id
-                        const targetId = galleryItems[galleryItems.length - 1].id
-                        setGlobalLoading(true, '맨 아래로 이동 중...')
-                        
-                        fetch('/api/admin/gallery', {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ sourceId, targetId }),
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                          if (data.success) {
-                            onUpdate()
-                            showToast('맨 아래로 이동 완료', 'success')
-                          } else {
-                            showToast('이동 실패', 'error')
-                          }
-                        })
-                        .catch(error => {
-                          console.error('Error moving to bottom:', error)
-                          showToast('이동 중 오류 발생', 'error')
-                        })
-                        .finally(() => setGlobalLoading(false))
-                      }
-                    }}
-                    disabled={index === galleryItems.length - 1}
-                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                    title={index === galleryItems.length - 1 ? "이미 맨 아래입니다" : "맨 아래로 이동"}
-                  >
-                    BOT
-                  </button>
-                </div>
-
-                {/* 단계별 이동 버튼들 */}
-                <div className="flex flex-col space-y-1 mr-4" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => {
-                      // 5칸 위로 이동
-                      const targetIndex = Math.max(0, index - 5)
-                      if (targetIndex !== index) {
-                        const sourceId = item.id
-                        const targetId = galleryItems[targetIndex].id
-                        setGlobalLoading(true, '5칸 위로 이동 중...')
-                        
-                        fetch('/api/admin/gallery', {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ sourceId, targetId }),
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                          if (data.success) {
-                            onUpdate()
-                            showToast('5칸 위로 이동 완료', 'success')
-                          } else {
-                            showToast('이동 실패', 'error')
-                          }
-                        })
-                        .catch(error => {
-                          console.error('Error moving up by 5:', error)
-                          showToast('이동 중 오류 발생', 'error')
-                        })
-                        .finally(() => setGlobalLoading(false))
-                      }
-                    }}
-                    disabled={index < 5}
-                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                    title={index < 5 ? "5칸 위로 이동할 수 없습니다" : "5칸 위로 이동"}
-                  >
-                    -5
-                  </button>
-                  <button
-                    onClick={() => {
-                      // 5칸 아래로 이동
-                      const targetIndex = Math.min(galleryItems.length - 1, index + 5)
-                      if (targetIndex !== index) {
-                        const sourceId = item.id
-                        const targetId = galleryItems[targetIndex].id
-                        setGlobalLoading(true, '5칸 아래로 이동 중...')
-                        
-                        fetch('/api/admin/gallery', {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ sourceId, targetId }),
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                          if (data.success) {
-                            onUpdate()
-                            showToast('5칸 아래로 이동 완료', 'success')
-                          } else {
-                            showToast('이동 실패', 'error')
-                          }
-                        })
-                        .catch(error => {
-                          console.error('Error moving down by 5:', error)
-                          showToast('이동 중 오류 발생', 'error')
-                        })
-                        .finally(() => setGlobalLoading(false))
-                      }
-                    }}
-                    disabled={index >= galleryItems.length - 5}
-                    className="w-8 h-6 flex items-center justify-center text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded"
-                    title={index >= galleryItems.length - 5 ? "5칸 아래로 이동할 수 없습니다" : "5칸 아래로 이동"}
-                  >
-                    +5
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
-      
-      {galleryItems.length === 0 && !loading && (
-        <div className="text-center text-gray-500 py-8">
-          갤러리 이미지가 없습니다.
-        </div>
-      )}
+
+      {/* 안내 텍스트 */}
+      <div className="text-sm text-gray-600 mt-4">
+        <p>• 일반 클릭: 사진을 드래그하여 순서 변경</p>
+        <p>• 롱클릭: 선택 모드 진입</p>
+        <p>• 선택 모드에서 수정/삭제 가능</p>
+      </div>
     </div>
   )
 }
@@ -2368,7 +1803,7 @@ function AdminPageContent() {
 
           {/* 갤러리 관리 탭 */}
           {activeTab === 'gallery' && (
-            <GallerySection gallery={gallery} onUpdate={updateGallery} loading={loading.gallery} showToast={showToast} setGlobalLoading={setGlobalLoadingState} />
+            <GallerySection gallery={gallery} onUpdate={updateGallery} showToast={showToast} setGlobalLoading={setGlobalLoadingState} />
           )}
 
           {/* 방명록 관리 탭 */}
