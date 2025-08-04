@@ -1040,7 +1040,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
   }
 
   // 터치 드래그 핸들러
-  const handleTouchStart = (e: React.TouchEvent, item: Gallery) => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (galleryState.isSelectionMode) return
     const touch = e.touches[0]
     setTouchStartPos({ x: touch.clientX, y: touch.clientY })
@@ -1346,7 +1346,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
             onDragOver={(e) => handleDragOver(e, item.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, item)}
-            onTouchStart={(e) => handleTouchStart(e, item)}
+            onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             onClick={() => handleClick(item)}
