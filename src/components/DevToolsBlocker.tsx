@@ -10,16 +10,7 @@ const DevToolsBlocker = ({ onBlock }: DevToolsBlockerProps) => {
   const [showToast, setShowToast] = useState(false)
 
   useEffect(() => {
-    // 우클릭 방지
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setShowToast(true)
-      onBlock?.()
-      return false
-    }
-
-    // F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+C 등 키보드 단축키 방지
+    // F12 키만 감지하여 토스트 표시
     const handleKeyDown = (e: KeyboardEvent) => {
       // F12
       if (e.key === 'F12') {
@@ -28,87 +19,13 @@ const DevToolsBlocker = ({ onBlock }: DevToolsBlockerProps) => {
         onBlock?.()
         return false
       }
-      
-      // Ctrl+Shift+I (개발자 도구)
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-        e.preventDefault()
-        setShowToast(true)
-        onBlock?.()
-        return false
-      }
-      
-      // Ctrl+Shift+J (콘솔)
-      if (e.ctrlKey && e.shiftKey && e.key === 'J') {
-        e.preventDefault()
-        setShowToast(true)
-        onBlock?.()
-        return false
-      }
-      
-      // Ctrl+U (소스 보기)
-      if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault()
-        setShowToast(true)
-        onBlock?.()
-        return false
-      }
-      
-      // Ctrl+Shift+C (요소 검사)
-      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-        e.preventDefault()
-        setShowToast(true)
-        onBlock?.()
-        return false
-      }
-      
-      // Ctrl+Shift+E (네트워크)
-      if (e.ctrlKey && e.shiftKey && e.key === 'E') {
-        e.preventDefault()
-        setShowToast(true)
-        onBlock?.()
-        return false
-      }
-    }
-
-    // 개발자 도구 감지 (크기 변화 감지)
-    const detectDevTools = () => {
-      const threshold = 160
-      const widthThreshold = window.outerWidth - window.innerWidth > threshold
-      const heightThreshold = window.outerHeight - window.innerHeight > threshold
-      
-      if (widthThreshold || heightThreshold) {
-        setShowToast(true)
-        onBlock?.()
-      }
-    }
-
-    // 개발자 도구 감지 (디버거 감지)
-    const detectDebugger = () => {
-      const startTime = performance.now()
-      debugger
-      const endTime = performance.now()
-      
-      if (endTime - startTime > 100) {
-        setShowToast(true)
-        onBlock?.()
-      }
     }
 
     // 이벤트 리스너 등록
-    document.addEventListener('contextmenu', handleContextMenu)
     document.addEventListener('keydown', handleKeyDown)
-    
-    // 주기적으로 개발자 도구 감지
-    const interval = setInterval(detectDevTools, 1000)
-    
-    // 디버거 감지 (더 정교한 방법)
-    const debuggerInterval = setInterval(detectDebugger, 2000)
 
     return () => {
-      document.removeEventListener('contextmenu', handleContextMenu)
       document.removeEventListener('keydown', handleKeyDown)
-      clearInterval(interval)
-      clearInterval(debuggerInterval)
     }
   }, [onBlock])
 

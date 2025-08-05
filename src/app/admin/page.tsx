@@ -1028,7 +1028,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
 
 
 
-  // dnd-kit을 위한 순서 변경 핸들러
+  // 순서 변경 핸들러
   const handleReorder = async (sortedIds: number[]) => {
     setGlobalLoading(true, '순서 변경 중...')
     try {
@@ -1045,7 +1045,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
       const data = await res.json()
       if (data.success) {
         await onUpdate()
-        showToast('순서 변경 완료', 'success')
+        // 토스트 메시지 제거 - 한 번에 여러 번 할 수 있으므로
       } else {
         showToast(data.error || '순서 변경 실패', 'error')
       }
