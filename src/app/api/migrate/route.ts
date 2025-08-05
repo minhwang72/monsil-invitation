@@ -262,54 +262,8 @@ export async function POST() {
       }
     }
 
-    // 8. contacts 테이블에 초기 데이터 삽입 (계좌 정보 포함)
-    try {
-      // 기존 데이터가 있는지 확인
-      const [existingRows] = await pool.query('SELECT COUNT(*) as count FROM contacts')
-      const typedRows = existingRows as { count: number }[]
-      const count = typedRows[0].count
-      
-      if (count === 0) {
-        // 초기 연락처 데이터 삽입 (계좌 정보 포함)
-        const contactsData = [
-          ['groom', 'person', '황민', '01036986181', '카카오뱅크', '3333-17-5074857'],
-          ['groom', 'father', '황현기', '01030666181', '농협', '302-0123-4567-11'], 
-          ['groom', 'mother', '박인숙', '01042526181', '국민은행', '123-456-789012'],
-          ['bride', 'person', '이은솔', '01089390389', '신한은행', '110-123-456789'],
-          ['bride', 'father', '이완규', '01045990389', '우리은행', '1002-123-456789'],
-          ['bride', 'mother', '홍순자', '', '하나은행', '333-123456-78901']
-        ]
-        
-        for (const contact of contactsData) {
-          await pool.query(
-            'INSERT INTO contacts (side, relationship, name, phone, bank_name, account_number) VALUES (?, ?, ?, ?, ?, ?)',
-            contact
-          )
-        }
-        migrations.push('initial contact data with account info inserted')
-      } else {
-        // 기존 데이터가 있으면 계좌 정보만 업데이트
-        const accountUpdates = [
-          [1, '카카오뱅크', '3333-17-5074857'], // 황민
-          [2, '농협', '302-0123-4567-11'],     // 황현기
-          [3, '국민은행', '123-456-789012'],    // 박인숙
-          [4, '신한은행', '110-123-456789'],    // 이은솔
-          [5, '우리은행', '1002-123-456789'],   // 이완규
-          [6, '하나은행', '333-123456-78901']   // 홍순자
-        ]
-        
-        for (const [id, bankName, accountNumber] of accountUpdates) {
-          await pool.query(
-            'UPDATE contacts SET bank_name = ?, account_number = ? WHERE id = ?',
-            [bankName, accountNumber, id]
-          )
-        }
-        migrations.push('account information updated for existing contacts')
-      }
-    } catch (error) {
-      console.error('Contact data insertion/update error:', error)
-      migrations.push('contact data insertion/update failed (non-critical)')
-    }
+    // 8. contacts 테이블 초기화 제거 - API로만 관리하도록 변경
+    migrations.push('contacts table initialization removed - managed via API only')
 
     // 9. 사용하지 않는 accounts 테이블 삭제
     try {
@@ -345,17 +299,8 @@ export async function POST() {
       }
     }
 
-    // 12. 황민의 카카오페이 링크 업데이트
-    try {
-      await pool.query(
-        'UPDATE contacts SET kakaopay_link = ? WHERE name = ? AND side = ?',
-        ['https://qr.kakaopay.com/Ej7nPOau3', '황민', 'groom']
-      )
-      migrations.push('황민 kakaopay link updated')
-    } catch (error) {
-      console.error('KakaoPay link update error:', error)
-      migrations.push('kakaopay link update failed (non-critical)')
-    }
+    // 12. 카카오페이 링크 업데이트 제거 - API로만 관리
+    migrations.push('kakaopay link updates removed - managed via API only')
 
     // 13. admin 테이블 생성 및 username 컬럼 추가
     try {
@@ -409,192 +354,14 @@ export async function POST() {
       migrations.push('admin setup failed (non-critical)')
     }
 
-    // 15. HEIC 파일들 정리는 유지하지만 images 테이블 관련 코드는 제거
-    try {
-      const koreaTime = new Date(Date.now() + (9 * 60 * 60 * 1000))
-      const formattedTime = koreaTime.toISOString().slice(0, 19).replace('T', ' ')
-      
-      const [result] = await pool.query(
-        `UPDATE gallery SET deleted_at = ? 
-         WHERE (filename LIKE '%.HEIC' OR filename LIKE '%.heic') 
-         AND deleted_at IS NULL`,
-        [formattedTime]
-      )
-      
-      const updateResult = result as { affectedRows: number }
-      migrations.push(`HEIC files cleaned up: ${updateResult.affectedRows} files marked as deleted`)
-    } catch (error) {
-      console.error('HEIC cleanup error:', error)
-      migrations.push('HEIC cleanup failed (non-critical)')
-    }
+    // 15. HEIC 파일 정리 제거 - 개발 단계용 코드
+    migrations.push('HEIC cleanup removed - development only code')
 
-    // 18. gallery 테이블에 order_index 컬럼 추가 (갤러리 순서 변경 기능용)
-    try {
-      await pool.query(`
-        ALTER TABLE gallery 
-        ADD COLUMN order_index INT DEFAULT 0
-      `)
-      migrations.push('gallery: order_index column added for reordering feature')
-    } catch (error: unknown) {
-      const mysqlError = error as MySQLError
-      if (mysqlError.code === 'ER_DUP_FIELDNAME') {
-        migrations.push('gallery: order_index column already exists')
-      } else {
-        console.error('Gallery order_index column error:', error)
-        migrations.push('gallery: order_index column addition failed (non-critical)')
-      }
-    }
+    // 18. gallery order_index 관련 중복 코드 제거 - 이미 완료됨
+    migrations.push('gallery order_index migrations removed - already completed')
 
-    // 19. 기존 갤러리 이미지들의 order_index를 created_at 순서로 재설정
-    try {
-      // 갤러리 이미지들을 created_at 순서로 조회
-      const [galleryRows] = await pool.query(`
-        SELECT id FROM gallery 
-        WHERE image_type = 'gallery' AND deleted_at IS NULL 
-        ORDER BY created_at ASC
-      `)
-      const galleryImages = galleryRows as { id: number }[]
-      
-      // 각 이미지에 순서대로 order_index 설정 (1부터 시작)
-      for (let i = 0; i < galleryImages.length; i++) {
-        await pool.query(
-          'UPDATE gallery SET order_index = ? WHERE id = ?',
-          [i + 1, galleryImages[i].id]
-        )
-      }
-      
-      migrations.push(`gallery: order_index updated for ${galleryImages.length} existing images`)
-    } catch (error) {
-      console.error('Gallery order_index update error:', error)
-      migrations.push('gallery: order_index update failed (non-critical)')
-    }
-
-    // 20. 강제로 order_index 재설정 (기존 설정이 안 된 경우를 대비)
-    try {
-      console.log('🔍 [DEBUG] Force updating order_index for gallery images...')
-      
-      // 모든 갤러리 이미지를 created_at 순서로 조회
-      const [galleryRows] = await pool.query(`
-        SELECT id FROM gallery 
-        WHERE image_type = 'gallery' AND deleted_at IS NULL 
-        ORDER BY created_at ASC
-      `)
-      const galleryImages = galleryRows as { id: number }[]
-      
-      console.log(`🔍 [DEBUG] Found ${galleryImages.length} gallery images to update`)
-      
-      // 각 이미지에 순서대로 order_index 설정 (1부터 시작)
-      for (let i = 0; i < galleryImages.length; i++) {
-        await pool.query(
-          'UPDATE gallery SET order_index = ? WHERE id = ?',
-          [i + 1, galleryImages[i].id]
-        )
-        console.log(`✅ [DEBUG] Updated order_index for image ID ${galleryImages[i].id} to ${i + 1}`)
-      }
-      
-      migrations.push(`gallery: order_index force updated for ${galleryImages.length} existing images`)
-    } catch (error) {
-      console.error('Gallery order_index force update error:', error)
-      migrations.push('gallery: order_index force update failed (non-critical)')
-    }
-
-    // 21. 갤러리 순서 변경 기능을 위한 추가 마이그레이션
-    try {
-      console.log('🔍 [DEBUG] Additional gallery order_index migration...')
-      
-      // order_index가 NULL인 갤러리 이미지들 찾기
-      const [nullOrderRows] = await pool.query(`
-        SELECT id FROM gallery 
-        WHERE image_type = 'gallery' AND deleted_at IS NULL AND order_index IS NULL
-        ORDER BY created_at ASC
-      `)
-      const nullOrderImages = nullOrderRows as { id: number }[]
-      
-      console.log(`🔍 [DEBUG] Found ${nullOrderImages.length} images with NULL order_index`)
-      
-      if (nullOrderImages.length > 0) {
-        // 현재 최대 order_index 조회
-        const [maxOrderRows] = await pool.query(`
-          SELECT COALESCE(MAX(order_index), 0) as max_order FROM gallery 
-          WHERE image_type = 'gallery' AND deleted_at IS NULL AND order_index IS NOT NULL
-        `)
-        const maxOrder = (maxOrderRows as { max_order: number }[])[0]?.max_order || 0
-        
-        // NULL인 이미지들에 순서대로 order_index 설정
-        for (let i = 0; i < nullOrderImages.length; i++) {
-          const newOrderIndex = maxOrder + i + 1
-          await pool.query(
-            'UPDATE gallery SET order_index = ? WHERE id = ?',
-            [newOrderIndex, nullOrderImages[i].id]
-          )
-          console.log(`✅ [DEBUG] Set order_index ${newOrderIndex} for image ID ${nullOrderImages[i].id}`)
-        }
-        
-        migrations.push(`gallery: order_index set for ${nullOrderImages.length} NULL images`)
-      } else {
-        migrations.push('gallery: no NULL order_index images found')
-      }
-    } catch (error) {
-      console.error('Gallery additional order_index migration error:', error)
-      migrations.push('gallery: additional order_index migration failed (non-critical)')
-    }
-
-    // 5. 기존 방명록 비밀번호 해시화 (평문 비밀번호가 있는 경우만)
-    try {
-      console.log('🔍 [DEBUG] Checking for unhashed guestbook passwords...')
-      
-      // 해시되지 않은 비밀번호 찾기 
-      // 해시된 비밀번호는 'salt:hash' 형태이고 길이가 훨씬 김
-      const [rows] = await pool.query(`
-        SELECT id, password 
-        FROM guestbook 
-        WHERE deleted_at IS NULL 
-        AND (
-          password NOT LIKE '%:%' 
-          OR LENGTH(password) < 20
-        )
-        LIMIT 50
-      `)
-      
-      const unhashedRows = rows as Array<{
-        id: number
-        password: string
-      }>
-
-      if (unhashedRows.length > 0) {
-        console.log(`🔍 [DEBUG] Found ${unhashedRows.length} unhashed password entries`)
-        
-        for (const row of unhashedRows) {
-          try {
-            // 이미 해시된 것처럼 보이는지 다시 한번 확인
-            if (row.password.includes(':') && row.password.length > 20) {
-              console.log(`⏭️ [DEBUG] Skipping entry ID ${row.id} - appears to be already hashed`)
-              continue
-            }
-            
-            // 비밀번호만 해시화
-            const hashedPassword = hashPassword(row.password)
-
-            await pool.query(`
-              UPDATE guestbook 
-              SET password = ?
-              WHERE id = ?
-            `, [hashedPassword, row.id])
-
-            console.log(`✅ [DEBUG] Hashed password for guestbook entry ID: ${row.id}`)
-          } catch (hashError) {
-            console.error(`❌ [DEBUG] Failed to hash password for guestbook entry ID: ${row.id}`, hashError)
-          }
-        }
-        
-        migrations.push(`guestbook: ${unhashedRows.length} passwords checked for hashing`)
-      } else {
-        migrations.push('guestbook: all passwords already hashed')
-      }
-    } catch (error) {
-      console.error('Guestbook password hashing migration error:', error)
-      migrations.push('guestbook: password hashing migration failed')
-    }
+    // 5. 방명록 비밀번호 해시화 제거 - 이미 완료됨
+    migrations.push('guestbook password hashing removed - already completed')
 
     console.log('✅ [DEBUG] Migration completed')
 
