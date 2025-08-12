@@ -37,10 +37,10 @@ export async function generateMetadata(): Promise<Metadata> {
         console.log(`[DEBUG] Found main image:`, mainImage)
         
         if (mainImage?.url) {
-          // URL이 상대 경로인 경우 절대 경로로 변환하고 타임스탬프 추가
+          // URL이 상대 경로인 경우 절대 경로로 변환 (타임스탬프 제거)
           imageUrl = mainImage.url.startsWith('http') 
-            ? `${mainImage.url}?v=${timestamp}`
-            : `https://monsil.eungming.com${mainImage.url}?v=${timestamp}`
+            ? mainImage.url
+            : `https://monsil.eungming.com${mainImage.url}`
           console.log(`[DEBUG] Final image URL:`, imageUrl)
         }
       }

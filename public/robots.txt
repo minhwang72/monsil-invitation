@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# 이미지 크롤링 허용
+Allow: /uploads/
+Allow: /images/
+
+# 사이트맵 위치
+Sitemap: https://monsil.eungming.com/sitemap.xml
