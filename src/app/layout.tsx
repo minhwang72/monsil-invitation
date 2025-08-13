@@ -64,6 +64,7 @@ export default function RootLayout({
         <meta name="robots" content="index,follow" />
         <meta name="googlebot" content="index,follow" />
         <meta name="google-site-verification" content="googled34400c98b84b203" />
+        <meta name="naver-site-verification" content="naverf9e3045bdd36fc3aabaf077273a51a57" />
         <script
           type="text/javascript"
           src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=7if040vbw7"
