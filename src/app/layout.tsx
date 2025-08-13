@@ -63,6 +63,7 @@ export default function RootLayout({
         <meta property="og:updated_time" content={new Date().toISOString()} />
         <meta name="robots" content="index,follow" />
         <meta name="googlebot" content="index,follow" />
+        <meta name="google-site-verification" content="googled34400c98b84b203" />
         <script
           type="text/javascript"
           src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=7if040vbw7"
