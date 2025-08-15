@@ -120,7 +120,7 @@ export default function WeddingDateSection() {
           className={`space-y-3 md:space-y-4 transition-all duration-800 ${dateInfoAnimation.animationClass}`}
         >
           <div className="text-base md:text-lg font-semibold text-black tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-            2025년 11월 8일 토요일&nbsp;&nbsp;|&nbsp;&nbsp;오후 12시 30분
+            2025년 11월 8일 토요일&nbsp;&nbsp;|&nbsp;&nbsp;오후 1시
           </div>
           
           <div className="text-base md:text-lg font-semibold text-black tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
