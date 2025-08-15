@@ -124,7 +124,7 @@ export default function WeddingDateSection() {
           </div>
           
           <div className="text-base md:text-lg font-semibold text-black tracking-wide" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-            Saturday, November 8, 2025&nbsp;&nbsp;|&nbsp;&nbsp;PM 12:30
+            Saturday, November 8, 2025&nbsp;&nbsp;|&nbsp;&nbsp;PM 1:00
           </div>
         </div>
       </div>

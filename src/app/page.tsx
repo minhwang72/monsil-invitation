@@ -19,7 +19,7 @@ export default function Home() {
   const [isFading, setIsFading] = useState(false)
 
   useEffect(() => {
-    const weddingDate = new Date('2025-11-08T12:30:00+09:00')
+    const weddingDate = new Date('2025-11-08T13:00:00+09:00')
     
     const calculateTimeLeft = () => {
       const now = new Date()
@@ -205,7 +205,7 @@ export default function Home() {
                 {/* 날짜와 시간 */}
                 <div className="text-center mb-2 md:mb-3">
                                   <p className="text-sm md:text-base lg:text-lg font-semibold tracking-wide text-gray-900" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-                  2025. 11. 08. 12:30 PM
+                  2025. 11. 08. 1:00 PM
                 </p>
                 </div>
 

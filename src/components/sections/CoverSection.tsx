@@ -222,7 +222,7 @@ export default function CoverSection() {
           className={`text-center mb-3 md:mb-4 transition-all duration-800 ${dateAnimation.animationClass}`}
         >
           <p className="text-base md:text-lg font-sans font-semibold text-gray-900" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-            2025. 11. 08. 12:30 PM
+                            2025. 11. 08. 1:00 PM
           </p>
         </div>
 
