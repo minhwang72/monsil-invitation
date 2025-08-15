@@ -196,7 +196,7 @@ const MainImageSection = ({ onUpdate, showToast, setGlobalLoading }: { onUpdate?
               <img
                 src={`${currentImage.url}?t=${Date.now()}`}
                 alt="Main"
-                className="w-full h-full object-cover rounded-lg"
+                className="w-full h-full object-contain bg-gray-50 rounded-lg"
                 key={currentImage.url}
               />
             </div>

@@ -231,7 +231,7 @@ export default function MainImageUploader({
               <img
                 src={preview}
                 alt="Uploaded preview"
-                className="w-full h-full object-cover rounded-lg border"
+                className="w-full h-full object-contain bg-gray-50 rounded-lg border"
               />
             </div>
           </div>

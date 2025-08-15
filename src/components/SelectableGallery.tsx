@@ -112,7 +112,7 @@ export default function SelectableGallery({
               <img
                 src={item.url}
                 alt={item.description || `Gallery item ${item.id}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-gray-50"
                 draggable={false}
               />
             </div>
@@ -160,7 +160,7 @@ export default function SelectableGallery({
                 <img
                   src={item.url}
                   alt={item.description || `Gallery item ${item.id}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-gray-50"
                   draggable={false}
                 />
               </div>
@@ -230,7 +230,7 @@ export default function SelectableGallery({
                   <img
                     src={selectedItem.url}
                     alt={selectedItem.description || `Selected item`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain bg-gray-50"
                     draggable={false}
                   />
                 </div>
