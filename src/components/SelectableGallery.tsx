@@ -166,12 +166,10 @@ export default function SelectableGallery({
 
       {/* 갤러리 리스트 */}
       <div className="space-y-3 select-none touch-manipulation">
-        {items.map((item, index) => {
+        {items.map((item) => {
           const isSelected = selectedItem?.id === item.id
           const isInSelectionMode = isSelectionMode && selectedItems.has(item.id)
           const isMoving = movingItem === item.id
-          const canMoveUp = index > 0
-          const canMoveDown = index < items.length - 1
           
           return (
             <div
