@@ -1329,7 +1329,7 @@ const GallerySection = ({ gallery, onUpdate, showToast, setGlobalLoading }: { ga
 
       {/* 안내 텍스트 */}
       <div className="text-sm text-gray-600 mt-4">
-        <p>• 일반 모드: 사진을 클릭하여 선택한 후, 각 사진의 위/아래 버튼으로 순서 변경</p>
+        <p>• 일반 모드: 사진을 클릭하여 선택한 후, 하단의 위/아래 버튼으로 순서 변경</p>
         <p>• 선택 모드: 사진을 터치하여 선택/해제, 우상단 체크박스 클릭 가능</p>
         <p>• 선택 모드에서 수정/삭제 가능</p>
       </div>

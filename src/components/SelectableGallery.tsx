@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Gallery } from '@/types'
 
 interface SelectableGalleryProps {
@@ -20,13 +20,25 @@ export default function SelectableGallery({
 }: SelectableGalleryProps) {
   const [mounted, setMounted] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Gallery | null>(null)
-  const [showMoveButtons, setShowMoveButtons] = useState(false)
   const [movingItem, setMovingItem] = useState<number | null>(null)
+  const selectedItemRef = useRef<HTMLDivElement>(null)
 
   // SSR 호환성을 위한 마운트 체크
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // 선택된 아이템이 변경될 때 자동 스크롤
+  useEffect(() => {
+    if (selectedItem && selectedItemRef.current) {
+      setTimeout(() => {
+        selectedItemRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        })
+      }, 100)
+    }
+  }, [selectedItem])
 
   // 아이템 선택 핸들러
   const handleItemSelect = (item: Gallery) => {
@@ -40,20 +52,20 @@ export default function SelectableGallery({
     if (selectedItem?.id === item.id) {
       // 같은 아이템 클릭 시 선택 해제
       setSelectedItem(null)
-      setShowMoveButtons(false)
     } else {
       // 다른 아이템 선택
       setSelectedItem(item)
-      setShowMoveButtons(true)
     }
   }
 
   // 위로 이동
-  const moveUp = async (item: Gallery) => {
-    const currentIndex = items.findIndex(i => i.id === item.id)
+  const moveUp = async () => {
+    if (!selectedItem) return
+
+    const currentIndex = items.findIndex(i => i.id === selectedItem.id)
     if (currentIndex <= 0) return // 이미 맨 위
 
-    setMovingItem(item.id)
+    setMovingItem(selectedItem.id)
     
     try {
       const newItems = [...items]
@@ -64,10 +76,8 @@ export default function SelectableGallery({
       const sortedIds = newItems.map(i => i.id)
       await onReorder(sortedIds)
       
-      // 선택된 아이템이 이동된 경우 업데이트
-      if (selectedItem?.id === item.id) {
-        setSelectedItem(newItems[currentIndex - 1])
-      }
+      // 선택된 아이템 업데이트 (순서가 바뀌었으므로)
+      setSelectedItem(newItems[currentIndex - 1])
     } catch (error) {
       console.error('Error moving item up:', error)
     } finally {
@@ -76,11 +86,13 @@ export default function SelectableGallery({
   }
 
   // 아래로 이동
-  const moveDown = async (item: Gallery) => {
-    const currentIndex = items.findIndex(i => i.id === item.id)
+  const moveDown = async () => {
+    if (!selectedItem) return
+
+    const currentIndex = items.findIndex(i => i.id === selectedItem.id)
     if (currentIndex >= items.length - 1) return // 이미 맨 아래
 
-    setMovingItem(item.id)
+    setMovingItem(selectedItem.id)
     
     try {
       const newItems = [...items]
@@ -91,10 +103,8 @@ export default function SelectableGallery({
       const sortedIds = newItems.map(i => i.id)
       await onReorder(sortedIds)
       
-      // 선택된 아이템이 이동된 경우 업데이트
-      if (selectedItem?.id === item.id) {
-        setSelectedItem(newItems[currentIndex + 1])
-      }
+      // 선택된 아이템 업데이트 (순서가 바뀌었으므로)
+      setSelectedItem(newItems[currentIndex + 1])
     } catch (error) {
       console.error('Error moving item down:', error)
     } finally {
@@ -105,7 +115,6 @@ export default function SelectableGallery({
   // 선택 해제
   const clearSelection = () => {
     setSelectedItem(null)
-    setShowMoveButtons(false)
   }
 
   // SSR 중에는 기본 리스트 렌더링
@@ -145,12 +154,12 @@ export default function SelectableGallery({
   }
 
   return (
-    <div className="relative">
+    <div className="relative pb-20">
       {/* 안내 메시지 */}
       {!isSelectionMode && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>순서 변경 방법:</strong> 사진을 클릭하여 선택한 후, 각 사진의 위/아래 버튼을 사용하여 순서를 변경하세요.
+            💡 <strong>순서 변경 방법:</strong> 사진을 클릭하여 선택한 후, 하단의 위/아래 버튼을 사용하여 순서를 변경하세요.
           </p>
         </div>
       )}
@@ -167,6 +176,7 @@ export default function SelectableGallery({
           return (
             <div
               key={item.id}
+              ref={isSelected ? selectedItemRef : null}
               className={`flex items-center gap-4 p-4 bg-white rounded-lg border-2 transition-all duration-200 ${
                 isSelected 
                   ? 'border-blue-500 bg-blue-50 shadow-lg' 
@@ -210,7 +220,7 @@ export default function SelectableGallery({
                 </div>
                 {isSelected && !isSelectionMode && (
                   <div className="text-xs text-blue-600 font-medium mt-1">
-                    선택됨 - 순서 변경 가능
+                    선택됨 - 하단 버튼으로 순서 변경
                   </div>
                 )}
               </div>
@@ -249,41 +259,6 @@ export default function SelectableGallery({
                   </div>
                 </div>
               )}
-
-              {/* 순서 변경 버튼들 (선택 모드가 아닐 때만 표시) */}
-              {!isSelectionMode && (
-                <div className="flex-shrink-0 flex flex-col gap-1">
-                  <button
-                    onClick={() => moveUp(item)}
-                    disabled={!canMoveUp || isMoving}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                      canMoveUp && !isMoving
-                        ? 'bg-blue-500 text-white hover:bg-blue-600'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
-                    title="위로 이동"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={() => moveDown(item)}
-                    disabled={!canMoveDown || isMoving}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                      canMoveDown && !isMoving
-                        ? 'bg-blue-500 text-white hover:bg-blue-600'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
-                    title="아래로 이동"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              )}
             </div>
           )
         })}
@@ -301,15 +276,67 @@ export default function SelectableGallery({
         </div>
       )}
 
-      {/* 선택 해제 버튼 (선택된 아이템이 있을 때만) */}
+      {/* 하단 고정 순서 변경 버튼 (선택된 아이템이 있을 때만) */}
       {selectedItem && !isSelectionMode && (
-        <div className="mt-4 text-center">
-          <button
-            onClick={clearSelection}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-          >
-            선택 해제
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+          <div className="p-4">
+            <div className="flex items-center justify-between max-w-md mx-auto">
+              {/* 선택된 아이템 정보 */}
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-12 h-12 rounded-lg overflow-hidden">
+                  <img
+                    src={selectedItem.url}
+                    alt={selectedItem.description || `Selected item`}
+                    className="w-full h-full object-contain bg-gray-50"
+                    draggable={false}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">
+                    순서 {selectedItem.order_index}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    선택됨
+                  </div>
+                </div>
+              </div>
+
+              {/* 이동 버튼들 */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={moveUp}
+                  disabled={items.findIndex(item => item.id === selectedItem.id) <= 0 || movingItem !== null}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="hidden sm:inline">위로</span>
+                </button>
+
+                <button
+                  onClick={moveDown}
+                  disabled={items.findIndex(item => item.id === selectedItem.id) >= items.length - 1 || movingItem !== null}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="hidden sm:inline">아래로</span>
+                </button>
+
+                <button
+                  onClick={clearSelection}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  <span className="hidden sm:inline">취소</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
