@@ -19,6 +19,11 @@ export default function Home() {
   const [isFading, setIsFading] = useState(false)
 
   useEffect(() => {
+    // 페이지 로드 시 즉시 스크롤을 맨 아래로 이동하고 고정 (애니메이션 없이)
+    window.scrollTo(0, document.body.scrollHeight)
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
     const weddingDate = new Date('2025-11-08T13:00:00+09:00')
     
     const calculateTimeLeft = () => {
@@ -45,7 +50,12 @@ export default function Home() {
       setShowGuide(true)
     }, 1000)
 
-    return () => clearInterval(timer)
+    return () => {
+      clearInterval(timer)
+      // 컴포넌트 언마운트 시 스크롤 해제
+      document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+    }
   }, [])
 
   const handleLetterClick = () => {
