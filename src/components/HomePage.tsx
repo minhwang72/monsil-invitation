@@ -123,7 +123,7 @@ export default function HomePage() {
           objectType: 'feed',
           content: {
             title: '황민 ♥ 이은솔 결혼합니다',
-            description: '2025년 11월 8일 오후 12시 30분\n정동제일교회에서 결혼식을 올립니다.\nWe invite you to our wedding.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.',
+            description: '2025년 11월 8일 오후 1시\n정동제일교회에서 결혼식을 올립니다.\nWe invite you to our wedding.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.',
             imageUrl: shareImageUrl,
             link: {
               mobileWebUrl: 'https://monsil.eungming.com',

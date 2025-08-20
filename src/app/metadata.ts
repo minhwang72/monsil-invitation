@@ -53,11 +53,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: "Min ♥ EunSol's Wedding",
-    description: "2025년 11월 8일 오후 12시 30분, 정동제일교회에서 결혼식을 올립니다. 여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
+    description: "2025년 11월 8일 오후 1시, 정동제일교회에서 결혼식을 올립니다. 여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
     keywords: ["결혼식", "청첩장", "wedding", "invitation", "황민", "이은솔", "정동제일교회"],
     openGraph: {
       title: "Min ♥ EunSol's Wedding",
-      description: "2025년 11월 8일 오후 12시 30분\n정동제일교회에서 결혼식을 올립니다.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
+      description: "2025년 11월 8일 오후 1시\n정동제일교회에서 결혼식을 올립니다.\n여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
       url: "https://monsil.eungming.com",
       siteName: "황민 ♥ 이은솔 결혼식 청첩장",
       images: [
@@ -74,7 +74,7 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: "Min ♥ EunSol's Wedding",
-      description: "2025년 11월 8일 오후 12시 30분, 정동제일교회에서 결혼식을 올립니다. 여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
+      description: "2025년 11월 8일 오후 1시, 정동제일교회에서 결혼식을 올립니다. 여러분의 축복으로 더 아름다운 날이 되길 바랍니다.",
       images: [imageUrl],
     },
     icons: {
