@@ -68,9 +68,15 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
       return
     }
     
+    const limitedValue = name === 'name'
+      ? value.slice(0, 10)
+      : name === 'content'
+        ? value.slice(0, 200)
+        : value
+
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: limitedValue
     }))
   }
 
@@ -354,6 +360,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   type="text"
                   value={formData.name}
                   onChange={handleInputChange}
+                  maxLength={10}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                   placeholder="이름을 입력해주세요 (최대 10글자)"
                   style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
@@ -367,6 +374,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   value={formData.content}
                   onChange={handleInputChange}
                   rows={4}
+                  maxLength={200}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent resize-none text-sm md:text-base placeholder-gray-400"
                   placeholder="축하 메시지를 입력해주세요 (최대 200글자)"
                   style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
@@ -383,6 +391,7 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
                   type="password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  maxLength={12}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent text-sm md:text-base placeholder-gray-400"
                   placeholder="비밀번호를 입력해주세요 (4~12자리)"
                   style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}
