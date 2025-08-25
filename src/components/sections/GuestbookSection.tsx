@@ -267,8 +267,8 @@ export default function GuestbookSection({ guestbook, onGuestbookUpdate }: Guest
               <>
                 {(showAll ? guestbook : guestbook.slice(0, 3)).map((item) => (
                   <div key={item.id} className="bg-white/80 p-4 md:p-6 rounded-lg shadow-sm border border-gray-100">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="text-gray-700 leading-relaxed text-sm md:text-base whitespace-pre-wrap flex-1 pr-4 break-words overflow-wrap-anywhere" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+                    <div className="flex justify-between items-start mb-4 gap-3">
+                      <div className="text-gray-700 leading-relaxed text-sm md:text-base whitespace-pre-wrap flex-1 min-w-0 break-words" style={{ fontFamily: 'MaruBuri, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
                         {item.content}
                       </div>
                       <button
