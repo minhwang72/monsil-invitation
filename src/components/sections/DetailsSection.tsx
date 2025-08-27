@@ -24,7 +24,7 @@ export default function LocationSection() {
   }
 
   const handleKakaoMap = () => {
-    window.open('https://kko.kakao.com/HQmHIUb47V', '_blank')
+    window.open('https://kko.kakao.com/w5qLCjYJ4z', '_blank')
   }
 
   const showToastMessage = (message: string) => {
