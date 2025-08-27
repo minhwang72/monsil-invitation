@@ -16,11 +16,11 @@ export default function LocationSection() {
   const transportAnimation = useScrollAnimation({ threshold: 0.1, animationDelay: 800 })
 
   const handleNaverMap = () => {
-    window.open('https://map.naver.com/p/search/정동제일교회', '_blank')
+    window.open('https://naver.me/GbADkHKc', '_blank')
   }
 
   const handleTMap = () => {
-    window.open('https://tmap.life/68c11ad5', '_blank')
+    window.open('https://tmap.life/ad3e5b9f', '_blank')
   }
 
   const handleKakaoMap = () => {
